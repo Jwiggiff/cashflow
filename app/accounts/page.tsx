@@ -12,43 +12,17 @@ import Link from "next/link";
 import { AddAccountDialog } from "./add-account-dialog";
 import prisma from "@/lib/prisma";
 import { EmptyState } from "./empty-state";
+import { AccountType } from "@prisma/client";
 
-const recentTransactions = [
-  {
-    id: 1,
-    account: "Main Checking",
-    description: "Grocery Store",
-    amount: -85.5,
-    date: "2024-03-15",
-    type: "expense",
-  },
-  {
-    id: 2,
-    account: "Main Checking",
-    description: "Salary Deposit",
-    amount: 3500.0,
-    date: "2024-03-14",
-    type: "income",
-  },
-  {
-    id: 3,
-    account: "Savings Account",
-    description: "Monthly Transfer",
-    amount: 500.0,
-    date: "2024-03-14",
-    type: "transfer",
-  },
-];
-
-const getAccountIcon = (type: string) => {
+const getAccountIcon = (type: AccountType) => {
   switch (type) {
-    case "CHECKING":
+    case AccountType.CHECKING:
       return HandCoinsIcon;
-    case "SAVINGS":
+    case AccountType.SAVINGS:
       return PiggyBankIcon;
-    case "INVESTMENT":
+    case AccountType.INVESTMENT:
       return ChartNoAxesCombinedIcon;
-    case "CREDIT":
+    case AccountType.CREDIT:
       return CreditCardIcon;
     default:
       return CircleQuestionMarkIcon;
@@ -59,6 +33,15 @@ export default async function AccountsPage() {
   const accounts = await prisma.account.findMany({
     orderBy: {
       createdAt: "desc",
+    },
+  });
+  const recentTransactions = await prisma.transaction.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 5,
+    include: {
+      account: true,
     },
   });
 
@@ -111,29 +94,38 @@ export default async function AccountsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentTransactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {transaction.description}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {transaction.account} • {transaction.date}
-                    </p>
-                  </div>
-                  <div
-                    className={`font-medium ${
-                      transaction.amount > 0 ? "text-green-600" : "text-red-600"
-                    }`}
-                  >
-                    {transaction.amount > 0 ? "+" : ""}$
-                    {Math.abs(transaction.amount).toFixed(2)}
-                  </div>
+              {recentTransactions.length === 0 ? (
+                <div className="text-center text-sm text-muted-foreground">
+                  No recent transactions
                 </div>
-              ))}
+              ) : (
+                recentTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {transaction.description}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {transaction.account.name} •{" "}
+                        {transaction.date.toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div
+                      className={`font-medium ${
+                        transaction.amount > 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transaction.amount > 0 ? "+" : ""}$
+                      {Math.abs(transaction.amount).toFixed(2)}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
