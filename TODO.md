@@ -1,0 +1,2 @@
+- missing sources: uber, emails
+- copy notion data to db

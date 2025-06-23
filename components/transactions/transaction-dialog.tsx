@@ -17,26 +17,39 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusIcon } from "lucide-react";
-import { useState } from "react";
+import { PlusIcon, PencilIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 import { TransactionType } from "@prisma/client";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
-import { createTransaction } from "../../app/transactions/actions";
+import { createTransaction, updateTransaction } from "@/app/transactions/actions";
 import { useRouter } from "next/navigation";
+import { TransactionWithAccount } from "@/lib/types";
 
 interface Account {
   id: number;
   name: string;
 }
 
-interface AddTransactionDialogProps {
+interface TransactionDialogProps {
   accounts: Account[];
+  mode?: "add" | "edit";
+  transaction?: TransactionWithAccount;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }
 
-export function AddTransactionDialog({ accounts }: AddTransactionDialogProps) {
+export function TransactionDialog({ 
+  accounts, 
+  mode = "add", 
+  transaction, 
+  open: controlledOpen, 
+  onOpenChange: controlledOnOpenChange,
+  trigger 
+}: TransactionDialogProps) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<TransactionType | "">("");
@@ -44,46 +57,80 @@ export function AddTransactionDialog({ accounts }: AddTransactionDialogProps) {
   const [accountId, setAccountId] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Use controlled or uncontrolled state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const onOpenChange = controlledOnOpenChange || setInternalOpen;
+
+  // Initialize form with transaction data when editing
+  useEffect(() => {
+    if (mode === "edit" && transaction) {
+      setDescription(transaction.description);
+      setType(transaction.type);
+      setCategory(transaction.category);
+      setAmount(Math.abs(transaction.amount).toFixed(2));
+      setAccountId(transaction.accountId);
+    } else {
+      // Reset form for add mode
+      setDescription("");
+      setType("");
+      setCategory("");
+      setAmount("");
+      setAccountId("");
+    }
+  }, [mode, transaction, open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !type || !amount || !category || !accountId) return;
 
     setIsSubmitting(true);
     try {
-      const result = await createTransaction({
+      const data = {
         description,
         type: type as TransactionType,
         category,
         amount: parseFloat(amount),
         accountId: accountId as number,
-      });
+      };
+
+      const result = mode === "edit" && transaction
+        ? await updateTransaction(transaction.id, data)
+        : await createTransaction(data);
 
       if (result.success) {
-        toast.success("Transaction created successfully");
-        setOpen(false);
+        toast.success(mode === "edit" ? "Transaction updated successfully" : "Transaction created successfully");
+        onOpenChange(false);
         router.refresh();
       } else {
-        toast.error(result.error || "Failed to create transaction");
+        toast.error(result.error || `Failed to ${mode} transaction`);
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
-      console.error("Failed to create transaction:", error);
+      console.error(`Failed to ${mode} transaction:`, error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const defaultTrigger = mode === "edit" ? (
+    <Button size="icon" variant="ghost" aria-label="Edit transaction">
+      <PencilIcon className="h-4 w-4" />
+    </Button>
+  ) : (
+    <Button size="sm" variant="outline" className="h-8">
+      <PlusIcon className="h-4 w-4 mr-2" />
+      Add Transaction
+    </Button>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="h-8">
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Transaction
-        </Button>
+        {trigger || defaultTrigger}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add New Transaction</DialogTitle>
+          <DialogTitle>{mode === "edit" ? "Edit Transaction" : "Add New Transaction"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -152,13 +199,13 @@ export function AddTransactionDialog({ accounts }: AddTransactionDialogProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Adding..." : "Add Transaction"}
+              {isSubmitting ? (mode === "edit" ? "Updating..." : "Adding...") : (mode === "edit" ? "Update Transaction" : "Add Transaction")}
             </Button>
           </div>
         </form>
