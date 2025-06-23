@@ -1,8 +1,17 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { TransactionActionsCell } from "./transaction-actions-cell";
-import { TransactionWithAccount } from "@/lib/types";
+import {
+  TransactionOrTransfer,
+  TransactionWithAccount,
+  TransferWithAccounts,
+} from "@/lib/types";
+import { ArrowRightIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { TransferActionsCell } from "./transfer-actions-cell";
 
-export function getColumns(accounts: { id: number; name: string; }[]): ColumnDef<TransactionWithAccount>[] {
+export function getColumns(
+  accounts: { id: number; name: string }[]
+): ColumnDef<TransactionOrTransfer>[] {
   return [
     {
       accessorKey: "id",
@@ -34,20 +43,37 @@ export function getColumns(accounts: { id: number; name: string; }[]): ColumnDef
     {
       accessorKey: "account",
       header: "Account",
-      accessorFn: (row) => String(row.account.id),
       cell: ({ row }) => {
-        const account = row.original.account;
-        return <div>{account.name}</div>;
+        const item = row.original;
+
+        // Check if it has 'account' property (transaction) or 'fromAccount' property (transfer)
+        if ("account" in item && item.account) {
+          return <div>{item.account.name}</div>;
+        } else if (
+          "fromAccount" in item &&
+          item.fromAccount &&
+          "toAccount" in item &&
+          item.toAccount
+        ) {
+          return (
+            <div className="flex items-center gap-1">
+              <span>{item.fromAccount.name}</span>
+              <ArrowRightIcon className="h-3 w-3 text-muted-foreground" />
+              <span>{item.toAccount.name}</span>
+            </div>
+          );
+        }
+        return <div>-</div>;
       },
     },
     {
       accessorKey: "type",
       header: "Type",
       cell: ({ row }) => {
-        const type = row.getValue("type") as string;
+        const item = row.original;
         return (
           <div className="capitalize">
-            {type.charAt(0) + type.slice(1).toLowerCase()}
+            {"type" in item ? item.type : "TRANSFER"}
           </div>
         );
       },
@@ -56,13 +82,21 @@ export function getColumns(accounts: { id: number; name: string; }[]): ColumnDef
     {
       accessorKey: "category",
       header: "Category",
-      cell: ({ row }) => <div>{row.getValue("category")}</div>,
+      cell: ({ row }) => {
+        const item = row.original;
+
+        return <div>{"category" in item ? item.category : "-"}</div>;
+      },
     },
     {
       accessorKey: "amount",
       header: () => <div className="text-right">Amount</div>,
       cell: ({ row }) => {
-        const amount = parseFloat(row.getValue("amount"));
+        const item = row.original;
+
+        const isTransfer = "fromAccount" in item && item.fromAccount;
+
+        const amount = parseFloat(item.amount.toString());
         const formatted = new Intl.NumberFormat("en-US", {
           style: "currency",
           currency: "USD",
@@ -70,11 +104,13 @@ export function getColumns(accounts: { id: number; name: string; }[]): ColumnDef
 
         return (
           <div
-            className={`text-right font-medium ${
-              amount > 0 ? "text-green-600" : "text-red-600"
-            }`}
+            className={cn(
+              "text-right font-medium",
+              amount > 0 ? "text-green-600" : "text-red-600",
+              isTransfer ? "text-muted-foreground" : ""
+            )}
           >
-            {amount > 0 ? "+" : ""}
+            {!isTransfer && amount > 0 ? "+" : ""}
             {formatted}
           </div>
         );
@@ -109,12 +145,25 @@ export function getColumns(accounts: { id: number; name: string; }[]): ColumnDef
     {
       id: "actions",
       enableHiding: false,
-      cell: ({ row }) => (
-        <TransactionActionsCell 
-          transaction={row.original as TransactionWithAccount} 
-          accounts={accounts}
-        />
-      ),
+      cell: ({ row }) => {
+        const item = row.original;
+
+        if ("account" in item && item.account) {
+          return (
+            <TransactionActionsCell
+              transaction={item as TransactionWithAccount}
+              accounts={accounts}
+            />
+          );
+        } else {
+          return (
+            <TransferActionsCell
+              transfer={item as TransferWithAccounts}
+              accounts={accounts}
+            />
+          );
+        }
+      },
     },
   ];
 }
