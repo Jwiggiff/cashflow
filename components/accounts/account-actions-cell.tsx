@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Trash2Icon } from "lucide-react";
+import { Trash2Icon, PencilIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -47,6 +47,11 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
       <AccountDialog
         mode="edit"
         account={account}
+        trigger={
+          <Button size="icon" variant="ghost" aria-label="Edit account">
+            <PencilIcon className="h-4 w-4" />
+          </Button>
+        }
       />
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogTrigger asChild>

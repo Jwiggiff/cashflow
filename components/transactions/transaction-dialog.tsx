@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusIcon, PencilIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { TransactionType } from "@prisma/client";
 import { toast } from "sonner";
@@ -46,7 +45,7 @@ export function TransactionDialog({
   transaction, 
   open: controlledOpen, 
   onOpenChange: controlledOnOpenChange,
-  trigger 
+  trigger,
 }: TransactionDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -112,22 +111,9 @@ export function TransactionDialog({
     }
   };
 
-  const defaultTrigger = mode === "edit" ? (
-    <Button size="icon" variant="ghost" aria-label="Edit transaction">
-      <PencilIcon className="h-4 w-4" />
-    </Button>
-  ) : (
-    <Button size="sm" variant="outline" className="h-8">
-      <PlusIcon className="h-4 w-4 mr-2" />
-      Add Transaction
-    </Button>
-  );
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || defaultTrigger}
-      </DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "edit" ? "Edit Transaction" : "Add New Transaction"}</DialogTitle>

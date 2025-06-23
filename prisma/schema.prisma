@@ -14,13 +14,15 @@ datasource db {
 }
 
 model Account {
-  id           Int           @id @default(autoincrement())
-  name         String
-  type         AccountType
-  balance      Float
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
+  id                    Int           @id @default(autoincrement())
+  name                  String
+  type                  AccountType
+  balance               Float
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  transactions          Transaction[]
+  outgoingTransfers     Transfer[]    @relation("FromAccount")
+  incomingTransfers     Transfer[]    @relation("ToAccount")
 }
 
 model Transaction {
@@ -36,6 +38,19 @@ model Transaction {
   updatedAt   DateTime        @updatedAt
 }
 
+model Transfer {
+  id                Int             @id @default(autoincrement())
+  date              DateTime
+  description       String?
+  amount            Float
+  fromAccount       Account         @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccountId     Int
+  toAccount         Account         @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccountId       Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
 enum AccountType {
   CHECKING
   SAVINGS
@@ -46,5 +61,4 @@ enum AccountType {
 enum TransactionType {
   INCOME
   EXPENSE
-  TRANSFER
 }
