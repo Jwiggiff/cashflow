@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AccountDialog } from "@/components/accounts/account-dialog";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
+import { TransferDialog } from "@/components/transactions/transfer-dialog";
 import { useState } from "react";
 import { Account } from "@prisma/client";
 
@@ -83,23 +84,11 @@ export function FloatingActionButton({
         onOpenChange={setTransactionDialogOpen}
       />
 
-      {/* TODO: Add TransferDialog component when available */}
-      {transferDialogOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg">
-            <h2 className="text-lg font-semibold mb-4">Transfer</h2>
-            <p className="text-muted-foreground">
-              Transfer functionality coming soon!
-            </p>
-            <Button
-              onClick={() => setTransferDialogOpen(false)}
-              className="mt-4"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      <TransferDialog
+        accounts={accounts}
+        open={transferDialogOpen}
+        onOpenChange={setTransferDialogOpen}
+      />
     </>
   );
 }
