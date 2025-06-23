@@ -36,15 +36,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { TransactionType } from "@prisma/client";
+import { capitalize } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  accounts: { id: number; name: string }[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  accounts,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -74,20 +78,6 @@ export function DataTable<TData, TValue>({
     },
   });
 
-  // Get unique values for filter options
-  const accounts = React.useMemo(() => {
-    const accountMap = new Map<number, string>();
-    data.forEach((item: TData) => {
-      const typedItem = item as { account?: { id: number; name: string } };
-      if (typedItem.account?.id && typedItem.account?.name) {
-        accountMap.set(typedItem.account.id, typedItem.account.name);
-      }
-    });
-    return Array.from(accountMap.entries()).sort((a, b) =>
-      a[1].localeCompare(b[1])
-    );
-  }, [data]);
-
   const categories = React.useMemo(() => {
     const categorySet = new Set<string>();
     data.forEach((item: TData) => {
@@ -99,16 +89,7 @@ export function DataTable<TData, TValue>({
     return Array.from(categorySet).sort();
   }, [data]);
 
-  const types = React.useMemo(() => {
-    const typeSet = new Set<string>();
-    data.forEach((item: TData) => {
-      const typedItem = item as { type?: string };
-      if (typedItem.type) {
-        typeSet.add(typedItem.type);
-      }
-    });
-    return Array.from(typeSet).sort();
-  }, [data]);
+  const types = [...Object.values(TransactionType), "TRANSFER"];
 
   return (
     <div className="w-full">
@@ -138,7 +119,7 @@ export function DataTable<TData, TValue>({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All accounts</SelectItem>
-            {accounts.map(([id, name]) => (
+            {accounts.map(({ id, name }) => (
               <SelectItem key={id} value={id.toString()}>
                 {name}
               </SelectItem>
@@ -182,7 +163,7 @@ export function DataTable<TData, TValue>({
             <SelectItem value="all">All types</SelectItem>
             {types.map((type) => (
               <SelectItem key={type} value={type}>
-                {type.charAt(0) + type.slice(1).toLowerCase()}
+                {capitalize(type)}
               </SelectItem>
             ))}
           </SelectContent>

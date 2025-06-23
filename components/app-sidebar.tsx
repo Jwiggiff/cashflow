@@ -7,9 +7,9 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-} from "@/components/ui/sidebar"
-import { CreditCardIcon, HomeIcon, TagIcon, UserIcon } from "lucide-react"
-import Link from "next/link"
+} from "@/components/ui/sidebar";
+import { CreditCardIcon, HomeIcon, LandmarkIcon, TagIcon } from "lucide-react";
+import Link from "next/link";
 
 const sidebarItems = [
   {
@@ -19,7 +19,7 @@ const sidebarItems = [
   },
   {
     label: "Accounts",
-    icon: UserIcon,
+    icon: LandmarkIcon,
     href: "/accounts",
   },
   {
@@ -32,7 +32,7 @@ const sidebarItems = [
     icon: TagIcon,
     href: "/categories",
   },
-]
+];
 
 export function AppSidebar() {
   return (
@@ -56,5 +56,5 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter />
     </Sidebar>
-  )
+  );
 }

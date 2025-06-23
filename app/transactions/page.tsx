@@ -32,7 +32,7 @@ export default async function TransactionsPage() {
   // Combine transactions and transfers into a single array
   const allItems: TransactionOrTransfer[] = [
     ...transactions,
-    ...transfers,
+    ...transfers.map((t) => ({ ...t, type: "TRANSFER" })),
   ].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );

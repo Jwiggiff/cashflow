@@ -6,7 +6,7 @@ import {
   TransferWithAccounts,
 } from "@/lib/types";
 import { ArrowRightIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { capitalize, cn } from "@/lib/utils";
 import { TransferActionsCell } from "./transfer-actions-cell";
 
 export function getColumns(
@@ -43,6 +43,23 @@ export function getColumns(
     {
       accessorKey: "account",
       header: "Account",
+      filterFn: (row, id, value) => {
+        const item = row.original;
+        if ("account" in item && item.account) {
+          return String(item.account.id) === String(value);
+        } else if (
+          "fromAccount" in item &&
+          item.fromAccount &&
+          "toAccount" in item &&
+          item.toAccount
+        ) {
+          return (
+            String(item.fromAccount.id) === String(value) ||
+            String(item.toAccount.id) === String(value)
+          );
+        }
+        return false;
+      },
       cell: ({ row }) => {
         const item = row.original;
 
@@ -71,11 +88,7 @@ export function getColumns(
       header: "Type",
       cell: ({ row }) => {
         const item = row.original;
-        return (
-          <div className="capitalize">
-            {"type" in item ? item.type : "TRANSFER"}
-          </div>
-        );
+        return <div className="capitalize">{capitalize(item.type)}</div>;
       },
       enableHiding: true,
     },

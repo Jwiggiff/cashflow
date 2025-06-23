@@ -12,5 +12,5 @@ interface TransactionsTableProps {
 export function TransactionsTable({ items, accounts }: TransactionsTableProps) {
   const columns = getColumns(accounts);
 
-  return <DataTable columns={columns} data={items} />;
+  return <DataTable columns={columns} data={items} accounts={accounts} />;
 }

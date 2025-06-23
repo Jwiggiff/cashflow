@@ -10,4 +10,4 @@ export type TransferWithAccounts = Prisma.TransferGetPayload<{
 
 export type TransactionOrTransfer =
   | TransactionWithAccount
-  | TransferWithAccounts;
+  | (TransferWithAccounts & { type: string });
