@@ -1,18 +1,18 @@
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  CreditCardIcon,
-  PiggyBankIcon,
-  CircleQuestionMarkIcon,
-  ChartNoAxesCombinedIcon,
-  HandCoinsIcon,
-} from "lucide-react";
+import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
+import { EmptyState } from "@/components/accounts/empty-state";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { AddAccountDialog } from "./add-account-dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import prisma from "@/lib/prisma";
-import { EmptyState } from "./empty-state";
 import { AccountType } from "@prisma/client";
+import {
+  ChartNoAxesCombinedIcon,
+  CircleQuestionMarkIcon,
+  CreditCardIcon,
+  HandCoinsIcon,
+  PiggyBankIcon,
+} from "lucide-react";
+import Link from "next/link";
 
 const getAccountIcon = (type: AccountType) => {
   switch (type) {

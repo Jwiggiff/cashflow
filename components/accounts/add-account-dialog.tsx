@@ -20,9 +20,10 @@ import {
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { AccountType } from "@prisma/client";
-import { createAccount } from "./actions";
+import { createAccount } from "../../app/accounts/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CurrencyInput } from "@/components/currency-input";
 
 export function AddAccountDialog() {
   const router = useRouter();
@@ -31,22 +32,6 @@ export function AddAccountDialog() {
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Remove any non-numeric characters except decimal point
-    const numericValue = value.replace(/[^0-9.]/g, "");
-    // Ensure only one decimal point
-    const parts = numericValue.split(".");
-    if (parts.length > 2) {
-      return;
-    }
-    // Limit to 2 decimal places
-    if (parts[1]?.length > 2) {
-      return;
-    }
-    setBalance(numericValue);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,21 +104,7 @@ export function AddAccountDialog() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="balance">Initial Balance</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground flex items-center h-full">
-                $
-              </span>
-              <Input
-                id="balance"
-                type="text"
-                inputMode="decimal"
-                value={balance}
-                onChange={handleBalanceChange}
-                className="pl-7"
-                placeholder="0.00"
-                required
-              />
-            </div>
+            <CurrencyInput value={balance} onChange={setBalance} />
           </div>
           <div className="flex justify-end space-x-2">
             <Button
@@ -152,4 +123,4 @@ export function AddAccountDialog() {
       </DialogContent>
     </Dialog>
   );
-} 
+}
