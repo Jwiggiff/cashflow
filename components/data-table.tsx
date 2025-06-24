@@ -38,17 +38,24 @@ import {
 } from "@/components/ui/table";
 import { TransactionType } from "@prisma/client";
 import { capitalize } from "@/lib/utils";
+import { iconOptions } from "@/lib/icon-options";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   accounts: { id: number; name: string }[];
+  categories: {
+    id: number;
+    name: string;
+    icon?: keyof typeof iconOptions | null;
+  }[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   accounts,
+  categories,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -77,17 +84,6 @@ export function DataTable<TData, TValue>({
       rowSelection,
     },
   });
-
-  const categories = React.useMemo(() => {
-    const categorySet = new Set<string>();
-    data.forEach((item: TData) => {
-      const typedItem = item as { category?: string };
-      if (typedItem.category) {
-        categorySet.add(typedItem.category);
-      }
-    });
-    return Array.from(categorySet).sort();
-  }, [data]);
 
   const types = [...Object.values(TransactionType), "TRANSFER"];
 
@@ -141,11 +137,19 @@ export function DataTable<TData, TValue>({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
+            {categories.map((category) => {
+              const Icon = iconOptions.find(
+                (icon) => icon.value === category.icon
+              )?.icon;
+              return (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  <div className="w-4">
+                    {Icon && <Icon className="h-4 w-4" />}
+                  </div>
+                  {category.name}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
         <Select

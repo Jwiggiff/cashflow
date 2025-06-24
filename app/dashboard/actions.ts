@@ -115,12 +115,6 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Calculate savings rate
   const savingsRate = ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
 
-  console.log({
-    monthlyIncome,
-    monthlyExpenses,
-    savingsRate,
-  });
-
   // Get last month's savings rate for comparison
   const lastSavingsRate =
     ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome) * 100;

@@ -10,12 +10,19 @@ export default async function TransactionsPage() {
     },
   });
 
+  const categories = await prisma.category.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+
   const transactions = await prisma.transaction.findMany({
     orderBy: {
       createdAt: "desc",
     },
     include: {
       account: true,
+      category: true,
     },
   });
 
@@ -46,7 +53,7 @@ export default async function TransactionsPage() {
       <Separator />
 
       <div className="flex-1 p-8">
-        <TransactionsTable items={allItems} accounts={accounts} />
+        <TransactionsTable items={allItems} accounts={accounts} categories={categories} />
       </div>
     </div>
   );

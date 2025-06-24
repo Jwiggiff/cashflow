@@ -17,15 +17,17 @@ import { AccountDialog } from "@/components/accounts/account-dialog";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
 import { TransferDialog } from "@/components/transactions/transfer-dialog";
 import { useState } from "react";
-import { Account } from "@prisma/client";
+import { Account, Category } from "@prisma/client";
 
 interface FloatingActionButtonProps {
   accounts: Account[];
+  categories: Category[];
   className?: string;
 }
 
 export function FloatingActionButton({
   accounts,
+  categories,
   className,
 }: FloatingActionButtonProps) {
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -80,6 +82,7 @@ export function FloatingActionButton({
 
       <TransactionDialog
         accounts={accounts}
+        categories={categories}
         open={transactionDialogOpen}
         onOpenChange={setTransactionDialogOpen}
       />

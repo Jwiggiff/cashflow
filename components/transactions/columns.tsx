@@ -2,15 +2,18 @@ import { ColumnDef } from "@tanstack/react-table";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import {
   TransactionOrTransfer,
-  TransactionWithAccount,
+  TransactionWithAccountAndCategory,
   TransferWithAccounts,
 } from "@/lib/types";
 import { ArrowRightIcon } from "lucide-react";
 import { capitalize, cn } from "@/lib/utils";
 import { TransferActionsCell } from "./transfer-actions-cell";
+import { Category } from "@prisma/client";
+import { iconOptions } from "@/lib/icon-options";
 
 export function getColumns(
-  accounts: { id: number; name: string }[]
+  accounts: { id: number; name: string }[],
+  categories: Category[]
 ): ColumnDef<TransactionOrTransfer>[] {
   return [
     {
@@ -98,7 +101,18 @@ export function getColumns(
       cell: ({ row }) => {
         const item = row.original;
 
-        return <div>{"category" in item ? item.category : "-"}</div>;
+        if ("category" in item && item.category) {
+          const Icon = iconOptions.find(
+            (icon) => icon.value === item.category?.icon
+          )?.icon;
+          return (
+            <div className="flex items-center gap-2">
+              {Icon && <Icon className="h-4 w-4" />}
+              {item.category.name}
+            </div>
+          );
+        }
+        return <div>-</div>;
       },
     },
     {
@@ -164,8 +178,9 @@ export function getColumns(
         if ("account" in item && item.account) {
           return (
             <TransactionActionsCell
-              transaction={item as TransactionWithAccount}
+              transaction={item as TransactionWithAccountAndCategory}
               accounts={accounts}
+              categories={categories}
             />
           );
         } else {

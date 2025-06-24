@@ -14,18 +14,20 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { TransactionWithAccount } from "@/lib/types";
+import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { deleteTransaction } from "@/app/transactions/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { TransactionDialog } from "./transaction-dialog";
+import { Category } from "@prisma/client";
 
 interface TransactionActionsCellProps {
-  transaction: TransactionWithAccount;
+  transaction: TransactionWithAccountAndCategory;
   accounts: { id: number; name: string; }[];
+  categories: Category[];
 }
 
-export function TransactionActionsCell({ transaction, accounts }: TransactionActionsCellProps) {
+export function TransactionActionsCell({ transaction, accounts, categories }: TransactionActionsCellProps) {
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
@@ -49,6 +51,7 @@ export function TransactionActionsCell({ transaction, accounts }: TransactionAct
         mode="edit"
         transaction={transaction}
         accounts={accounts}
+        categories={categories}
         trigger={
           <Button size="icon" variant="ghost" aria-label="Edit transaction">
             <PencilIcon className="h-4 w-4" />
@@ -72,7 +75,7 @@ export function TransactionActionsCell({ transaction, accounts }: TransactionAct
               <div><span className="font-semibold">Amount:</span> ${Math.abs(transaction.amount).toFixed(2)} {transaction.amount < 0 ? '(Expense)' : ''}</div>
               <div><span className="font-semibold">Date:</span> {new Date(transaction.date).toLocaleDateString()}</div>
               <div><span className="font-semibold">Account:</span> {transaction.account.name}</div>
-              <div><span className="font-semibold">Category:</span> {transaction.category}</div>
+              <div><span className="font-semibold">Category:</span> {transaction.category?.name || '-'}</div>
               <div><span className="font-semibold">Type:</span> {transaction.type.charAt(0) + transaction.type.slice(1).toLowerCase()}</div>
             </div>
           </AlertDialogHeader>

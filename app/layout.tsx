@@ -34,6 +34,12 @@ export default async function RootLayout({
     },
   });
 
+  const categories = await prisma.category.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -52,7 +58,7 @@ export default async function RootLayout({
               {children}
             </main>
           </SidebarProvider>
-          <FloatingActionButton accounts={accounts} />
+          <FloatingActionButton accounts={accounts} categories={categories} />
           <Toaster position="top-right" />
         </ThemeProvider>
       </body>

@@ -1,7 +1,7 @@
-import { Prisma } from "@prisma/client";
+import { Category, Prisma } from "@prisma/client";
 
-export type TransactionWithAccount = Prisma.TransactionGetPayload<{
-  include: { account: true };
+export type TransactionWithAccountAndCategory = Prisma.TransactionGetPayload<{
+  include: { account: true; category: true };
 }>;
 
 export type TransferWithAccounts = Prisma.TransferGetPayload<{
@@ -9,7 +9,7 @@ export type TransferWithAccounts = Prisma.TransferGetPayload<{
 }>;
 
 export type TransactionOrTransfer =
-  | TransactionWithAccount
+  | TransactionWithAccountAndCategory
   | (TransferWithAccounts & { type: string });
 
 export type DashboardStat = {
@@ -33,4 +33,9 @@ export type MonthlyData = {
 export type ExpenseData = {
   category: string;
   value: number;
+};
+
+export type CategoryWithData = Category & {
+  currentMonthSpent: number;
+  transactionCount: number;
 };

@@ -3,7 +3,7 @@
 import { Separator } from "@/components/ui/separator";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ChartCard } from "@/components/dashboard/chart-card";
-import { DollarSign, Wallet, TrendingUp, PiggyBank } from "lucide-react";
+import { DollarSign, TrendingUp, PiggyBank, TrendingDown } from "lucide-react";
 import {
   XAxis,
   YAxis,
@@ -127,7 +127,7 @@ export default function Home() {
             title="Monthly Expenses"
             value={formatCurrency(stats?.monthlyExpenses.value || 0)}
             change={formatChange(stats?.monthlyExpenses.change || 0)}
-            icon={Wallet}
+            icon={TrendingDown}
           />
 
           <StatCard

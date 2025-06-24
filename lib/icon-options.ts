@@ -1,0 +1,37 @@
+import { 
+  TagIcon, 
+  ShoppingCartIcon, 
+  HomeIcon, 
+  CarIcon, 
+  PlaneIcon, 
+  UtensilsIcon, 
+  HeartIcon, 
+  GiftIcon,
+  GamepadIcon,
+  BookOpenIcon,
+  MusicIcon,
+  CameraIcon,
+  BriefcaseIcon,
+  GraduationCapIcon,
+  WifiIcon,
+  PhoneIcon
+} from "lucide-react";
+
+export const iconOptions = [
+  { value: "tag", label: "Tag", icon: TagIcon },
+  { value: "shopping-cart", label: "Shopping", icon: ShoppingCartIcon },
+  { value: "home", label: "Home", icon: HomeIcon },
+  { value: "car", label: "Transport", icon: CarIcon },
+  { value: "plane", label: "Travel", icon: PlaneIcon },
+  { value: "utensils", label: "Food", icon: UtensilsIcon },
+  { value: "heart", label: "Health", icon: HeartIcon },
+  { value: "gift", label: "Gifts", icon: GiftIcon },
+  { value: "gamepad", label: "Entertainment", icon: GamepadIcon },
+  { value: "book-open", label: "Education", icon: BookOpenIcon },
+  { value: "music", label: "Music", icon: MusicIcon },
+  { value: "camera", label: "Photos", icon: CameraIcon },
+  { value: "briefcase", label: "Work", icon: BriefcaseIcon },
+  { value: "graduation-cap", label: "School", icon: GraduationCapIcon },
+  { value: "wifi", label: "Internet", icon: WifiIcon },
+  { value: "phone", label: "Phone", icon: PhoneIcon },
+]; 

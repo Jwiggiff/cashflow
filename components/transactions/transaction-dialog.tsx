@@ -1,5 +1,12 @@
 "use client";
 
+import { createCategory } from "@/app/categories/actions";
+import {
+  createTransaction,
+  updateTransaction,
+} from "@/app/transactions/actions";
+import { Combobox, ComboboxItem } from "@/components/combobox";
+import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,13 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
-import { TransactionType } from "@prisma/client";
-import { toast } from "sonner";
-import { CurrencyInput } from "@/components/currency-input";
-import { createTransaction, updateTransaction } from "@/app/transactions/actions";
+import { iconOptions } from "@/lib/icon-options";
+import { TransactionWithAccountAndCategory } from "@/lib/types";
+import { Category, TransactionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { TransactionWithAccount } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Account {
   id: number;
@@ -32,18 +38,20 @@ interface Account {
 
 interface TransactionDialogProps {
   accounts: Account[];
+  categories: Category[];
   mode?: "add" | "edit";
-  transaction?: TransactionWithAccount;
+  transaction?: TransactionWithAccountAndCategory;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
 }
 
-export function TransactionDialog({ 
-  accounts, 
-  mode = "add", 
-  transaction, 
-  open: controlledOpen, 
+export function TransactionDialog({
+  accounts,
+  categories,
+  mode = "add",
+  transaction,
+  open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
 }: TransactionDialogProps) {
@@ -52,7 +60,7 @@ export function TransactionDialog({
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<TransactionType | "">("");
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,39 +73,54 @@ export function TransactionDialog({
     if (mode === "edit" && transaction) {
       setDescription(transaction.description);
       setType(transaction.type);
-      setCategory(transaction.category);
+      setCategoryId(transaction.categoryId);
       setAmount(Math.abs(transaction.amount).toFixed(2));
       setAccountId(transaction.accountId);
     } else {
       // Reset form for add mode
       setDescription("");
       setType("");
-      setCategory("");
+      setCategoryId(null);
       setAmount("");
       setAccountId("");
     }
   }, [mode, transaction, open]);
 
+  const handleCreateCategory = async (name: string) => {
+    const result = await createCategory({ name });
+    if (result.success && result.data) {
+      setCategoryId(result.data.id);
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to create category");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !type || !amount || !category || !accountId) return;
+    if (!description || !type || !amount || !categoryId || !accountId) return;
 
     setIsSubmitting(true);
     try {
       const data = {
         description,
         type: type as TransactionType,
-        category,
+        categoryId: categoryId,
         amount: parseFloat(amount),
         accountId: accountId as number,
       };
 
-      const result = mode === "edit" && transaction
-        ? await updateTransaction(transaction.id, data)
-        : await createTransaction(data);
+      const result =
+        mode === "edit" && transaction
+          ? await updateTransaction(transaction.id, data)
+          : await createTransaction(data);
 
       if (result.success) {
-        toast.success(mode === "edit" ? "Transaction updated successfully" : "Transaction created successfully");
+        toast.success(
+          mode === "edit"
+            ? "Transaction updated successfully"
+            : "Transaction created successfully"
+        );
         onOpenChange(false);
         router.refresh();
       } else {
@@ -111,12 +134,22 @@ export function TransactionDialog({
     }
   };
 
+  // Convert categories to combobox items
+  const categoryItems: ComboboxItem[] = categories.map((cat) => ({
+    value: cat.id.toString(),
+    label: cat.name,
+    icon: iconOptions.find((icon) => icon.value === cat.icon)
+      ?.icon as React.ReactNode,
+  })) satisfies ComboboxItem[];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit Transaction" : "Add New Transaction"}</DialogTitle>
+          <DialogTitle>
+            {mode === "edit" ? "Edit Transaction" : "Add New Transaction"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -169,13 +202,24 @@ export function TransactionDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Input
+            <Combobox
+              items={categoryItems}
+              value={categoryId?.toString() ?? ""}
+              onChange={(value) =>
+                setCategoryId(value ? parseInt(value) : null)
+              }
+              placeholder="Select or create a category..."
+              searchPlaceholder="Search categories..."
+              onCreateItem={handleCreateCategory}
+              createLabel="Create category"
+            />
+            {/* <Input
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               placeholder="e.g., Food & Dining"
               required
-            />
+            /> */}
           </div>
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
@@ -191,7 +235,13 @@ export function TransactionDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (mode === "edit" ? "Updating..." : "Adding...") : (mode === "edit" ? "Update Transaction" : "Add Transaction")}
+              {isSubmitting
+                ? mode === "edit"
+                  ? "Updating..."
+                  : "Adding..."
+                : mode === "edit"
+                ? "Update Transaction"
+                : "Add Transaction"}
             </Button>
           </div>
         </form>
