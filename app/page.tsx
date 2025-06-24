@@ -5,35 +5,96 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { ChartCard } from "@/components/dashboard/chart-card";
 import { DollarSign, Wallet, TrendingUp, PiggyBank } from "lucide-react";
 import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
   XAxis,
   YAxis,
-  Tooltip,
+  AreaChart,
+  Area,
+  CartesianGrid,
+  PieChart,
+  Pie,
 } from "recharts";
-import { PieChart, Pie, Cell } from "recharts";
-
-const monthlyData = [
-  { month: "Jan", income: 12000, expenses: 8000 },
-  { month: "Feb", income: 12500, expenses: 8200 },
-  { month: "Mar", income: 13000, expenses: 8500 },
-  { month: "Apr", income: 12800, expenses: 8300 },
-  { month: "May", income: 13200, expenses: 8400 },
-  { month: "Jun", income: 13500, expenses: 8600 },
-];
-
-const expenseData = [
-  { name: "Housing", value: 2500 },
-  { name: "Food", value: 1200 },
-  { name: "Transport", value: 800 },
-  { name: "Utilities", value: 600 },
-  { name: "Entertainment", value: 400 },
-];
-
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
+import { useEffect, useState } from "react";
+import {
+  getDashboardStats,
+  getMonthlyData,
+  getExpenseBreakdown,
+} from "./dashboard/actions";
+import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import {
+  ChartLegendContent,
+  ChartLegend,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
+import {
+  formatCurrency,
+  formatChange,
+  formatPercentage,
+  capitalize,
+} from "@/lib/utils";
+import { CurrencyTooltipFormatter } from "@/components/dashboard/currency-tooltip-formatter";
 
 export default function Home() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [expenseData, setExpenseData] = useState<ExpenseData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [statsData, monthlyDataResult, expenseDataResult] =
+          await Promise.all([
+            getDashboardStats(),
+            getMonthlyData(),
+            getExpenseBreakdown(),
+          ]);
+
+        setStats(statsData);
+        setMonthlyData(monthlyDataResult);
+        setExpenseData(expenseDataResult);
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col min-h-screen w-full">
+        <div className="flex items-center justify-between p-8">
+          <h1 className="text-3xl font-bold">Financial Dashboard</h1>
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        </div>
+        <Separator />
+        <div className="flex-1 p-8">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />
+            ))}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <div className="col-span-4 h-[300px] bg-muted animate-pulse rounded-lg" />
+            <div className="col-span-3 h-[300px] bg-muted animate-pulse rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const expenseConfig = expenseData.reduce((acc, expense, index) => {
+    acc[expense.category.toLowerCase()] = {
+      label: capitalize(expense.category),
+      color: `var(--chart-${index + 1})`,
+    };
+    return acc;
+  }, {} as Record<string, { label: string; color: string }>);
+
   return (
     <div className="flex flex-col min-h-screen w-full">
       <div className="flex items-center justify-between p-8">
@@ -50,29 +111,29 @@ export default function Home() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatCard
             title="Total Balance"
-            value="$45,231.89"
-            change="+20.1% from last month"
+            value={formatCurrency(stats?.totalBalance.value || 0)}
+            change={formatChange(stats?.totalBalance.change || 0)}
             icon={DollarSign}
           />
 
           <StatCard
             title="Monthly Income"
-            value="$12,234"
-            change="+4.3% from last month"
+            value={formatCurrency(stats?.monthlyIncome.value || 0)}
+            change={formatChange(stats?.monthlyIncome.change || 0)}
             icon={TrendingUp}
           />
 
           <StatCard
             title="Monthly Expenses"
-            value="$8,234"
-            change="-2.1% from last month"
+            value={formatCurrency(stats?.monthlyExpenses.value || 0)}
+            change={formatChange(stats?.monthlyExpenses.change || 0)}
             icon={Wallet}
           />
 
           <StatCard
             title="Savings Rate"
-            value="32.7%"
-            change="+5.2% from last month"
+            value={formatPercentage(stats?.savingsRate.value || 0)}
+            change={formatChange(stats?.savingsRate.change || 0)}
             icon={PiggyBank}
           />
         </div>
@@ -80,46 +141,123 @@ export default function Home() {
         {/* Charts Section */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <ChartCard title="Monthly Overview" className="col-span-4">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="income" fill="#0088FE" name="Income" />
-                  <Bar dataKey="expenses" fill="#FF8042" name="Expenses" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              className="aspect-auto h-full w-full min-h-[300px]"
+              config={{
+                income: {
+                  label: "Income",
+                  color: "var(--chart-2)",
+                  // color: "#0088FE",
+                },
+                expenses: {
+                  label: "Expenses",
+                  color: "var(--destructive)",
+                  // color: "#FF8042",
+                },
+              }}
+            >
+              <AreaChart data={monthlyData}>
+                <defs>
+                  <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-income)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-income)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                  <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-expenses)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-expenses)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  tickFormatter={(value) => formatCurrency(value)}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      formatter={(_, __, item) => (
+                        <CurrencyTooltipFormatter item={item} />
+                      )}
+                    />
+                  }
+                />
+                <Area
+                  dataKey="income"
+                  type="natural"
+                  fill="url(#fillIncome)"
+                  stroke="var(--color-income)"
+                  stackId="a"
+                />
+                <Area
+                  dataKey="expenses"
+                  type="natural"
+                  fill="url(#fillExpenses)"
+                  stroke="var(--color-expenses)"
+                  stackId="a"
+                />
+                <ChartLegend content={<ChartLegendContent />} />
+              </AreaChart>
+            </ChartContainer>
           </ChartCard>
 
           <ChartCard title="Expense Breakdown" className="col-span-3">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={expenseData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                  >
-                    {expenseData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <ChartContainer
+              config={expenseConfig}
+              className="aspect-square h-full w-full mx-auto max-h-[300px]"
+            >
+              <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      hideLabel
+                      formatter={(_, __, item) => (
+                        <CurrencyTooltipFormatter item={item} />
+                      )}
+                    />
+                  }
+                />
+                <Pie
+                  data={expenseData.map((expense) => ({
+                    ...expense,
+                    fill: `var(--color-${expense.category.toLowerCase()})`,
+                  }))}
+                  dataKey="value"
+                  nameKey="category"
+                  stroke="0"
+                />
+                <ChartLegend
+                  content={<ChartLegendContent nameKey="category" />}
+                />
+              </PieChart>
+            </ChartContainer>
           </ChartCard>
         </div>
       </div>

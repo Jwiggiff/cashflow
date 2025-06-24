@@ -12,7 +12,7 @@ export function ChartCard({ title, children, className }: ChartCardProps) {
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="pl-2">
+      <CardContent className="px-2 pt-4">
         {children}
       </CardContent>
     </Card>

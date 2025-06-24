@@ -11,3 +11,26 @@ export type TransferWithAccounts = Prisma.TransferGetPayload<{
 export type TransactionOrTransfer =
   | TransactionWithAccount
   | (TransferWithAccounts & { type: string });
+
+export type DashboardStat = {
+  value: number;
+  change: number;
+};
+
+export type DashboardStats = {
+  totalBalance: DashboardStat;
+  monthlyIncome: DashboardStat;
+  monthlyExpenses: DashboardStat;
+  savingsRate: DashboardStat;
+};
+
+export type MonthlyData = {
+  month: string;
+  income: number;
+  expenses: number;
+};
+
+export type ExpenseData = {
+  category: string;
+  value: number;
+};
