@@ -197,8 +197,10 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+  const categories = await prisma.category.findMany();
+
   const expenses = await prisma.transaction.groupBy({
-    by: ["category"],
+    by: ["categoryId"],
     where: {
       type: "EXPENSE",
       date: {
@@ -212,7 +214,7 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
   });
 
   return expenses.map((expense) => ({
-    category: expense.category.toLowerCase(),
+    category: categories.find((c) => c.id === expense.categoryId)?.name ?? "",
     value: (expense._sum.amount || 0) * -1,
   }));
 }

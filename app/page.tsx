@@ -32,6 +32,7 @@ import {
   formatChange,
   formatPercentage,
   capitalize,
+  slugify,
 } from "@/lib/utils";
 import { CurrencyTooltipFormatter } from "@/components/dashboard/currency-tooltip-formatter";
 
@@ -88,12 +89,14 @@ export default function Home() {
   }
 
   const expenseConfig = expenseData.reduce((acc, expense, index) => {
-    acc[expense.category.toLowerCase()] = {
+    acc[expense.category] = {
       label: capitalize(expense.category),
       color: `var(--chart-${index + 1})`,
     };
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
+
+  console.log(expenseConfig);
 
   return (
     <div className="flex flex-col min-h-screen w-full">
@@ -245,9 +248,9 @@ export default function Home() {
                   }
                 />
                 <Pie
-                  data={expenseData.map((expense) => ({
+                  data={expenseData.map((expense, index) => ({
                     ...expense,
-                    fill: `var(--color-${expense.category.toLowerCase()})`,
+                    fill: `var(--chart-${index + 1})`,
                   }))}
                   dataKey="value"
                   nameKey="category"

@@ -5,8 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function slugify(str: string) {
+  return str.toLowerCase().replaceAll(" ", "_").replaceAll(/[^a-z0-9_]/g, "");
+}
+
 export function capitalize(str: string) {
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 }
 
 export function formatCurrency(amount: number) {
