@@ -6,7 +6,7 @@ import { TransactionType } from "@prisma/client";
 export async function createTransaction(data: {
   description: string;
   type: TransactionType;
-  categoryId: number;
+  categoryId: number | null;
   amount: number;
   accountId: number;
 }) {
@@ -36,7 +36,7 @@ export async function createTransaction(data: {
 export async function updateTransaction(id: number, data: {
   description: string;
   type: TransactionType;
-  categoryId: number;
+  categoryId: number | null;
   amount: number;
   accountId: number;
 }) {

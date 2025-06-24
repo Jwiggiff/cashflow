@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,11 +17,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type ComboboxItem = {
   value: string;
   label: string;
-  icon?: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
 };
 
 export type ComboboxProps = {
@@ -110,7 +111,9 @@ export function Combobox({
                     setSearchValue("");
                   }}
                 >
-                  {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  <div className="w-4">
+                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                  </div>
                   {item.label}
                 </CommandItem>
               ))}

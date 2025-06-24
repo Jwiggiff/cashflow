@@ -59,7 +59,7 @@ export function TransactionDialog({
   const [internalOpen, setInternalOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<TransactionType | "">("");
+  const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +79,7 @@ export function TransactionDialog({
     } else {
       // Reset form for add mode
       setDescription("");
-      setType("");
+      setType(TransactionType.EXPENSE);
       setCategoryId(null);
       setAmount("");
       setAccountId("");
@@ -98,7 +98,8 @@ export function TransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !type || !amount || !categoryId || !accountId) return;
+    if (!description || !type || !amount || !accountId) return;
+    
 
     setIsSubmitting(true);
     try {
@@ -200,27 +201,22 @@ export function TransactionDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Combobox
-              items={categoryItems}
-              value={categoryId?.toString() ?? ""}
-              onChange={(value) =>
-                setCategoryId(value ? parseInt(value) : null)
-              }
-              placeholder="Select or create a category..."
-              searchPlaceholder="Search categories..."
-              onCreateItem={handleCreateCategory}
-              createLabel="Create category"
-            />
-            {/* <Input
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              placeholder="e.g., Food & Dining"
-              required
-            /> */}
-          </div>
+          {type === TransactionType.EXPENSE && (
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Combobox
+                items={categoryItems}
+                value={categoryId?.toString() ?? ""}
+                onChange={(value) =>
+                  setCategoryId(value ? parseInt(value) : null)
+                }
+                placeholder="Select or create category..."
+                searchPlaceholder="Search categories..."
+                onCreateItem={handleCreateCategory}
+                createLabel="Create category"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
             <CurrencyInput value={amount} onChange={setAmount} />
