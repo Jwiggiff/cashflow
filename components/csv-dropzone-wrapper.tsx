@@ -11,15 +11,16 @@ import { useRouter } from "next/navigation";
 
 interface CSVDropzoneWrapperProps {
   accounts: Account[];
+  canAutoCategorize: boolean;
 }
 
-export function CSVDropzoneWrapper({ accounts }: CSVDropzoneWrapperProps) {
+export function CSVDropzoneWrapper({ accounts, canAutoCategorize }: CSVDropzoneWrapperProps) {
   const [previewData, setPreviewData] = useState<{
     transactions: CSVTransaction[];
     fileName: string;
   } | null>(null);
   const router = useRouter();
-
+  
   const handleCSVFileDrop = async (file: File) => {
     try {
       const text = await file.text();
@@ -35,9 +36,13 @@ export function CSVDropzoneWrapper({ accounts }: CSVDropzoneWrapperProps) {
     }
   };
 
-  const handleImport = async (transactions: CSVTransaction[], accountId: number) => {
+  const handleImport = async (
+    transactions: CSVTransaction[], 
+    accountId: number,
+    autoCategorize: boolean
+  ) => {
     try {
-      const result = await bulkImportTransactions(transactions, accountId);
+      const result = await bulkImportTransactions(transactions, accountId, autoCategorize);
       
       if (result.success) {
         toast.success(result.message);
@@ -66,6 +71,7 @@ export function CSVDropzoneWrapper({ accounts }: CSVDropzoneWrapperProps) {
           accounts={accounts}
           onImport={handleImport}
           onCancel={handleCancelPreview}
+          canAutoCategorize={canAutoCategorize}
         />
       )}
     </>

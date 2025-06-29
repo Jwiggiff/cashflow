@@ -41,6 +41,8 @@ export default async function RootLayout({
     },
   });
 
+  const canAutoCategorize = process.env.OPENAI_API_KEY !== undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -60,7 +62,7 @@ export default async function RootLayout({
             </main>
           </SidebarProvider>
           <FloatingActionButton accounts={accounts} categories={categories} />
-          <CSVDropzoneWrapper accounts={accounts} />
+          <CSVDropzoneWrapper accounts={accounts} canAutoCategorize={canAutoCategorize} />
           <Toaster position="top-right" />
         </ThemeProvider>
       </body>

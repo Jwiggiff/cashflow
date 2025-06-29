@@ -20,7 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { X, Sparkles } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Account } from "@prisma/client";
 
@@ -28,8 +29,13 @@ interface CSVPreviewProps {
   transactions: CSVTransaction[];
   fileName: string;
   accounts: Account[];
-  onImport: (transactions: CSVTransaction[], accountId: number) => void;
+  onImport: (
+    transactions: CSVTransaction[], 
+    accountId: number, 
+    autoCategorize: boolean
+  ) => void;
   onCancel: () => void;
+  canAutoCategorize: boolean;
 }
 
 export function CSVPreview({
@@ -38,16 +44,18 @@ export function CSVPreview({
   accounts,
   onImport,
   onCancel,
+  canAutoCategorize,
 }: CSVPreviewProps) {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [autoCategorize, setAutoCategorize] = useState(canAutoCategorize);
 
   const handleImport = async () => {
     if (!selectedAccountId) return;
 
     setIsImporting(true);
     try {
-      await onImport(transactions, parseInt(selectedAccountId));
+      await onImport(transactions, parseInt(selectedAccountId), autoCategorize);
     } catch (error) {
       console.error("Import failed:", error);
     } finally {
@@ -89,6 +97,22 @@ export function CSVPreview({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Auto-categorization Checkbox */}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="auto-categorize"
+              checked={autoCategorize}
+              disabled={!canAutoCategorize}
+              onCheckedChange={(checked) => setAutoCategorize(checked as boolean)}
+            />
+            <Label htmlFor="auto-categorize" className="text-sm">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Enable AI auto-categorization for expenses
+              </div>
+            </Label>
           </div>
 
           {/* Transactions Table */}

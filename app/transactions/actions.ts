@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { CSVTransaction } from "@/lib/csv-parser";
+import { autoCategorize } from "@/lib/auto-categorizer";
 
 // Helper function to parse CSV dates properly
 function parseCSVDate(dateString: string): Date | null {
@@ -315,14 +316,21 @@ export async function bulkDeleteItems(
 
 export async function bulkImportTransactions(
   transactions: CSVTransaction[],
-  accountId: number
+  accountId: number,
+  enableAutoCategorize: boolean = false
 ) {
   try {
+    // Get categories for auto-categorization
+    const categories = await prisma.category.findMany({
+      orderBy: { name: "asc" },
+    });
+
     // Use a transaction to ensure all operations succeed or fail together
     const result = await prisma.$transaction(async (tx) => {
       const createdTransactions = [];
       let totalBalanceChange = 0;
       let skippedTransactions = 0;
+      let categorizedTransactions = 0;
 
       for (const csvTransaction of transactions) {
         // Parse the date from the CSV using our helper function
@@ -341,6 +349,20 @@ export async function bulkImportTransactions(
         const type =
           amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
 
+        // Auto-categorize if enabled
+        let categoryId: number | null = null;
+        if (enableAutoCategorize && type === TransactionType.EXPENSE) {
+          const categorization = await autoCategorize(
+            csvTransaction.merchant,
+            categories
+          );
+
+          if (categorization.categoryId) {
+            categoryId = categorization.categoryId;
+            categorizedTransactions++;
+          }
+        }
+
         // Create the transaction
         const transaction = await tx.transaction.create({
           data: {
@@ -349,7 +371,7 @@ export async function bulkImportTransactions(
             amount,
             accountId,
             date: transactionDate,
-            categoryId: null, // No category mapping for now
+            categoryId,
           },
         });
 
@@ -367,6 +389,7 @@ export async function bulkImportTransactions(
         transactions: createdTransactions,
         totalBalanceChange,
         skippedTransactions,
+        categorizedTransactions,
       };
     });
 
@@ -375,6 +398,10 @@ export async function bulkImportTransactions(
     } transactions${
       result.skippedTransactions > 0
         ? ` (${result.skippedTransactions} skipped due to invalid dates)`
+        : ""
+    }${
+      enableAutoCategorize
+        ? ` (${result.categorizedTransactions} auto-categorized)`
         : ""
     }`;
 
