@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
+import { CSVTransaction } from "@/lib/csv-parser";
 
 export async function createTransaction(data: {
   description: string;
@@ -190,5 +191,129 @@ export async function deleteTransfer(id: number) {
   } catch (error) {
     console.error("Failed to delete transfer:", error);
     return { success: false, error: "Failed to delete transfer" };
+  }
+}
+
+export async function bulkDeleteItems(items: Array<{ id: number; type: string }>) {
+  try {
+    const transactionIds: number[] = [];
+    const transferIds: number[] = [];
+
+    // Separate transactions and transfers
+    items.forEach(item => {
+      if (item.type === "TRANSFER") {
+        transferIds.push(item.id);
+      } else {
+        transactionIds.push(item.id);
+      }
+    });
+
+    // Use a transaction to ensure all operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      let deletedTransactions = 0;
+      let deletedTransfers = 0;
+
+      // Delete transactions
+      if (transactionIds.length > 0) {
+        await tx.transaction.deleteMany({
+          where: { id: { in: transactionIds } },
+        });
+        deletedTransactions = transactionIds.length;
+      }
+
+      // Delete transfers and revert account balances
+      if (transferIds.length > 0) {
+        const transfers = await tx.transfer.findMany({
+          where: { id: { in: transferIds } },
+        });
+
+        // Revert account balances for all transfers
+        for (const transfer of transfers) {
+          await tx.account.update({
+            where: { id: transfer.fromAccountId },
+            data: { balance: { increment: transfer.amount } },
+          });
+
+          await tx.account.update({
+            where: { id: transfer.toAccountId },
+            data: { balance: { decrement: transfer.amount } },
+          });
+        }
+
+        await tx.transfer.deleteMany({
+          where: { id: { in: transferIds } },
+        });
+        deletedTransfers = transferIds.length;
+      }
+
+      return { deletedTransactions, deletedTransfers };
+    });
+
+    return { 
+      success: true, 
+      deletedTransactions: result.deletedTransactions,
+      deletedTransfers: result.deletedTransfers 
+    };
+  } catch (error) {
+    console.error("Failed to bulk delete items:", error);
+    return { success: false, error: "Failed to delete selected items" };
+  }
+}
+
+export async function bulkImportTransactions(
+  transactions: CSVTransaction[],
+  accountId: number
+) {
+  try {
+    // Use a transaction to ensure all operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      const createdTransactions = [];
+      let totalBalanceChange = 0;
+
+      for (const csvTransaction of transactions) {
+        // Parse the date from the CSV
+        const transactionDate = new Date(csvTransaction.date);
+        transactionDate.setUTCHours(0, 0, 0, 0);
+        
+        // Determine transaction type and amount
+        const amount = csvTransaction.income - csvTransaction.expense;
+        const type = amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
+        
+        // Create the transaction
+        const transaction = await tx.transaction.create({
+          data: {
+            description: csvTransaction.merchant,
+            type,
+            amount,
+            accountId,
+            date: transactionDate,
+            categoryId: null, // No category mapping for now
+          },
+        });
+
+        createdTransactions.push(transaction);
+        totalBalanceChange += amount;
+      }
+
+      // Update the account balance
+      await tx.account.update({
+        where: { id: accountId },
+        data: { balance: { increment: totalBalanceChange } },
+      });
+
+      return { transactions: createdTransactions, totalBalanceChange };
+    });
+
+    return { 
+      success: true, 
+      data: result,
+      message: `Successfully imported ${transactions.length} transactions`
+    };
+  } catch (error) {
+    console.error("Failed to bulk import transactions:", error);
+    return { 
+      success: false, 
+      error: "Failed to import transactions. Please check your CSV format and try again." 
+    };
   }
 } 

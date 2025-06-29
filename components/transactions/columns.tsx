@@ -6,7 +6,7 @@ import {
   TransferWithAccounts,
 } from "@/lib/types";
 import { ArrowRightIcon } from "lucide-react";
-import { capitalize, cn } from "@/lib/utils";
+import { capitalize, cn, formatDate } from "@/lib/utils";
 import { TransferActionsCell } from "./transfer-actions-cell";
 import { Category } from "@prisma/client";
 import { iconOptions } from "@/lib/icon-options";
@@ -29,11 +29,7 @@ export function getColumns(
       header: "Date",
       cell: ({ row }) => {
         const date = row.getValue("date") as Date;
-        return (
-          <div>
-            {Intl.DateTimeFormat("en-US", { dateStyle: "short" }).format(date)}
-          </div>
-        );
+        return <div>{formatDate(date, { dateStyle: "short" })}</div>;
       },
     },
     {

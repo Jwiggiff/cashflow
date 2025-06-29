@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { CreditCardIcon, HomeIcon, LandmarkIcon, TagIcon } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const sidebarItems = [
   {
@@ -37,7 +38,10 @@ const sidebarItems = [
 export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader />
+      <SidebarHeader>
+        {/* <Image src="/logo.png" alt="CashFlow" width={32} height={32} /> */}
+        CashFlow
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
           <SidebarMenu>

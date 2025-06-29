@@ -14,6 +14,7 @@ import {
 import { ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -49,6 +50,7 @@ interface DataTableProps<TData, TValue> {
     name: string;
     icon?: keyof typeof iconOptions | null;
   }[];
+  onDeleteSelected?: (selectedRows: TData[]) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -56,6 +58,7 @@ export function DataTable<TData, TValue>({
   data,
   accounts,
   categories,
+  onDeleteSelected,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -69,9 +72,41 @@ export function DataTable<TData, TValue>({
     });
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // Add selection column
+  const selectionColumn: ColumnDef<TData, TValue> = {
+    id: "select",
+    header: ({ table }) => (
+      <div className="grid place-items-center">
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value: boolean | "indeterminate") =>
+            table.toggleAllPageRowsSelected(!!value)
+          }
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="grid place-items-center">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean | "indeterminate") =>
+            row.toggleSelected(!!value)
+          }
+          aria-label="Select row"
+        />
+      </div>
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  };
+
   const table = useReactTable({
     data,
-    columns,
+    columns: [selectionColumn, ...columns],
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -86,6 +121,18 @@ export function DataTable<TData, TValue>({
   });
 
   const types = [...Object.values(TransactionType), "TRANSFER"];
+
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const hasSelectedRows = selectedRows.length > 0;
+
+  const handleDeleteSelected = () => {
+    if (onDeleteSelected && hasSelectedRows) {
+      const selectedData = selectedRows.map((row) => row.original);
+      onDeleteSelected(selectedData);
+      // Clear selection after deletion
+      table.toggleAllPageRowsSelected(false);
+    }
+  };
 
   return (
     <div className="w-full">
@@ -172,6 +219,15 @@ export function DataTable<TData, TValue>({
             ))}
           </SelectContent>
         </Select>
+        {hasSelectedRows && onDeleteSelected && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDeleteSelected}
+          >
+            Delete {selectedRows.length} selected
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">

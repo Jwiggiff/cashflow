@@ -96,8 +96,6 @@ export default function Home() {
     return acc;
   }, {} as Record<string, { label: string; color: string }>);
 
-  console.log(expenseConfig);
-
   return (
     <div className="flex flex-col min-h-screen w-full">
       <div className="flex items-center justify-between p-8">
@@ -251,6 +249,7 @@ export default function Home() {
                   data={expenseData.map((expense, index) => ({
                     ...expense,
                     fill: `var(--chart-${index + 1})`,
+                    fillOpacity: 0.8,
                   }))}
                   dataKey="value"
                   nameKey="category"

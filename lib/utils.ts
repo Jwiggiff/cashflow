@@ -6,11 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function slugify(str: string) {
-  return str.toLowerCase().replaceAll(" ", "_").replaceAll(/[^a-z0-9_]/g, "");
+  return str
+    .toLowerCase()
+    .replaceAll(" ", "_")
+    .replaceAll(/[^a-z0-9_]/g, "");
 }
 
 export function capitalize(str: string) {
-  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+  return str
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 export function formatCurrency(amount: number) {
@@ -27,4 +33,9 @@ export function formatPercentage(value: number) {
 export function formatChange(change: number) {
   const sign = change >= 0 ? "+" : "";
   return `${sign}${change.toFixed(1)}% from last month`;
+}
+
+export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions) {
+  console.log(date);
+  return new Intl.DateTimeFormat("en-US", options).format(date);
 }
