@@ -18,8 +18,8 @@ model Account {
   name                  String
   type                  AccountType
   balance               Float
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  createdAt             DateTime      @default(now()) @db.Timestamptz
+  updatedAt             DateTime      @updatedAt @db.Timestamptz
   transactions          Transaction[]
   outgoingTransfers     Transfer[]    @relation("FromAccount")
   incomingTransfers     Transfer[]    @relation("ToAccount")
@@ -29,14 +29,14 @@ model Category {
   id          Int           @id @default(autoincrement())
   name        String        @unique
   icon        String?       // Optional icon name from lucide-react
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime      @default(now()) @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @db.Timestamptz
   transactions Transaction[]
 }
 
 model Transaction {
   id          Int             @id @default(autoincrement())
-  date        DateTime
+  date        DateTime        @db.Timestamptz
   description String
   amount      Float
   type        TransactionType
@@ -44,21 +44,21 @@ model Transaction {
   categoryId  Int?
   account     Account         @relation(fields: [accountId], references: [id])
   accountId   Int
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime        @default(now()) @db.Timestamptz
+  updatedAt   DateTime        @updatedAt @db.Timestamptz
 }
 
 model Transfer {
   id                Int             @id @default(autoincrement())
-  date              DateTime
+  date              DateTime        @db.Timestamptz
   description       String?
   amount            Float
   fromAccount       Account         @relation("FromAccount", fields: [fromAccountId], references: [id])
   fromAccountId     Int
   toAccount         Account         @relation("ToAccount", fields: [toAccountId], references: [id])
   toAccountId       Int
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime        @default(now()) @db.Timestamptz
+  updatedAt         DateTime        @updatedAt @db.Timestamptz
 }
 
 enum AccountType {

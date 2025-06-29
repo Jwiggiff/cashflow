@@ -36,6 +36,11 @@ export function formatChange(change: number) {
 }
 
 export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions) {
-  console.log(date);
-  return new Intl.DateTimeFormat("en-US", options).format(date);
+  // Use the system's local timezone if NEXT_PUBLIC_TZ is not set
+  const timeZone = process.env.NEXT_PUBLIC_TZ || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
+  return new Intl.DateTimeFormat("en-US", {
+    ...options,
+    timeZone,
+  }).format(date);
 }

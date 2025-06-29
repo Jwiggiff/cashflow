@@ -29,7 +29,11 @@ export function getColumns(
       header: "Date",
       cell: ({ row }) => {
         const date = row.getValue("date") as Date;
-        return <div>{formatDate(date, { dateStyle: "short" })}</div>;
+        return (
+          <div>
+            {formatDate(date, { dateStyle: "short" })}
+          </div>
+        );
       },
     },
     {

@@ -4,6 +4,49 @@ import prisma from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { CSVTransaction } from "@/lib/csv-parser";
 
+// Helper function to parse CSV dates properly
+function parseCSVDate(dateString: string): Date | null {
+  const trimmed = dateString.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    // Parse the date string
+    const parsedDate = new Date(trimmed);
+
+    // Validate the date
+    if (isNaN(parsedDate.getTime())) {
+      return null;
+    }
+
+    // Check if the original string contains time information
+    const hasTime = /\d{1,2}:\d{1,2}/.test(trimmed);
+
+    if (!hasTime) {
+      // For dates without time, create a date at noon in local time
+      // This ensures consistent behavior and avoids timezone edge cases
+      return new Date(
+        parsedDate.getFullYear(),
+        parsedDate.getMonth(),
+        parsedDate.getDate(),
+        12, // noon
+        0,
+        0,
+        0
+      );
+    }
+
+    // For dates with time, return the parsed date
+    // Prisma will handle the timezone conversion to UTC for storage
+    return parsedDate;
+  } catch (error) {
+    console.error(`Failed to parse date: ${trimmed}`, error);
+    return null;
+  }
+}
+
 export async function createTransaction(data: {
   description: string;
   type: TransactionType;
@@ -13,9 +56,10 @@ export async function createTransaction(data: {
 }) {
   try {
     // If it's an expense, ensure the amount is negative
-    const finalAmount = data.type === TransactionType.EXPENSE 
-      ? Math.abs(data.amount) * -1 
-      : Math.abs(data.amount);
+    const finalAmount =
+      data.type === TransactionType.EXPENSE
+        ? Math.abs(data.amount) * -1
+        : Math.abs(data.amount);
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -34,18 +78,22 @@ export async function createTransaction(data: {
   }
 }
 
-export async function updateTransaction(id: number, data: {
-  description: string;
-  type: TransactionType;
-  categoryId: number | null;
-  amount: number;
-  accountId: number;
-}) {
+export async function updateTransaction(
+  id: number,
+  data: {
+    description: string;
+    type: TransactionType;
+    categoryId: number | null;
+    amount: number;
+    accountId: number;
+  }
+) {
   try {
     // If it's an expense, ensure the amount is negative
-    const finalAmount = data.type === TransactionType.EXPENSE 
-      ? Math.abs(data.amount) * -1 
-      : Math.abs(data.amount);
+    const finalAmount =
+      data.type === TransactionType.EXPENSE
+        ? Math.abs(data.amount) * -1
+        : Math.abs(data.amount);
 
     const transaction = await prisma.transaction.update({
       where: { id },
@@ -110,12 +158,15 @@ export async function createTransfer(data: {
   }
 }
 
-export async function updateTransfer(id: number, data: {
-  description?: string;
-  amount: number;
-  fromAccountId: number;
-  toAccountId: number;
-}) {
+export async function updateTransfer(
+  id: number,
+  data: {
+    description?: string;
+    amount: number;
+    fromAccountId: number;
+    toAccountId: number;
+  }
+) {
   try {
     // Get the original transfer to calculate balance adjustments
     const originalTransfer = await prisma.transfer.findUnique({
@@ -194,13 +245,15 @@ export async function deleteTransfer(id: number) {
   }
 }
 
-export async function bulkDeleteItems(items: Array<{ id: number; type: string }>) {
+export async function bulkDeleteItems(
+  items: Array<{ id: number; type: string }>
+) {
   try {
     const transactionIds: number[] = [];
     const transferIds: number[] = [];
 
     // Separate transactions and transfers
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.type === "TRANSFER") {
         transferIds.push(item.id);
       } else {
@@ -249,10 +302,10 @@ export async function bulkDeleteItems(items: Array<{ id: number; type: string }>
       return { deletedTransactions, deletedTransfers };
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       deletedTransactions: result.deletedTransactions,
-      deletedTransfers: result.deletedTransfers 
+      deletedTransfers: result.deletedTransfers,
     };
   } catch (error) {
     console.error("Failed to bulk delete items:", error);
@@ -269,16 +322,25 @@ export async function bulkImportTransactions(
     const result = await prisma.$transaction(async (tx) => {
       const createdTransactions = [];
       let totalBalanceChange = 0;
+      let skippedTransactions = 0;
 
       for (const csvTransaction of transactions) {
-        // Parse the date from the CSV
-        const transactionDate = new Date(csvTransaction.date);
-        transactionDate.setUTCHours(0, 0, 0, 0);
-        
+        // Parse the date from the CSV using our helper function
+        const transactionDate = parseCSVDate(csvTransaction.date);
+
+        if (!transactionDate) {
+          console.warn(
+            `Skipping transaction with invalid date: ${csvTransaction.date}`
+          );
+          skippedTransactions++;
+          continue;
+        }
+
         // Determine transaction type and amount
         const amount = csvTransaction.income - csvTransaction.expense;
-        const type = amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
-        
+        const type =
+          amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
+
         // Create the transaction
         const transaction = await tx.transaction.create({
           data: {
@@ -301,19 +363,32 @@ export async function bulkImportTransactions(
         data: { balance: { increment: totalBalanceChange } },
       });
 
-      return { transactions: createdTransactions, totalBalanceChange };
+      return {
+        transactions: createdTransactions,
+        totalBalanceChange,
+        skippedTransactions,
+      };
     });
 
-    return { 
-      success: true, 
+    const message = `Successfully imported ${
+      result.transactions.length
+    } transactions${
+      result.skippedTransactions > 0
+        ? ` (${result.skippedTransactions} skipped due to invalid dates)`
+        : ""
+    }`;
+
+    return {
+      success: true,
       data: result,
-      message: `Successfully imported ${transactions.length} transactions`
+      message,
     };
   } catch (error) {
     console.error("Failed to bulk import transactions:", error);
-    return { 
-      success: false, 
-      error: "Failed to import transactions. Please check your CSV format and try again." 
+    return {
+      success: false,
+      error:
+        "Failed to import transactions. Please check your CSV format and try again.",
     };
   }
-} 
+}

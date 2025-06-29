@@ -44,7 +44,7 @@ export function CSVPreview({
 
   const handleImport = async () => {
     if (!selectedAccountId) return;
-    
+
     setIsImporting(true);
     try {
       await onImport(transactions, parseInt(selectedAccountId));
@@ -69,12 +69,15 @@ export function CSVPreview({
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>
-        
+
         <CardContent className="space-y-4">
           {/* Account Selection */}
           <div className="space-y-2">
             <Label htmlFor="account">Select Account</Label>
-            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+            <Select
+              value={selectedAccountId}
+              onValueChange={setSelectedAccountId}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Choose an account to import to" />
               </SelectTrigger>
@@ -130,8 +133,8 @@ export function CSVPreview({
             <Button variant="outline" onClick={onCancel} disabled={isImporting}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleImport} 
+            <Button
+              onClick={handleImport}
               disabled={isImporting || !selectedAccountId}
             >
               {isImporting
