@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
 
 export async function getDashboardStats(): Promise<DashboardStats> {

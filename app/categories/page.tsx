@@ -1,6 +1,6 @@
 import { CategoriesList } from "@/components/categories/categories-list";
 import { Separator } from "@/components/ui/separator";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export default async function CategoriesPage() {
   // Get current month spending for each category

@@ -1,6 +1,6 @@
 "use server";
 
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
 import { CSVTransaction } from "@/lib/csv-parser";
 import { autoCategorize } from "@/lib/auto-categorizer";

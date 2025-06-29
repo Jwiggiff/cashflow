@@ -1,6 +1,6 @@
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { Separator } from "@/components/ui/separator";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 export default async function AccountsPage() {
   const accounts = await prisma.account.findMany({

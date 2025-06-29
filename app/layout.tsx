@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
 import { FloatingActionButton } from "@/components/floating-action-button";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

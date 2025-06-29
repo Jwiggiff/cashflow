@@ -1,6 +1,6 @@
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { Separator } from "@/components/ui/separator";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { TransactionOrTransfer } from "@/lib/types";
 
 export default async function TransactionsPage() {
