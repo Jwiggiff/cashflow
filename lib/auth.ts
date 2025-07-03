@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import { authSchema } from "./zod";
-import { ZodError } from "zod";
 
 declare module "next-auth" {
   interface User {
@@ -73,8 +72,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name: user.name,
           };
         } catch (error) {
-          if (error instanceof ZodError) return null;
-          throw new Error("Invalid credentials");
+          console.error("Error signing in", error);
+          return null;
         }
       },
     }),
