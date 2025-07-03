@@ -69,17 +69,16 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-1 p-4">
-              <SidebarTrigger />
-              {children}
-            </main>
-          </SidebarProvider>
-          <Toaster position="top-right" />
-
-          {loggedIn && (
+          {loggedIn ? (
             <>
+              <SidebarProvider>
+                <AppSidebar />
+                <main className="flex-1 p-4">
+                  <SidebarTrigger />
+                  {children}
+                </main>
+              </SidebarProvider>
+              <Toaster position="top-right" />
               <FloatingActionButton
                 accounts={accounts}
                 categories={categories}
@@ -89,6 +88,8 @@ export default async function RootLayout({
                 canAutoCategorize={canAutoCategorize}
               />
             </>
+          ) : (
+            children
           )}
         </ThemeProvider>
       </body>

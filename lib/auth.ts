@@ -1,23 +1,36 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth from "next-auth";
+import "next-auth/jwt";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
-import { signInSchema } from "./zod";
+import { authSchema } from "./zod";
 import { ZodError } from "zod";
 
 declare module "next-auth" {
-  interface Session extends DefaultSession {
-    user: {
-      id: string;
-      username: string;
-      email?: string;
-      name?: string;
-    };
-  }
   interface User {
+    /** The user's id. */
     id: string;
+    /** The user's username. */
     username: string;
+    /** The user's email. */
     email: string | null;
+    /** The user's name. */
+    name: string | null;
+  }
+  interface Session {
+    user: User;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    /** The user's id. */
+    id: string;
+    /** The user's username. */
+    username: string;
+    /** The user's email. */
+    email: string | null;
+    /** The user's name. */
     name: string | null;
   }
 }
@@ -31,7 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const { username, password } = await signInSchema.parseAsync(
+          const { username, password } = await authSchema.parseAsync(
             credentials
           );
 
@@ -66,6 +79,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.username = user.username;
+        token.email = user.email;
+        token.name = user.name;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && token.id) {
+        session.user.id = token.id;
+        session.user.username = token.username;
+        session.user.email = token.email || "";
+        session.user.name = token.name;
+      }
+      return session;
+    },
+  },
   pages: {
     signIn: "/auth/signin",
   },

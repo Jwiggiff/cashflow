@@ -2,6 +2,9 @@ import { Separator } from "@/components/ui/separator";
 import { Greeting } from "@/components/dashboard/greeting";
 import { Suspense } from "react";
 import DashboardWrapper from "@/components/dashboard/dashboard-wrapper";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 
 const Loading = () => {
   return (
@@ -19,7 +22,19 @@ const Loading = () => {
   );
 };
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  if (!session) {
+    const numUsers = await prisma.user.count();
+    if (numUsers === 0) {
+      redirect("/auth/signup");
+    } else {
+      redirect("/auth/signin");
+    }
+    return;
+  }
+
   return (
     <div className="flex flex-col min-h-screen w-full">
       <div className="flex items-center justify-between p-8">

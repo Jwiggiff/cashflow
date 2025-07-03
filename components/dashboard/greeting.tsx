@@ -5,7 +5,10 @@ export async function Greeting() {
 
   return (
     <h1 className="text-3xl font-bold">
-      Hello, {session?.user?.name || "Guest"}
+      Hello
+      {session?.user
+        ? `, ${session?.user?.name || session?.user?.username}`
+        : ""}
     </h1>
   );
 }
