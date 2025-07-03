@@ -1,17 +1,16 @@
 "use client";
 
-import { Account } from "@prisma/client";
-import { AccountType } from "@prisma/client";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AccountType, BankAccount } from "@prisma/client";
 import { AccountActionsCell } from "./account-actions-cell";
 
 interface AccountsListProps {
-  accounts: Account[];
+  accounts: BankAccount[];
 }
 
 const getAccountTypeLabel = (type: AccountType) => {
@@ -37,7 +36,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
     }
     acc[account.type].push(account);
     return acc;
-  }, {} as Record<AccountType, Account[]>);
+  }, {} as Record<AccountType, BankAccount[]>);
 
   // Define the desired order and ensure all types are included
   const desiredOrder = [
@@ -58,10 +57,10 @@ export function AccountsList({ accounts }: AccountsListProps) {
   const sortedOrder = desiredOrder.sort((a, b) => {
     const aHasAccounts = accountsByType[a].length > 0;
     const bHasAccounts = accountsByType[b].length > 0;
-    
+
     if (aHasAccounts && !bHasAccounts) return -1;
     if (!aHasAccounts && bHasAccounts) return 1;
-    
+
     // If both have accounts or both are empty, maintain desired order
     return desiredOrder.indexOf(a) - desiredOrder.indexOf(b);
   });

@@ -13,11 +13,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
+model User {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  password      String
+  email         String?   @unique
+  name          String?
+
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  bankAccounts  BankAccount[]
+  categories    Category[]
+}
+
+model BankAccount {
   id                    Int           @id @default(autoincrement())
   name                  String
   type                  AccountType
   balance               Float
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String
   createdAt             DateTime      @default(now()) @db.Timestamptz
   updatedAt             DateTime      @updatedAt @db.Timestamptz
   transactions          Transaction[]
@@ -29,6 +45,8 @@ model Category {
   id          Int           @id @default(autoincrement())
   name        String        @unique
   icon        String?       // Optional icon name from lucide-react
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
   createdAt   DateTime      @default(now()) @db.Timestamptz
   updatedAt   DateTime      @updatedAt @db.Timestamptz
   transactions Transaction[]
@@ -42,7 +60,7 @@ model Transaction {
   type        TransactionType
   category    Category?       @relation(fields: [categoryId], references: [id])
   categoryId  Int?
-  account     Account         @relation(fields: [accountId], references: [id])
+  account     BankAccount     @relation(fields: [accountId], references: [id])
   accountId   Int
   createdAt   DateTime        @default(now()) @db.Timestamptz
   updatedAt   DateTime        @updatedAt @db.Timestamptz
@@ -53,9 +71,9 @@ model Transfer {
   date              DateTime        @db.Timestamptz
   description       String?
   amount            Float
-  fromAccount       Account         @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccount       BankAccount     @relation("FromAccount", fields: [fromAccountId], references: [id])
   fromAccountId     Int
-  toAccount         Account         @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccount         BankAccount     @relation("ToAccount", fields: [toAccountId], references: [id])
   toAccountId       Int
   createdAt         DateTime        @default(now()) @db.Timestamptz
   updatedAt         DateTime        @updatedAt @db.Timestamptz

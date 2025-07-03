@@ -4,13 +4,13 @@ import { useState } from "react";
 import { CSVDropzone } from "./csv-dropzone";
 import { CSVPreview } from "./csv-preview";
 import { parseCSV, CSVTransaction } from "@/lib/csv-parser";
-import { Account } from "@prisma/client";
+import { BankAccount } from "@prisma/client";
 import { bulkImportTransactions } from "@/app/transactions/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface CSVDropzoneWrapperProps {
-  accounts: Account[];
+  accounts: BankAccount[];
   canAutoCategorize: boolean;
 }
 

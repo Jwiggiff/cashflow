@@ -1,9 +1,10 @@
 "use server";
 
+import { auth } from "@/lib/auth";
+import { autoCategorize } from "@/lib/auto-categorizer";
+import { CSVTransaction } from "@/lib/csv-parser";
 import { prisma } from "@/lib/prisma";
 import { TransactionType } from "@prisma/client";
-import { CSVTransaction } from "@/lib/csv-parser";
-import { autoCategorize } from "@/lib/auto-categorizer";
 
 // Helper function to parse CSV dates properly
 function parseCSVDate(dateString: string): Date | null {
@@ -55,6 +56,11 @@ export async function createTransaction(data: {
   amount: number;
   accountId: number;
 }) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     // If it's an expense, ensure the amount is negative
     const finalAmount =
@@ -89,6 +95,11 @@ export async function updateTransaction(
     accountId: number;
   }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     // If it's an expense, ensure the amount is negative
     const finalAmount =
@@ -114,6 +125,11 @@ export async function updateTransaction(
 }
 
 export async function deleteTransaction(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     await prisma.transaction.delete({ where: { id } });
     return { success: true };
@@ -130,6 +146,11 @@ export async function createTransfer(data: {
   fromAccountId: number;
   toAccountId: number;
 }) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     const transfer = await prisma.transfer.create({
       data: {
@@ -142,12 +163,12 @@ export async function createTransfer(data: {
     });
 
     // Update account balances
-    await prisma.account.update({
+    await prisma.bankAccount.update({
       where: { id: data.fromAccountId },
       data: { balance: { decrement: data.amount } },
     });
 
-    await prisma.account.update({
+    await prisma.bankAccount.update({
       where: { id: data.toAccountId },
       data: { balance: { increment: data.amount } },
     });
@@ -168,6 +189,11 @@ export async function updateTransfer(
     toAccountId: number;
   }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     // Get the original transfer to calculate balance adjustments
     const originalTransfer = await prisma.transfer.findUnique({
@@ -189,24 +215,24 @@ export async function updateTransfer(
     });
 
     // Revert original transfer balances
-    await prisma.account.update({
-      where: { id: originalTransfer.fromAccountId },
+    await prisma.bankAccount.update({
+      where: { id: originalTransfer.fromAccountId, userId: session.user.id },
       data: { balance: { increment: originalTransfer.amount } },
     });
 
-    await prisma.account.update({
-      where: { id: originalTransfer.toAccountId },
+    await prisma.bankAccount.update({
+      where: { id: originalTransfer.toAccountId, userId: session.user.id },
       data: { balance: { decrement: originalTransfer.amount } },
     });
 
     // Apply new transfer balances
-    await prisma.account.update({
-      where: { id: data.fromAccountId },
+    await prisma.bankAccount.update({
+      where: { id: data.fromAccountId, userId: session.user.id },
       data: { balance: { decrement: data.amount } },
     });
 
-    await prisma.account.update({
-      where: { id: data.toAccountId },
+    await prisma.bankAccount.update({
+      where: { id: data.toAccountId, userId: session.user.id },
       data: { balance: { increment: data.amount } },
     });
 
@@ -218,6 +244,11 @@ export async function updateTransfer(
 }
 
 export async function deleteTransfer(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     const transfer = await prisma.transfer.findUnique({
       where: { id },
@@ -228,13 +259,13 @@ export async function deleteTransfer(id: number) {
     }
 
     // Revert account balances
-    await prisma.account.update({
-      where: { id: transfer.fromAccountId },
+    await prisma.bankAccount.update({
+      where: { id: transfer.fromAccountId, userId: session.user.id },
       data: { balance: { increment: transfer.amount } },
     });
 
-    await prisma.account.update({
-      where: { id: transfer.toAccountId },
+    await prisma.bankAccount.update({
+      where: { id: transfer.toAccountId, userId: session.user.id },
       data: { balance: { decrement: transfer.amount } },
     });
 
@@ -249,6 +280,11 @@ export async function deleteTransfer(id: number) {
 export async function bulkDeleteItems(
   items: Array<{ id: number; type: string }>
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     const transactionIds: number[] = [];
     const transferIds: number[] = [];
@@ -283,13 +319,13 @@ export async function bulkDeleteItems(
 
         // Revert account balances for all transfers
         for (const transfer of transfers) {
-          await tx.account.update({
-            where: { id: transfer.fromAccountId },
+          await tx.bankAccount.update({
+            where: { id: transfer.fromAccountId, userId: session.user.id },
             data: { balance: { increment: transfer.amount } },
           });
 
-          await tx.account.update({
-            where: { id: transfer.toAccountId },
+          await tx.bankAccount.update({
+            where: { id: transfer.toAccountId, userId: session.user.id },
             data: { balance: { decrement: transfer.amount } },
           });
         }
@@ -319,6 +355,11 @@ export async function bulkImportTransactions(
   accountId: number,
   enableAutoCategorize: boolean = false
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
     // Get categories for auto-categorization
     const categories = await prisma.category.findMany({
@@ -380,8 +421,8 @@ export async function bulkImportTransactions(
       }
 
       // Update the account balance
-      await tx.account.update({
-        where: { id: accountId },
+      await tx.bankAccount.update({
+        where: { id: accountId, userId: session.user.id },
         data: { balance: { increment: totalBalanceChange } },
       });
 

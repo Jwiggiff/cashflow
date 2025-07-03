@@ -1,9 +1,16 @@
 import { AccountsList } from "@/components/accounts/accounts-list";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export default async function AccountsPage() {
-  const accounts = await prisma.account.findMany({
+  const session = await auth();
+  if (!session?.user) {
+    return <div>Unauthorized</div>;
+  }
+
+  const accounts = await prisma.bankAccount.findMany({
+    where: { userId: session.user.id },
     orderBy: {
       createdAt: "desc",
     },

@@ -1,9 +1,20 @@
 "use server";
 
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  const session = await auth();
+  if (!session?.user) {
+    return {
+      totalBalance: { value: 0, change: 0 },
+      monthlyIncome: { value: 0, change: 0 },
+      monthlyExpenses: { value: 0, change: 0 },
+      savingsRate: { value: 0, change: 0 },
+    };
+  }
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -13,7 +24,10 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Get total balance across all accounts
   const totalBalance =
     (
-      await prisma.account.aggregate({
+      await prisma.bankAccount.aggregate({
+        where: {
+          userId: session.user.id,
+        },
         _sum: {
           balance: true,
         },
@@ -25,6 +39,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     (
       await prisma.transaction.aggregate({
         where: {
+          account: {
+            userId: session.user.id,
+          },
           date: {
             lt: endOfLastMonth,
           },
@@ -43,6 +60,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     (
       await prisma.transaction.aggregate({
         where: {
+          account: {
+            userId: session.user.id,
+          },
           type: "INCOME",
           date: {
             gte: startOfMonth,
@@ -60,6 +80,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     (
       await prisma.transaction.aggregate({
         where: {
+          account: {
+            userId: session.user.id,
+          },
           type: "INCOME",
           date: {
             gte: startOfLastMonth,
@@ -80,6 +103,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     ((
       await prisma.transaction.aggregate({
         where: {
+          account: {
+            userId: session.user.id,
+          },
           type: "EXPENSE",
           date: {
             gte: startOfMonth,
@@ -97,6 +123,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     ((
       await prisma.transaction.aggregate({
         where: {
+          account: {
+            userId: session.user.id,
+          },
           type: "EXPENSE",
           date: {
             gte: startOfLastMonth,
@@ -141,6 +170,11 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function getMonthlyData(): Promise<MonthlyData[]> {
+  const session = await auth();
+  if (!session?.user) {
+    return [];
+  }
+
   const now = new Date();
   const months = [];
 
@@ -154,6 +188,9 @@ export async function getMonthlyData(): Promise<MonthlyData[]> {
       (
         await prisma.transaction.aggregate({
           where: {
+            account: {
+              userId: session.user.id,
+            },
             type: "INCOME",
             date: {
               gte: startOfMonth,
@@ -170,6 +207,9 @@ export async function getMonthlyData(): Promise<MonthlyData[]> {
       (
         await prisma.transaction.aggregate({
           where: {
+            account: {
+              userId: session.user.id,
+            },
             type: "EXPENSE",
             date: {
               gte: startOfMonth,
@@ -193,6 +233,11 @@ export async function getMonthlyData(): Promise<MonthlyData[]> {
 }
 
 export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
+  const session = await auth();
+  if (!session?.user) {
+    return [];
+  }
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -202,6 +247,9 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
   const expenses = await prisma.transaction.groupBy({
     by: ["categoryId"],
     where: {
+      account: {
+        userId: session.user.id,
+      },
       type: "EXPENSE",
       date: {
         gte: startOfMonth,

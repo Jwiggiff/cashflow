@@ -17,10 +17,10 @@ import { AccountDialog } from "@/components/accounts/account-dialog";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
 import { TransferDialog } from "@/components/transactions/transfer-dialog";
 import { useState } from "react";
-import { Account, Category } from "@prisma/client";
+import { BankAccount, Category } from "@prisma/client";
 
 interface FloatingActionButtonProps {
-  accounts: Account[];
+  accounts: BankAccount[];
   categories: Category[];
   className?: string;
 }

@@ -3,7 +3,7 @@
 import { Category } from "@prisma/client";
 import { CategoryActionsCell } from "./category-actions-cell";
 import { EmptyState } from "./empty-state";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/formatter";
 import { iconOptions } from "@/lib/icon-options";
 
 interface CategoriesListProps {

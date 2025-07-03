@@ -8,6 +8,7 @@ import { Toaster } from "sonner";
 import { FloatingActionButton } from "@/components/floating-action-button";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,13 +30,25 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const accounts = await prisma.account.findMany({
+  const session = await auth();
+  if (!session?.user) {
+    // TODO: show onboarding page
+    return <div>Unauthorized</div>;
+  }
+
+  const accounts = await prisma.bankAccount.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: {
       name: "asc",
     },
   });
 
   const categories = await prisma.category.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: {
       name: "asc",
     },
@@ -62,7 +75,10 @@ export default async function RootLayout({
             </main>
           </SidebarProvider>
           <FloatingActionButton accounts={accounts} categories={categories} />
-          <CSVDropzoneWrapper accounts={accounts} canAutoCategorize={canAutoCategorize} />
+          <CSVDropzoneWrapper
+            accounts={accounts}
+            canAutoCategorize={canAutoCategorize}
+          />
           <Toaster position="top-right" />
         </ThemeProvider>
       </body>

@@ -1,5 +1,5 @@
 import { Category } from "@prisma/client";
-import prisma from "./prisma";
+import { prisma } from "./prisma";
 
 export interface CategorizationResult {
   categoryId: number | null;

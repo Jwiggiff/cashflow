@@ -1,22 +1,40 @@
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionOrTransfer } from "@/lib/types";
+import { redirect } from "next/navigation";
 
 export default async function TransactionsPage() {
-  const accounts = await prisma.account.findMany({
+  const session = await auth();
+  if (!session?.user) {
+    return redirect("/auth/signin");
+  }
+
+  const accounts = await prisma.bankAccount.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: {
       name: "asc",
     },
   });
 
   const categories = await prisma.category.findMany({
+    where: {
+      userId: session.user.id,
+    },
     orderBy: {
       name: "asc",
     },
   });
 
   const transactions = await prisma.transaction.findMany({
+    where: {
+      account: {
+        userId: session.user.id,
+      },
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -27,6 +45,14 @@ export default async function TransactionsPage() {
   });
 
   const transfers = await prisma.transfer.findMany({
+    where: {
+      fromAccount: {
+        userId: session.user.id,
+      },
+      toAccount: {
+        userId: session.user.id,
+      },
+    },
     orderBy: {
       createdAt: "desc",
     },
@@ -53,7 +79,11 @@ export default async function TransactionsPage() {
       <Separator />
 
       <div className="flex-1 p-8">
-        <TransactionsTable items={allItems} accounts={accounts} categories={categories} />
+        <TransactionsTable
+          items={allItems}
+          accounts={accounts}
+          categories={categories}
+        />
       </div>
     </div>
   );

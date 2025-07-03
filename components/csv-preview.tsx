@@ -22,16 +22,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Sparkles } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
 import { Account } from "@prisma/client";
+import { formatCurrency } from "@/lib/formatter";
 
 interface CSVPreviewProps {
   transactions: CSVTransaction[];
   fileName: string;
   accounts: Account[];
   onImport: (
-    transactions: CSVTransaction[], 
-    accountId: number, 
+    transactions: CSVTransaction[],
+    accountId: number,
     autoCategorize: boolean
   ) => void;
   onCancel: () => void;
@@ -105,7 +105,9 @@ export function CSVPreview({
               id="auto-categorize"
               checked={autoCategorize}
               disabled={!canAutoCategorize}
-              onCheckedChange={(checked) => setAutoCategorize(checked as boolean)}
+              onCheckedChange={(checked) =>
+                setAutoCategorize(checked as boolean)
+              }
             />
             <Label htmlFor="auto-categorize" className="text-sm">
               <div className="flex items-center gap-2">
