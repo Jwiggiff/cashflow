@@ -9,6 +9,7 @@ import { FloatingActionButton } from "@/components/floating-action-button";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { BankAccount, Category } from "@prisma/client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,30 +32,31 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  if (!session?.user) {
-    // TODO: show onboarding page
-    return <div>Unauthorized</div>;
-  }
-
-  const accounts = await prisma.bankAccount.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
-
-  const categories = await prisma.category.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      name: "asc",
-    },
-  });
+  const loggedIn = !!session?.user;
 
   const canAutoCategorize = process.env.OPENAI_API_KEY !== undefined;
+
+  let accounts: BankAccount[] = [];
+  let categories: Category[] = [];
+  if (loggedIn) {
+    accounts = await prisma.bankAccount.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    categories = await prisma.category.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        name: "asc",
+      },
+    });
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -74,12 +76,20 @@ export default async function RootLayout({
               {children}
             </main>
           </SidebarProvider>
-          <FloatingActionButton accounts={accounts} categories={categories} />
-          <CSVDropzoneWrapper
-            accounts={accounts}
-            canAutoCategorize={canAutoCategorize}
-          />
           <Toaster position="top-right" />
+
+          {loggedIn && (
+            <>
+              <FloatingActionButton
+                accounts={accounts}
+                categories={categories}
+              />
+              <CSVDropzoneWrapper
+                accounts={accounts}
+                canAutoCategorize={canAutoCategorize}
+              />
+            </>
+          )}
         </ThemeProvider>
       </body>
     </html>
