@@ -51,8 +51,8 @@ export function AddButton({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuButton className="bg-primary text-primary-foreground px-4  hover:bg-primary/90 hover:text-primary-foreground my-2">
-            <PlusIcon className="h-4 w-4 mr-2" />
+          <SidebarMenuButton className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground my-2">
+            <PlusIcon className="h-4 w-4" />
             Add
           </SidebarMenuButton>
         </DropdownMenuTrigger>

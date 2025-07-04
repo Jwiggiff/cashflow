@@ -71,8 +71,9 @@ export async function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
+              size="lg"
+              className="group-data-[collapsible=icon]:p-1.5!"
               asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
                 <DollarSign className="!size-5" />
