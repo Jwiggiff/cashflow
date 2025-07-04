@@ -10,6 +10,7 @@ import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BankAccount, Category } from "@prisma/client";
+import { SessionProvider } from "next-auth/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -70,7 +71,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           {loggedIn ? (
-            <>
+            <SessionProvider>
               <SidebarProvider>
                 <AppSidebar />
                 <main className="flex-1 p-4">
@@ -87,7 +88,7 @@ export default async function RootLayout({
                 accounts={accounts}
                 canAutoCategorize={canAutoCategorize}
               />
-            </>
+            </SessionProvider>
           ) : (
             children
           )}

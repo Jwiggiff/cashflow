@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { CreditCardIcon, HomeIcon, LandmarkIcon, TagIcon } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { UserSection } from "@/components/user-section";
 
 const sidebarItems = [
   {
@@ -58,7 +58,9 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter />
+      <SidebarFooter>
+        <UserSection />
+      </SidebarFooter>
     </Sidebar>
   );
 }

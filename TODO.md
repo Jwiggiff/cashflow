@@ -1,2 +1,1 @@
-- auth
 - API endpoint to add transactions
