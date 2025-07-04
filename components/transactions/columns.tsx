@@ -6,10 +6,11 @@ import {
   TransferWithAccounts,
 } from "@/lib/types";
 import { ArrowRightIcon } from "lucide-react";
-import { capitalize, cn, formatDate } from "@/lib/utils";
+import { capitalize, cn } from "@/lib/utils";
 import { TransferActionsCell } from "./transfer-actions-cell";
 import { Category } from "@prisma/client";
 import { iconOptions } from "@/lib/icon-options";
+import { formatDate } from "@/lib/formatter";
 
 export function getColumns(
   accounts: { id: number; name: string }[],
@@ -29,11 +30,7 @@ export function getColumns(
       header: "Date",
       cell: ({ row }) => {
         const date = row.getValue("date") as Date;
-        return (
-          <div>
-            {formatDate(date, { dateStyle: "short" })}
-          </div>
-        );
+        return <div>{formatDate(date, { dateStyle: "short" })}</div>;
       },
     },
     {

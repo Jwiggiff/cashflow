@@ -1,4 +1,4 @@
-import { object, string } from "zod";
+import { boolean, enum as enum_, number, object, string } from "zod";
 
 export const authSchema = object({
   username: string({ required_error: "Username is required" })
@@ -18,4 +18,14 @@ export const profileSchema = object({
     .optional(),
   name: string().max(100, "Name is too long").optional(),
   email: string().email("Invalid email address").optional(),
+});
+
+export const createTransactionSchema = object({
+  description: string().min(1, "Description is required"),
+  type: enum_(["INCOME", "EXPENSE"]),
+  categoryId: number().nullable().optional(),
+  amount: number().positive("Amount must be positive"),
+  account: string().min(1, "Account name is required"),
+  date: string().datetime().optional(),
+  autoCategorize: boolean().optional(),
 });

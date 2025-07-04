@@ -1,0 +1,165 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { TransactionType } from "@prisma/client";
+import { createTransactionSchema } from "@/lib/zod";
+import bcrypt from "bcryptjs";
+import { autoCategorize as autoCategorizeTransaction } from "@/lib/auto-categorizer";
+
+export async function POST(request: NextRequest) {
+  try {
+    // Check authentication via Basic Auth
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Basic ")) {
+      return NextResponse.json(
+        { error: "Authorization header required" },
+        { status: 401 }
+      );
+    }
+
+    const credentials = Buffer.from(authHeader.slice(6), "base64").toString();
+    const [username, password] = credentials.split(":");
+
+    if (!username || !password) {
+      return NextResponse.json(
+        { error: "Invalid credentials format" },
+        { status: 401 }
+      );
+    }
+
+    // Find user by username
+    const user = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const validationResult = createTransactionSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid request data",
+          details: validationResult.error.errors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const {
+      description,
+      type,
+      categoryId,
+      amount,
+      account: accountName,
+      date,
+      autoCategorize,
+    } = validationResult.data;
+
+    // Verify the account belongs to the user
+    const account = await prisma.bankAccount.findFirst({
+      where: {
+        name: accountName,
+        userId: user.id,
+      },
+    });
+
+    if (!account) {
+      return NextResponse.json(
+        { error: "Account not found or access denied" },
+        { status: 404 }
+      );
+    }
+
+    // Get user's categories for auto-categorization
+    const categories = await prisma.category.findMany({
+      where: { userId: user.id },
+      orderBy: { name: "asc" },
+    });
+
+    // Determine final categoryId
+    let finalCategoryId = categoryId;
+
+    // Auto-categorize if enabled and no category provided
+    if (autoCategorize && !categoryId && type === "EXPENSE") {
+      const categorization = await autoCategorizeTransaction(description, categories);
+      if (categorization.categoryId) {
+        finalCategoryId = categorization.categoryId;
+      }
+    }
+
+    // Verify category exists and belongs to user (if provided)
+    if (finalCategoryId) {
+      const category = await prisma.category.findFirst({
+        where: {
+          id: finalCategoryId,
+          userId: user.id,
+        },
+      });
+
+      if (!category) {
+        return NextResponse.json(
+          { error: "Category not found or access denied" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Calculate final amount (negative for expenses)
+    const finalAmount =
+      type === TransactionType.EXPENSE
+        ? Math.abs(amount) * -1
+        : Math.abs(amount);
+
+    // Create the transaction
+    const transaction = await prisma.transaction.create({
+      data: {
+        description,
+        type: type as TransactionType,
+        categoryId: finalCategoryId,
+        amount: finalAmount,
+        accountId: account.id,
+        date: date ? new Date(date) : new Date(),
+      },
+      include: {
+        account: true,
+        category: true,
+      },
+    });
+
+    // Update account balance
+    await prisma.bankAccount.update({
+      where: { id: account.id },
+      data: { balance: { increment: finalAmount } },
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data: transaction,
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Failed to create transaction:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
