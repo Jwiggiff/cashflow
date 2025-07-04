@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: "Invalid request data",
-          details: validationResult.error.errors,
+          errorDetails: validationResult.error.errors,
         },
         { status: 400 }
       );
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     const {
       description,
       type,
-      categoryId,
+      category,
       amount,
       account: accountName,
       date,
@@ -86,38 +86,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's categories for auto-categorization
-    const categories = await prisma.category.findMany({
-      where: { userId: user.id },
-      orderBy: { name: "asc" },
-    });
-
-    // Determine final categoryId
-    let finalCategoryId = categoryId;
-
     // Auto-categorize if enabled and no category provided
-    if (autoCategorize && !categoryId && type === "EXPENSE") {
-      const categorization = await autoCategorizeTransaction(description, categories);
+    let finalCategoryId = null;
+    if (autoCategorize && !category && type === "EXPENSE") {
+      // Get user's categories for auto-categorization
+      const categories = await prisma.category.findMany({
+        where: { userId: user.id },
+        orderBy: { name: "asc" },
+      });
+      const categorization = await autoCategorizeTransaction(
+        description,
+        categories
+      );
       if (categorization.categoryId) {
         finalCategoryId = categorization.categoryId;
       }
     }
 
     // Verify category exists and belongs to user (if provided)
-    if (finalCategoryId) {
-      const category = await prisma.category.findFirst({
+    if (category) {
+      const categoryRecord = await prisma.category.findFirst({
         where: {
-          id: finalCategoryId,
+          name: category,
           userId: user.id,
         },
       });
 
-      if (!category) {
+      if (!categoryRecord) {
         return NextResponse.json(
           { error: "Category not found or access denied" },
           { status: 404 }
         );
       }
+      finalCategoryId = categoryRecord.id;
     }
 
     // Calculate final amount (negative for expenses)

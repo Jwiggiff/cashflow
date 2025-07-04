@@ -22,10 +22,10 @@ export const profileSchema = object({
 
 export const createTransactionSchema = object({
   description: string().min(1, "Description is required"),
-  type: enum_(["INCOME", "EXPENSE"]),
-  categoryId: number().nullable().optional(),
   amount: number().positive("Amount must be positive"),
-  account: string().min(1, "Account name is required"),
+  type: enum_(["INCOME", "EXPENSE"]),
   date: string().datetime().optional(),
+  account: string().min(1, "Account name is required"),
+  category: string().nullable().optional(),
   autoCategorize: boolean().optional(),
 });
