@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = env("DATABASE_URL", "file:../data/cashflow.db")
 }
 
 model User {
@@ -20,8 +20,8 @@ model User {
   email         String?   @unique
   name          String?
 
-  createdAt DateTime @default(now()) @db.Timestamptz
-  updatedAt DateTime @updatedAt @db.Timestamptz
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   bankAccounts  BankAccount[]
   categories    Category[]
@@ -34,8 +34,8 @@ model BankAccount {
   balance               Float
   user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                String
-  createdAt             DateTime      @default(now()) @db.Timestamptz
-  updatedAt             DateTime      @updatedAt @db.Timestamptz
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   transactions          Transaction[]
   outgoingTransfers     Transfer[]    @relation("FromAccount")
   incomingTransfers     Transfer[]    @relation("ToAccount")
@@ -47,14 +47,14 @@ model Category {
   icon        String?       // Optional icon name from lucide-react
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
-  createdAt   DateTime      @default(now()) @db.Timestamptz
-  updatedAt   DateTime      @updatedAt @db.Timestamptz
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   transactions Transaction[]
 }
 
 model Transaction {
   id          Int             @id @default(autoincrement())
-  date        DateTime        @db.Timestamptz
+  date        DateTime
   description String
   amount      Float
   type        TransactionType
@@ -62,21 +62,21 @@ model Transaction {
   categoryId  Int?
   account     BankAccount     @relation(fields: [accountId], references: [id])
   accountId   Int
-  createdAt   DateTime        @default(now()) @db.Timestamptz
-  updatedAt   DateTime        @updatedAt @db.Timestamptz
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model Transfer {
   id                Int             @id @default(autoincrement())
-  date              DateTime        @db.Timestamptz
+  date              DateTime
   description       String?
   amount            Float
   fromAccount       BankAccount     @relation("FromAccount", fields: [fromAccountId], references: [id])
   fromAccountId     Int
   toAccount         BankAccount     @relation("ToAccount", fields: [toAccountId], references: [id])
   toAccountId       Int
-  createdAt         DateTime        @default(now()) @db.Timestamptz
-  updatedAt         DateTime        @updatedAt @db.Timestamptz
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 }
 
 enum AccountType {

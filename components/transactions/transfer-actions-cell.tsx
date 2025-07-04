@@ -1,28 +1,29 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Trash2Icon, PencilIcon } from "lucide-react";
+import { deleteTransfer } from "@/app/transactions/actions";
 import {
   AlertDialog,
-  AlertDialogTrigger,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { TransferWithAccounts } from "@/lib/types";
-import { deleteTransfer } from "@/app/transactions/actions";
-import { toast } from "sonner";
+import { BankAccount } from "@prisma/client";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import * as React from "react";
+import { toast } from "sonner";
 import { TransferDialog } from "./transfer-dialog";
 
 interface TransferActionsCellProps {
   transfer: TransferWithAccounts;
-  accounts: { id: number; name: string }[];
+  accounts: BankAccount[];
 }
 
 export function TransferActionsCell({

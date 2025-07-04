@@ -22,17 +22,17 @@ import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { createTransfer, updateTransfer } from "@/app/transactions/actions";
 import { useRouter } from "next/navigation";
-import { Transfer, Account } from "@prisma/client";
+import { Transfer, BankAccount } from "@prisma/client";
 import { cn } from "@/lib/utils";
-import { ArrowLeftRightIcon, ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon } from "lucide-react";
 
 interface TransferWithAccounts extends Transfer {
-  fromAccount: Account;
-  toAccount: Account;
+  fromAccount: BankAccount;
+  toAccount: BankAccount;
 }
 
 interface TransferDialogProps {
-  accounts: Account[];
+  accounts: BankAccount[];
   mode?: "add" | "edit";
   transfer?: TransferWithAccounts;
   open?: boolean;

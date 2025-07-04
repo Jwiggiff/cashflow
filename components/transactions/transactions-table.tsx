@@ -1,17 +1,17 @@
 "use client";
 
-import { DataTable } from "@/components/data-table";
-import { getColumns } from "./columns";
-import { TransactionOrTransfer } from "@/lib/types";
-import { Category } from "@prisma/client";
-import { iconOptions } from "@/lib/icon-options";
 import { bulkDeleteItems } from "@/app/transactions/actions";
-import { toast } from "sonner";
+import { DataTable } from "@/components/data-table";
+import { iconOptions } from "@/lib/icon-options";
+import { TransactionOrTransfer } from "@/lib/types";
+import { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { getColumns } from "./columns";
 
 interface TransactionsTableProps {
   items: TransactionOrTransfer[];
-  accounts: { id: number; name: string }[];
+  accounts: BankAccount[];
   categories: Category[];
 }
 
@@ -23,17 +23,20 @@ export function TransactionsTable({
   const columns = getColumns(accounts, categories);
   const router = useRouter();
 
-  const handleDeleteSelected = async (selectedItems: TransactionOrTransfer[]) => {
+  const handleDeleteSelected = async (
+    selectedItems: TransactionOrTransfer[]
+  ) => {
     try {
-      const itemsToDelete = selectedItems.map(item => ({
+      const itemsToDelete = selectedItems.map((item) => ({
         id: item.id,
-        type: item.type
+        type: item.type,
       }));
 
       const result = await bulkDeleteItems(itemsToDelete);
-      
+
       if (result.success) {
-        const totalDeleted = (result.deletedTransactions || 0) + (result.deletedTransfers || 0);
+        const totalDeleted =
+          (result.deletedTransactions || 0) + (result.deletedTransfers || 0);
         toast.success(`Successfully deleted ${totalDeleted} items`);
         router.refresh();
       } else {

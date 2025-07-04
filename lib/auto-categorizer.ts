@@ -15,10 +15,7 @@ async function findSimilarTransaction(
   // First, try exact match
   const exactMatch = await prisma.transaction.findFirst({
     where: {
-      description: {
-        equals: description,
-        mode: "insensitive",
-      },
+      description: { equals: description },
       categoryId: {
         not: null,
       },
@@ -41,10 +38,7 @@ async function findSimilarTransaction(
   // Try partial matches (merchant name contains the search term)
   const partialMatches = await prisma.transaction.findMany({
     where: {
-      description: {
-        contains: normalizedDescription,
-        mode: "insensitive",
-      },
+      description: { contains: normalizedDescription },
       categoryId: {
         not: null,
       },

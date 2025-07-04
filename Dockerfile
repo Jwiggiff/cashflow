@@ -23,20 +23,39 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Generate Prisma client
+RUN npx prisma generate
+
+# Run migrations
+RUN npx prisma migrate deploy
+
 RUN npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
+# Environment variables
 ENV NODE_ENV=production
+ENV AUTH_TRUST_HOST=true
+ENV NEXT_PUBLIC_TZ=${TZ}
+ENV NEXTAUTH_URL=${BASE_URL}
+ENV NEXTAUTH_SECRET=${AUTH_SECRET}
+ENV DATABASE_URL=file:/app/data/cashflow.db
+
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Create data directory for SQLite database
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
 COPY --from=builder /app/public ./public
+
+# Copy Prisma schema and migrations
+COPY --from=builder /app/prisma ./prisma
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing

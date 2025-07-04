@@ -5,11 +5,10 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import { AddButton } from "@/components/add-button";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { BankAccount, Category } from "@prisma/client";
+import { BankAccount } from "@prisma/client";
 import { SessionProvider } from "next-auth/react";
 
 const geistSans = Geist({

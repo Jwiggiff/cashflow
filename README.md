@@ -19,48 +19,25 @@ A modern, self-hosted personal finance management application built with Next.js
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: "3.8"
-
 services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your-secure-password
-      POSTGRES_DB: cashflow
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - cashflow-network
-
   cashflow:
+    container_name: cashflow
     image: ghcr.io/jwiggiff/cashflow:latest
+    restart: unless-stopped
+    volumes:
+      - ./cashflow:/app/data
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:your-secure-password@postgres:5432/cashflow
       # Generate a secure secret using `openssl rand -base64 33`
-      - NEXTAUTH_SECRET=your-production-secret
-      - NEXTAUTH_URL=https://yourdomain.com
+      - AUTH_SECRET=your-production-secret
+      - BASE_URL=https://yourdomain.com
 
-      # Optional
-      # - NEXT_PUBLIC_TZ=America/New_York
+      # Optional - set your timezone
+      # - TZ=America/New_York
 
-      # This is used for auto-categorization of transactions
+      # Optional - This is used for auto-categorization of transactions
       # - OPENAI_API_KEY=your-openai-api-key
-    depends_on:
-      - postgres
-    networks:
-      - cashflow-network
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
-
-networks:
-  cashflow-network:
-    driver: bridge
 ```
 
 Deploy:
@@ -73,14 +50,12 @@ docker compose up -d
 
 ### Environment Variables
 
-| Variable          | Description                  | Default            |
-| ----------------- | ---------------------------- | ------------------ |
-| `DATABASE_URL`    | PostgreSQL connection string | Required           |
-| `NEXTAUTH_SECRET` | Secret for NextAuth.js       | Required           |
-| `NEXTAUTH_URL`    | Your application URL         | Required           |
-| `NODE_ENV`        | Environment mode             | `production`       |
-| `NEXT_PUBLIC_TZ`  | Timezone                     | `America/New_York` |
-| `OPENAI_API_KEY`  | OpenAI API key               | `null`             |
+| Variable         | Description            | Default            |
+| ---------------- | ---------------------- | ------------------ |
+| `AUTH_SECRET`    | Secret for NextAuth.js | Required           |
+| `BASE_URL`       | Your application URL   | Required           |
+| `TZ`             | Timezone               | `America/New_York` |
+| `OPENAI_API_KEY` | OpenAI API key         | `null`             |
 
 ## API Usage
 

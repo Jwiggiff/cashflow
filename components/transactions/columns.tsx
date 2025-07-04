@@ -1,19 +1,19 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { TransactionActionsCell } from "./transaction-actions-cell";
+import { formatDate } from "@/lib/formatter";
+import { iconOptions } from "@/lib/icon-options";
 import {
   TransactionOrTransfer,
   TransactionWithAccountAndCategory,
   TransferWithAccounts,
 } from "@/lib/types";
-import { ArrowRightIcon } from "lucide-react";
 import { capitalize, cn } from "@/lib/utils";
+import { BankAccount, Category } from "@prisma/client";
+import { ColumnDef } from "@tanstack/react-table";
+import { ArrowRightIcon } from "lucide-react";
+import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
-import { Category } from "@prisma/client";
-import { iconOptions } from "@/lib/icon-options";
-import { formatDate } from "@/lib/formatter";
 
 export function getColumns(
-  accounts: { id: number; name: string }[],
+  accounts: BankAccount[],
   categories: Category[]
 ): ColumnDef<TransactionOrTransfer>[] {
   return [

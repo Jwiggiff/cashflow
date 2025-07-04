@@ -6,7 +6,6 @@ import {
   ArrowLeftRightIcon,
   LandmarkIcon,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +22,9 @@ import { SidebarMenuButton } from "./ui/sidebar";
 interface FloatingActionButtonProps {
   accounts: BankAccount[];
   categories: Category[];
-  className?: string;
 }
 
-export function AddButton({
-  accounts,
-  categories,
-  className,
-}: FloatingActionButtonProps) {
+export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);

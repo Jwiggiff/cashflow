@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/popover";
 import { useState } from "react";
 import { iconOptions } from "@/lib/icon-options";
-import { TagIcon, XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface IconPickerProps {

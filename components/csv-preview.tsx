@@ -22,13 +22,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Sparkles } from "lucide-react";
-import { Account } from "@prisma/client";
+import { BankAccount } from "@prisma/client";
 import { formatCurrency } from "@/lib/formatter";
 
 interface CSVPreviewProps {
   transactions: CSVTransaction[];
   fileName: string;
-  accounts: Account[];
+  accounts: BankAccount[];
   onImport: (
     transactions: CSVTransaction[],
     accountId: number,

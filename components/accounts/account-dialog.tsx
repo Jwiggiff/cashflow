@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { AccountType, Account } from "@prisma/client";
+import { AccountType, BankAccount } from "@prisma/client";
 import { createAccount, updateAccount } from "@/app/accounts/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ import { CurrencyInput } from "@/components/currency-input";
 
 interface AccountDialogProps {
   mode?: "add" | "edit";
-  account?: Account;
+  account?: BankAccount;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;

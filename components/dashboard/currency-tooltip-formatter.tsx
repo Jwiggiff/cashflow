@@ -29,7 +29,7 @@ export function CurrencyTooltipFormatter({
         <span className="text-muted-foreground capitalize">{item.name}</span>
         {item.value && (
           <span className="text-foreground font-mono font-medium tabular-nums">
-            {formatCurrency(item.value)}
+            {formatCurrency(Number(item.value))}
           </span>
         )}
       </div>

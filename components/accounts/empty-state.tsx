@@ -1,6 +1,7 @@
 "use client";
 
-import { AddAccountDialog } from "./add-account-dialog";
+import { Button } from "../ui/button";
+import { AccountDialog } from "./account-dialog";
 
 export function EmptyState() {
   return (
@@ -8,12 +9,13 @@ export function EmptyState() {
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold">Welcome to CashFlow</h1>
         <p className="text-muted-foreground max-w-md">
-          Get started by creating your first account. You can add checking, savings, investment, or credit card accounts.
+          Get started by creating your first account. You can add checking,
+          savings, investment, or credit card accounts.
         </p>
         <div className="pt-4">
-          <AddAccountDialog />
+          <AccountDialog mode="add" trigger={<Button>Add Account</Button>} />
         </div>
       </div>
     </div>
   );
-} 
+}

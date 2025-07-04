@@ -14,14 +14,14 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { Account } from "@prisma/client";
+import { BankAccount } from "@prisma/client";
 import { deleteAccount } from "@/app/accounts/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AccountDialog } from "./account-dialog";
 
 interface AccountActionsCellProps {
-  account: Account;
+  account: BankAccount;
 }
 
 export function AccountActionsCell({ account }: AccountActionsCellProps) {
@@ -63,13 +63,25 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Account</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this account? This action cannot be undone.
+              Are you sure you want to delete this account? This action cannot
+              be undone.
             </AlertDialogDescription>
             <div className="mt-4 p-3 rounded bg-muted text-sm">
-              <div><span className="font-semibold">Name:</span> {account.name}</div>
-              <div><span className="font-semibold">Type:</span> {account.type.charAt(0) + account.type.slice(1).toLowerCase()}</div>
-              <div><span className="font-semibold">Balance:</span> ${account.balance.toFixed(2)}</div>
-              <div><span className="font-semibold">Created:</span> {new Date(account.createdAt).toLocaleDateString()}</div>
+              <div>
+                <span className="font-semibold">Name:</span> {account.name}
+              </div>
+              <div>
+                <span className="font-semibold">Type:</span>{" "}
+                {account.type.charAt(0) + account.type.slice(1).toLowerCase()}
+              </div>
+              <div>
+                <span className="font-semibold">Balance:</span> $
+                {account.balance.toFixed(2)}
+              </div>
+              <div>
+                <span className="font-semibold">Created:</span>{" "}
+                {new Date(account.createdAt).toLocaleDateString()}
+              </div>
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -82,4 +94,4 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
       </AlertDialog>
     </div>
   );
-} 
+}
