@@ -32,10 +32,8 @@ services:
       # Generate a secure secret using `openssl rand -base64 33`
       - AUTH_SECRET=your-production-secret
       - BASE_URL=https://yourdomain.com
-
       # Optional - set your timezone
       # - TZ=America/New_York
-
       # Optional - This is used for auto-categorization of transactions
       # - OPENAI_API_KEY=your-openai-api-key
 ```

@@ -1,11 +1,9 @@
 services:
-  cashflow-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  cashflow:
+    image: cashflow:latest
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
-      - AUTH_SECRET=dev-secret-key
+      - AUTH_SECRET=LAf9c4qPKzk9FmSEzszvrC/y5ivH8PHJmLb7NV+THWQ=
       - BASE_URL=http://localhost:3000
+      - TZ=America/Toronto

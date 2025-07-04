@@ -26,9 +26,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Generate Prisma client
 RUN npx prisma generate
 
-# Run migrations
-RUN npx prisma migrate deploy
-
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -38,10 +35,7 @@ WORKDIR /app
 # Environment variables
 ENV NODE_ENV=production
 ENV AUTH_TRUST_HOST=true
-ENV NEXT_PUBLIC_TZ=${TZ}
-ENV NEXTAUTH_URL=${BASE_URL}
-ENV NEXTAUTH_SECRET=${AUTH_SECRET}
-ENV DATABASE_URL=file:/app/data/cashflow.db
+ENV TZ=America/New_York
 
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -51,6 +45,10 @@ RUN adduser --system --uid 1001 nextjs
 
 # Create data directory for SQLite database
 RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+# Copy and setup entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 COPY --from=builder /app/public ./public
 
@@ -62,13 +60,17 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+RUN npm install -g prisma
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT=3000
 
-# server.js is created by next build from the standalone output
-# https://nextjs.org/docs/pages/api-reference/config/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
+
+# Set the entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
 CMD ["node", "server.js"]
