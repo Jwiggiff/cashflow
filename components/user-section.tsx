@@ -68,7 +68,7 @@ export function UserSection() {
   const user = session.user;
 
   const handleSignOut = () => {
-    signOut({ redirectTo: "/auth/signin" });
+    signOut({ redirectTo: "/" });
   };
 
   return (

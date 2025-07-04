@@ -55,6 +55,7 @@ export async function createTransaction(data: {
   categoryId: number | null;
   amount: number;
   accountId: number;
+  date?: Date;
 }) {
   const session = await auth();
   if (!session?.user) {
@@ -75,7 +76,7 @@ export async function createTransaction(data: {
         categoryId: data.categoryId,
         amount: finalAmount,
         accountId: data.accountId,
-        date: new Date(),
+        date: data.date || new Date(),
       },
     });
     return { success: true, data: transaction };
@@ -93,6 +94,7 @@ export async function updateTransaction(
     categoryId: number | null;
     amount: number;
     accountId: number;
+    date?: Date;
   }
 ) {
   const session = await auth();
@@ -115,6 +117,7 @@ export async function updateTransaction(
         categoryId: data.categoryId,
         amount: finalAmount,
         accountId: data.accountId,
+        date: data.date,
       },
     });
     return { success: true, data: transaction };

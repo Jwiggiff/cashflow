@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { iconOptions } from "@/lib/icon-options";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
@@ -62,6 +63,7 @@ export function TransactionDialog({
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | "">("");
+  const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use controlled or uncontrolled state
@@ -76,6 +78,7 @@ export function TransactionDialog({
       setCategoryId(transaction.categoryId);
       setAmount(Math.abs(transaction.amount).toFixed(2));
       setAccountId(transaction.accountId);
+      setDate(transaction.date);
     } else {
       // Reset form for add mode
       setDescription("");
@@ -83,6 +86,7 @@ export function TransactionDialog({
       setCategoryId(null);
       setAmount("");
       setAccountId("");
+      setDate(new Date());
     }
   }, [mode, transaction, open]);
 
@@ -99,7 +103,6 @@ export function TransactionDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description || !type || !amount || !accountId) return;
-    
 
     setIsSubmitting(true);
     try {
@@ -109,6 +112,7 @@ export function TransactionDialog({
         categoryId: categoryId,
         amount: parseFloat(amount),
         accountId: accountId as number,
+        date,
       };
 
       const result =
@@ -140,7 +144,7 @@ export function TransactionDialog({
     value: cat.id.toString(),
     label: cat.name,
     icon: iconOptions.find((icon) => icon.value === cat.icon)
-      ?.icon as React.ReactNode,
+      ?.icon as React.ComponentType<{ className?: string }>,
   })) satisfies ComboboxItem[];
 
   return (
@@ -161,6 +165,14 @@ export function TransactionDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Grocery Store"
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <DatePicker
+              date={date}
+              onDateChange={(newDate) => setDate(newDate || new Date())}
+              placeholder="Select date"
             />
           </div>
           <div className="space-y-2">
