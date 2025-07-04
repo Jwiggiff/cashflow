@@ -1,36 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CashFlow - Personal Finance Management
 
-## Getting Started
+A modern, self-hosted personal finance management application built with Next.js, featuring bank account tracking, transaction management, and financial insights.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 💰 **Bank Account Management** - Track multiple accounts (checking, savings, investment, credit)
+- 📊 **Transaction Tracking** - Record income and expenses with categories
+- 🔄 **Transfer Management** - Track money transfers between accounts
+- 📈 **Financial Insights** - Visualize your spending patterns and trends
+- 🔐 **Secure Authentication** - User accounts with secure login
+- 🏷️ **Category Management** - Organize transactions with custom categories
+- 📱 **Responsive Design** - Works seamlessly on desktop and mobile
+
+## How to Use
+
+### Using Docker Compose (Recommended)
+
+Create a `docker-compose.yml` file:
+
+```yaml
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: your-secure-password
+      POSTGRES_DB: cashflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cashflow-network
+
+  cashflow:
+    image: ghcr.io/jwiggiff/cashflow:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:your-secure-password@postgres:5432/cashflow
+      # Generate a secure secret using `openssl rand -base64 33`
+      - NEXTAUTH_SECRET=your-production-secret
+      - NEXTAUTH_URL=https://yourdomain.com
+
+      # Optional
+      # - NEXT_PUBLIC_TZ=America/New_York
+
+      # This is used for auto-categorization of transactions
+      # - OPENAI_API_KEY=your-openai-api-key
+    depends_on:
+      - postgres
+    networks:
+      - cashflow-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  cashflow-network:
+    driver: bridge
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Deploy:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose up -d
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Configuration
 
-## Learn More
+### Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+| Variable          | Description                  | Default            |
+| ----------------- | ---------------------------- | ------------------ |
+| `DATABASE_URL`    | PostgreSQL connection string | Required           |
+| `NEXTAUTH_SECRET` | Secret for NextAuth.js       | Required           |
+| `NEXTAUTH_URL`    | Your application URL         | Required           |
+| `NODE_ENV`        | Environment mode             | `production`       |
+| `NEXT_PUBLIC_TZ`  | Timezone                     | `America/New_York` |
+| `OPENAI_API_KEY`  | OpenAI API key               | `null`             |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## API Usage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### POST /api/transactions
 
-## Deploy on Vercel
+Create a transaction
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Authentication
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The API uses basic authentication using your username and password.
+
+#### Request (JSON Body)
+
+| Parameter        | Type                  | Description                                | Required                 |
+| ---------------- | --------------------- | ------------------------------------------ | ------------------------ |
+| `description`    | string                | The description of the transaction         | Yes                      |
+| `amount`         | number                | The amount of the transaction              | Yes                      |
+| `type`           | `INCOME` \| `EXPENSE` | The type of the transaction                | Yes                      |
+| `date`           | string                | The date of the transaction                | No (defaults to today)   |
+| `account`        | string                | The account name of the transaction        | Yes                      |
+| `category`       | string                | The category of the transaction            | No                       |
+| `autoCategorize` | boolean               | Whether to auto-categorize the transaction | No (defaults to `false`) |
+
+##### Example Request
+
+```json
+{
+  "description": "Metro",
+  "amount": 100,
+  "type": "EXPENSE",
+  "date": "2021-01-01",
+  "account": "Checking",
+  "category": "Groceries",
+  "autoCategorize": false
+}
+```
+
+#### Response
+
+| Parameter      | Type    | Description                                                       |
+| -------------- | ------- | ----------------------------------------------------------------- |
+| `success`      | boolean | Whether the transaction was created successfully                  |
+| `data`         | object  | The transaction data if the transaction was created successfully  |
+| `error`        | string  | The error message if the transaction was not created successfully |
+| `errorDetails` | array   | The error details if the transaction was not created successfully |
+
+##### Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "amount": 100,
+    "date": "2021-01-01",
+    "description": "Metro",
+    "account": {
+      "id": 1,
+      "name": "Checking",
+      "type": "CHECKING",
+      "balance": 1000
+    },
+    "category": {
+      "id": 1,
+      "name": "Groceries"
+    }
+  }
+}
+```
+
+## License
+
+[MIT](https://opensource.org/licenses/MIT)
+
+## Support
+
+For issues and questions:
+
+- Create an issue in the GitHub repository
