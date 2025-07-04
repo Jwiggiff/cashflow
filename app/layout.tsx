@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
-import { FloatingActionButton } from "@/components/floating-action-button";
+import { AddButton } from "@/components/add-button";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
@@ -38,18 +38,8 @@ export default async function RootLayout({
   const canAutoCategorize = process.env.OPENAI_API_KEY !== undefined;
 
   let accounts: BankAccount[] = [];
-  let categories: Category[] = [];
   if (loggedIn) {
     accounts = await prisma.bankAccount.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    categories = await prisma.category.findMany({
       where: {
         userId: session.user.id,
       },
@@ -74,16 +64,14 @@ export default async function RootLayout({
             <SessionProvider>
               <SidebarProvider>
                 <AppSidebar />
-                <main className="flex-1 p-4">
-                  <SidebarTrigger />
-                  {children}
-                </main>
+                <SidebarInset>
+                  <main className="flex-1 p-4">
+                    <SidebarTrigger />
+                    {children}
+                  </main>
+                </SidebarInset>
               </SidebarProvider>
               <Toaster position="top-right" />
-              <FloatingActionButton
-                accounts={accounts}
-                categories={categories}
-              />
               <CSVDropzoneWrapper
                 accounts={accounts}
                 canAutoCategorize={canAutoCategorize}

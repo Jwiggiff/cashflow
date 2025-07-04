@@ -8,9 +8,18 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-import { CreditCardIcon, HomeIcon, LandmarkIcon, TagIcon } from "lucide-react";
+import {
+  CreditCardIcon,
+  DollarSign,
+  HomeIcon,
+  LandmarkIcon,
+  TagIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { UserSection } from "@/components/user-section";
+import { AddButton } from "./add-button";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 const sidebarItems = [
   {
@@ -35,15 +44,51 @@ const sidebarItems = [
   },
 ];
 
-export function AppSidebar() {
+export async function AppSidebar() {
+  const session = await auth();
+
+  const accounts = await prisma.bankAccount.findMany({
+    where: {
+      userId: session?.user.id,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  const categories = await prisma.category.findMany({
+    where: {
+      userId: session?.user.id,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
-        {/* <Image src="/logo.png" alt="CashFlow" width={32} height={32} /> */}
-        CashFlow
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <a href="#">
+                <DollarSign className="!size-5" />
+                <span className="text-xl font-semibold">CashFlow</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <AddButton accounts={accounts} categories={categories} />
+            </SidebarMenuItem>
+          </SidebarMenu>
           <SidebarMenu>
             {sidebarItems.map((item) => (
               <SidebarMenuItem key={item.href}>

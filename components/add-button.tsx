@@ -18,6 +18,7 @@ import { TransactionDialog } from "@/components/transactions/transaction-dialog"
 import { TransferDialog } from "@/components/transactions/transfer-dialog";
 import { useState } from "react";
 import { BankAccount, Category } from "@prisma/client";
+import { SidebarMenuButton } from "./ui/sidebar";
 
 interface FloatingActionButtonProps {
   accounts: BankAccount[];
@@ -25,7 +26,7 @@ interface FloatingActionButtonProps {
   className?: string;
 }
 
-export function FloatingActionButton({
+export function AddButton({
   accounts,
   categories,
   className,
@@ -50,13 +51,10 @@ export function FloatingActionButton({
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            size="lg"
-            className={`fixed bottom-12 right-12 z-50 h-12 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${className}`}
-          >
-            <PlusIcon className="!w-5 !h-5 mr-2" />
+          <SidebarMenuButton className="bg-primary text-primary-foreground px-4  hover:bg-primary/90 hover:text-primary-foreground my-2">
+            <PlusIcon className="h-4 w-4 mr-2" />
             Add
-          </Button>
+          </SidebarMenuButton>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onClick={handleAddAccount}>
