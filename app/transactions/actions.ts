@@ -51,6 +51,7 @@ function parseCSVDate(dateString: string): Date | null {
 
 export async function createTransaction(data: {
   description: string;
+  source?: string | null;
   type: TransactionType;
   categoryId: number | null;
   amount: number;
@@ -72,6 +73,7 @@ export async function createTransaction(data: {
     const transaction = await prisma.transaction.create({
       data: {
         description: data.description,
+        source: data.source,
         type: data.type,
         categoryId: data.categoryId,
         amount: finalAmount,
@@ -90,6 +92,7 @@ export async function updateTransaction(
   id: number,
   data: {
     description: string;
+    source?: string | null;
     type: TransactionType;
     categoryId: number | null;
     amount: number;
@@ -113,6 +116,7 @@ export async function updateTransaction(
       where: { id },
       data: {
         description: data.description,
+        source: data.source,
         type: data.type,
         categoryId: data.categoryId,
         amount: finalAmount,

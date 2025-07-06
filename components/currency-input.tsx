@@ -1,12 +1,19 @@
+import { cn } from "@/lib/utils";
 import { Input } from "./ui/input";
+
+export interface CurrencyInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  required?: boolean;
+}
 
 export function CurrencyInput({
   value,
   onChange,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-}) {
+  className,
+  required,
+}: CurrencyInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Remove any non-numeric characters except decimal point
@@ -34,9 +41,9 @@ export function CurrencyInput({
         inputMode="decimal"
         value={value}
         onChange={handleChange}
-        className="pl-7"
+        className={cn("pl-7", className)}
         placeholder="0.00"
-        required
+        required={required}
       />
     </div>
   );

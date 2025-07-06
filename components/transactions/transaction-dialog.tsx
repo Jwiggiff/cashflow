@@ -60,11 +60,13 @@ export function TransactionDialog({
   const [internalOpen, setInternalOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [source, setSource] = useState("");
   const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [accountId, setAccountId] = useState<number | "">("");
   const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -74,6 +76,7 @@ export function TransactionDialog({
   useEffect(() => {
     if (mode === "edit" && transaction) {
       setDescription(transaction.description);
+      setSource(transaction.source || "");
       setType(transaction.type);
       setCategoryId(transaction.categoryId);
       setAmount(Math.abs(transaction.amount).toFixed(2));
@@ -82,6 +85,7 @@ export function TransactionDialog({
     } else {
       // Reset form for add mode
       setDescription("");
+      setSource("");
       setType(TransactionType.EXPENSE);
       setCategoryId(null);
       setAmount("");
@@ -102,12 +106,35 @@ export function TransactionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!description || !type || !amount || !accountId) return;
+
+    // Clear previous errors
+    setErrors({});
+
+    // Validate required fields
+    const newErrors: Record<string, string> = {};
+
+    if (!description.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (!amount || parseFloat(amount) <= 0) {
+      newErrors.amount = "Amount is required and must be greater than 0";
+    }
+
+    if (!accountId) {
+      newErrors.accountId = "Account is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       const data = {
         description,
+        source: source || null,
         type: type as TransactionType,
         categoryId: categoryId,
         amount: parseFloat(amount),
@@ -158,81 +185,124 @@ export function TransactionDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g., Grocery Store"
-              required
+            <Label htmlFor="amount">Amount</Label>
+            <CurrencyInput
+              value={amount}
+              onChange={setAmount}
+              className={
+                errors.amount ? "border-red-500 focus:border-red-500" : ""
+              }
             />
+            {errors.amount && (
+              <p className="text-sm text-red-500">{errors.amount}</p>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <DatePicker
-              date={date}
-              onDateChange={(newDate) => setDate(newDate || new Date())}
-              placeholder="Select date"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="account">Account</Label>
-            <Select
-              value={accountId.toString()}
-              onValueChange={(value) => setAccountId(parseInt(value))}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="type">Transaction Type</Label>
-            <Select
-              value={type}
-              onValueChange={(value) => setType(value as TransactionType)}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select transaction type" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(TransactionType).map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type.charAt(0) + type.slice(1).toLowerCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {type === TransactionType.EXPENSE && (
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Combobox
-                items={categoryItems}
-                value={categoryId?.toString() ?? ""}
-                onChange={(value) =>
-                  setCategoryId(value ? parseInt(value) : null)
+              <Label htmlFor="description">Description</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Grocery Store"
+                className={
+                  errors.description
+                    ? "border-red-500 focus:border-red-500"
+                    : ""
                 }
-                placeholder="Select or create category..."
-                searchPlaceholder="Search categories..."
-                onCreateItem={handleCreateCategory}
-                createLabel="Create category"
+              />
+              {errors.description && (
+                <p className="text-sm text-red-500">{errors.description}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="source">Source</Label>
+              <Input
+                id="source"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="URL, email, or reference"
+                type="url"
               />
             </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <CurrencyInput value={amount} onChange={setAmount} />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="date">Date</Label>
+              <DatePicker
+                date={date}
+                onDateChange={(newDate) => setDate(newDate || new Date())}
+                placeholder="Select date"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="account">Account</Label>
+              <Select
+                value={accountId.toString()}
+                onValueChange={(value) => setAccountId(parseInt(value))}
+              >
+                <SelectTrigger
+                  className={`w-full ${
+                    errors.accountId
+                      ? "border-red-500 focus:border-red-500"
+                      : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id.toString()}>
+                      {account.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.accountId && (
+                <p className="text-sm text-red-500">{errors.accountId}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">Transaction Type</Label>
+              <Select
+                value={type}
+                onValueChange={(value) => setType(value as TransactionType)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select transaction type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(TransactionType).map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type.charAt(0) + type.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {type === TransactionType.EXPENSE && (
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Combobox
+                  items={categoryItems}
+                  value={categoryId?.toString() ?? ""}
+                  onChange={(value) =>
+                    setCategoryId(value ? parseInt(value) : null)
+                  }
+                  placeholder="Select or create category..."
+                  searchPlaceholder="Search categories..."
+                  onCreateItem={handleCreateCategory}
+                  createLabel="Create category"
+                />
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
