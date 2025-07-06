@@ -6,12 +6,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AccountWithAliases } from "@/lib/types";
+import { BankAccountWithAliases } from "@/lib/types";
 import { AccountType } from "@prisma/client";
 import { AccountActionsCell } from "./account-actions-cell";
 
 interface AccountsListProps {
-  accounts: AccountWithAliases[];
+  accounts: BankAccountWithAliases[];
 }
 
 const getAccountTypeLabel = (type: AccountType) => {
@@ -37,7 +37,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
     }
     acc[account.type].push(account);
     return acc;
-  }, {} as Record<AccountType, AccountWithAliases[]>);
+  }, {} as Record<AccountType, BankAccountWithAliases[]>);
 
   // Define the desired order and ensure all types are included
   const desiredOrder = [

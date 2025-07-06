@@ -24,11 +24,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import { Trash2, Plus } from "lucide-react";
-import { AccountWithAliases } from "@/lib/types";
+import { BankAccountWithAliases } from "@/lib/types";
 
 interface AccountDialogProps {
   mode?: "add" | "edit";
-  account?: AccountWithAliases;
+  account?: BankAccountWithAliases;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;

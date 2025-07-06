@@ -14,14 +14,14 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { BankAccount } from "@prisma/client";
 import { deleteAccount } from "@/app/accounts/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AccountDialog } from "./account-dialog";
+import { BankAccountWithAliases } from "@/lib/types";
 
 interface AccountActionsCellProps {
-  account: BankAccount;
+  account: BankAccountWithAliases;
 }
 
 export function AccountActionsCell({ account }: AccountActionsCellProps) {
