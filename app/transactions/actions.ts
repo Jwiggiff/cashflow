@@ -373,58 +373,77 @@ export async function bulkImportTransactions(
       orderBy: { name: "asc" },
     });
 
-    // Use a transaction to ensure all operations succeed or fail together
+    // Pre-process transactions and perform auto-categorization outside the transaction
+    const processedTransactions: Array<{
+      description: string;
+      type: TransactionType;
+      amount: number;
+      date: Date;
+      categoryId: number | null;
+    }> = [];
+    let skippedTransactions = 0;
+    let categorizedTransactions = 0;
+
+    for (const csvTransaction of transactions) {
+      // Parse the date from the CSV using our helper function
+      const transactionDate = parseCSVDate(csvTransaction.date);
+
+      if (!transactionDate) {
+        console.warn(
+          `Skipping transaction with invalid date: ${csvTransaction.date}`
+        );
+        skippedTransactions++;
+        continue;
+      }
+
+      // Determine transaction type and amount
+      const amount = csvTransaction.income - csvTransaction.expense;
+      const type =
+        amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
+
+      // Auto-categorize if enabled (outside transaction to avoid timeouts)
+      let categoryId: number | null = null;
+      if (enableAutoCategorize && type === TransactionType.EXPENSE) {
+        const categorization = await autoCategorize(
+          csvTransaction.merchant,
+          categories
+        );
+
+        if (categorization.categoryId) {
+          categoryId = categorization.categoryId;
+          categorizedTransactions++;
+        }
+      }
+
+      processedTransactions.push({
+        description: csvTransaction.merchant,
+        type,
+        amount,
+        date: transactionDate,
+        categoryId,
+      });
+    }
+
+    // Use a transaction only for the database operations
     const result = await prisma.$transaction(async (tx) => {
       const createdTransactions = [];
       let totalBalanceChange = 0;
-      let skippedTransactions = 0;
-      let categorizedTransactions = 0;
 
-      for (const csvTransaction of transactions) {
-        // Parse the date from the CSV using our helper function
-        const transactionDate = parseCSVDate(csvTransaction.date);
-
-        if (!transactionDate) {
-          console.warn(
-            `Skipping transaction with invalid date: ${csvTransaction.date}`
-          );
-          skippedTransactions++;
-          continue;
-        }
-
-        // Determine transaction type and amount
-        const amount = csvTransaction.income - csvTransaction.expense;
-        const type =
-          amount >= 0 ? TransactionType.INCOME : TransactionType.EXPENSE;
-
-        // Auto-categorize if enabled
-        let categoryId: number | null = null;
-        if (enableAutoCategorize && type === TransactionType.EXPENSE) {
-          const categorization = await autoCategorize(
-            csvTransaction.merchant,
-            categories
-          );
-
-          if (categorization.categoryId) {
-            categoryId = categorization.categoryId;
-            categorizedTransactions++;
-          }
-        }
-
+      for (const processedTransaction of processedTransactions) {
         // Create the transaction
         const transaction = await tx.transaction.create({
           data: {
-            description: csvTransaction.merchant,
-            type,
-            amount,
+            description: processedTransaction.description,
+            type: processedTransaction.type,
+            amount: processedTransaction.amount,
             accountId,
-            date: transactionDate,
-            categoryId,
+            date: processedTransaction.date,
+            categoryId: processedTransaction.categoryId,
           },
         });
 
         createdTransactions.push(transaction);
-        totalBalanceChange += amount;
+        totalBalanceChange += processedTransaction.amount;
       }
 
       // Update the account balance
@@ -436,26 +455,28 @@ export async function bulkImportTransactions(
       return {
         transactions: createdTransactions,
         totalBalanceChange,
-        skippedTransactions,
-        categorizedTransactions,
       };
     });
 
     const message = `Successfully imported ${
       result.transactions.length
     } transactions${
-      result.skippedTransactions > 0
-        ? ` (${result.skippedTransactions} skipped due to invalid dates)`
+      skippedTransactions > 0
+        ? ` (${skippedTransactions} skipped due to invalid dates)`
         : ""
     }${
       enableAutoCategorize
-        ? ` (${result.categorizedTransactions} auto-categorized)`
+        ? ` (${categorizedTransactions} auto-categorized)`
         : ""
     }`;
 
     return {
       success: true,
-      data: result,
+      data: {
+        ...result,
+        skippedTransactions,
+        categorizedTransactions,
+      },
       message,
     };
   } catch (error) {
