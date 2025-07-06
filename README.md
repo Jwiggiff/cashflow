@@ -36,6 +36,9 @@ services:
       # - TZ=America/New_York
       # Optional - This is used for auto-categorization of transactions
       # - OPENAI_API_KEY=your-openai-api-key
+      # Optional - User and group IDs for file permissions (default: 1000)
+      # - PUID=1000
+      # - PGID=1000
 ```
 
 Deploy:
@@ -46,6 +49,25 @@ docker compose up -d
 
 ## Configuration
 
+### PUID and PGID
+
+The container supports PUID (User ID) and PGID (Group ID) environment variables to run the application as a specific user, which is important for file permissions and security.
+
+**Benefits:**
+- Prevents the container from running as root
+- Ensures proper file ownership for mounted volumes
+- Follows Docker security best practices
+- Allows fine-grained control over file permissions
+
+**Finding Your User/Group ID:**
+```bash
+# Get your user ID
+id -u
+
+# Get your group ID
+id -g
+```
+
 ### Environment Variables
 
 | Variable         | Description            | Default            |
@@ -54,6 +76,8 @@ docker compose up -d
 | `BASE_URL`       | Your application URL   | Required           |
 | `TZ`             | Timezone               | `America/New_York` |
 | `OPENAI_API_KEY` | OpenAI API key         | `null`             |
+| `PUID`           | User ID to run as      | `1000`             |
+| `PGID`           | Group ID to run as     | `1000`             |
 
 ## API Usage
 

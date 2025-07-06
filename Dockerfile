@@ -40,11 +40,15 @@ ENV TZ=America/New_York
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Install gosu for user switching
+RUN apk add --no-cache gosu
+
+# Default PUID and PGID (will be overridden by environment variables)
+ENV PUID=1000
+ENV PGID=1000
 
 # Create data directory for SQLite database
-RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+RUN mkdir -p /app/data
 
 # Copy and setup entrypoint script
 COPY entrypoint.sh /entrypoint.sh
@@ -57,12 +61,10 @@ COPY --from=builder /app/prisma ./prisma
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 RUN npm install -g prisma
-
-USER nextjs
 
 EXPOSE 3000
 
