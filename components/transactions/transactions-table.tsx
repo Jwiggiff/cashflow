@@ -1,6 +1,6 @@
 "use client";
 
-import { bulkDeleteItems } from "@/app/transactions/actions";
+import { bulkDeleteItems, convertTransactionsToTransfer } from "@/app/transactions/actions";
 import { DataTable } from "@/components/data-table";
 import { iconOptions } from "@/lib/icon-options";
 import { TransactionOrTransfer } from "@/lib/types";
@@ -48,6 +48,36 @@ export function TransactionsTable({
     }
   };
 
+  const handleConvertToTransfer = async (
+    selectedItems: TransactionOrTransfer[]
+  ) => {
+    try {
+      // Filter to only include transactions (not transfers)
+      const transactions = selectedItems.filter(
+        (item) => "account" in item && item.account
+      );
+
+      if (transactions.length !== 2) {
+        toast.error("Please select exactly 2 transactions to convert to a transfer");
+        return;
+      }
+
+      const transactionIds = transactions.map((item) => item.id);
+
+      const result = await convertTransactionsToTransfer(transactionIds);
+
+      if (result.success) {
+        toast.success("Successfully converted transactions to transfer");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Failed to convert transactions to transfer");
+      }
+    } catch (error) {
+      console.error("Error converting to transfer:", error);
+      toast.error("An unexpected error occurred");
+    }
+  };
+
   return (
     <DataTable
       columns={columns}
@@ -59,6 +89,7 @@ export function TransactionsTable({
         icon: category.icon as keyof typeof iconOptions,
       }))}
       onDeleteSelected={handleDeleteSelected}
+      onConvertToTransfer={handleConvertToTransfer}
     />
   );
 }

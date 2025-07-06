@@ -67,7 +67,7 @@ export default async function TransactionsPage() {
     ...transactions,
     ...transfers.map((t) => ({ ...t, type: "TRANSFER" })),
   ].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
   return (

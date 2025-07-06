@@ -488,3 +488,113 @@ export async function bulkImportTransactions(
     };
   }
 }
+
+export async function convertTransactionsToTransfer(
+  transactionIds: number[]
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (transactionIds.length !== 2) {
+    return { success: false, error: "Exactly 2 transactions are required to create a transfer" };
+  }
+
+  try {
+    // Get the two transactions
+    const transactions = await prisma.transaction.findMany({
+      where: {
+        id: { in: transactionIds },
+        account: {
+          userId: session.user.id,
+        },
+      },
+      include: {
+        account: true,
+      },
+    });
+
+    if (transactions.length !== 2) {
+      return { success: false, error: "One or more transactions not found" };
+    }
+
+    const [transaction1, transaction2] = transactions;
+
+    // Check if transactions are from different accounts
+    if (transaction1.accountId === transaction2.accountId) {
+      return { success: false, error: "Transactions must be from different accounts to create a transfer" };
+    }
+
+    // Determine which is the "from" and which is the "to" account
+    // We'll use the transaction with negative amount as "from" (money leaving)
+    // and positive amount as "to" (money entering)
+    let fromTransaction, toTransaction;
+    
+    if (transaction1.amount < 0 && transaction2.amount > 0) {
+      fromTransaction = transaction1;
+      toTransaction = transaction2;
+    } else if (transaction1.amount > 0 && transaction2.amount < 0) {
+      fromTransaction = transaction2;
+      toTransaction = transaction1;
+    } else {
+      return { success: false, error: "Transactions must have opposite signs (one positive, one negative) to create a transfer" };
+    }
+
+    // Check if amounts are equal (absolute values)
+    if (Math.abs(fromTransaction.amount) !== Math.abs(toTransaction.amount)) {
+      return { success: false, error: "Transaction amounts must be equal to create a transfer" };
+    }
+
+    // Use a transaction to ensure all operations succeed or fail together
+    const result = await prisma.$transaction(async (tx) => {
+      // Create the transfer
+      const transfer = await tx.transfer.create({
+        data: {
+          description: `Transfer from ${fromTransaction.account.name} to ${toTransaction.account.name}`,
+          amount: Math.abs(fromTransaction.amount),
+          fromAccountId: fromTransaction.accountId,
+          toAccountId: toTransaction.accountId,
+          date: new Date(Math.max(
+            new Date(fromTransaction.date).getTime(),
+            new Date(toTransaction.date).getTime()
+          )),
+        },
+      });
+
+      // Delete the original transactions
+      await tx.transaction.deleteMany({
+        where: { id: { in: transactionIds } },
+      });
+
+      // Revert the balance changes from the original transactions
+      await tx.bankAccount.update({
+        where: { id: fromTransaction.accountId },
+        data: { balance: { decrement: fromTransaction.amount } },
+      });
+
+      await tx.bankAccount.update({
+        where: { id: toTransaction.accountId },
+        data: { balance: { decrement: toTransaction.amount } },
+      });
+
+      // Apply the transfer balance changes
+      await tx.bankAccount.update({
+        where: { id: fromTransaction.accountId },
+        data: { balance: { decrement: transfer.amount } },
+      });
+
+      await tx.bankAccount.update({
+        where: { id: toTransaction.accountId },
+        data: { balance: { increment: transfer.amount } },
+      });
+
+      return transfer;
+    });
+
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Failed to convert transactions to transfer:", error);
+    return { success: false, error: "Failed to convert transactions to transfer" };
+  }
+}

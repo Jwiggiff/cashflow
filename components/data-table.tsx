@@ -51,6 +51,7 @@ interface DataTableProps<TData, TValue> {
     icon?: keyof typeof iconOptions | null;
   }[];
   onDeleteSelected?: (selectedRows: TData[]) => void;
+  onConvertToTransfer?: (selectedRows: TData[]) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -59,6 +60,7 @@ export function DataTable<TData, TValue>({
   accounts,
   categories,
   onDeleteSelected,
+  onConvertToTransfer,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -226,6 +228,16 @@ export function DataTable<TData, TValue>({
             onClick={handleDeleteSelected}
           >
             Delete {selectedRows.length} selected
+          </Button>
+        )}
+        {hasSelectedRows && onConvertToTransfer && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onConvertToTransfer(selectedRows.map(row => row.original))}
+            disabled={selectedRows.length !== 2}
+          >
+            Convert to Transfer
           </Button>
         )}
         <DropdownMenu>
