@@ -5,6 +5,7 @@ import DashboardWrapper from "@/components/dashboard/dashboard-wrapper";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { Welcome } from "@/components/dashboard/welcome";
 
 const Loading = () => {
   return (
@@ -33,6 +34,14 @@ export default async function Home() {
       redirect("/auth/signin");
     }
     return;
+  }
+
+  const numAccounts = await prisma.bankAccount.count({
+    where: { userId: session.user.id },
+  });
+
+  if (numAccounts === 0) {
+    return <Welcome />;
   }
 
   return (
