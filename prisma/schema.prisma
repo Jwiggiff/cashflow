@@ -26,17 +26,18 @@ model User {
 }
 
 model BankAccount {
-  id                Int           @id @default(autoincrement())
+  id                Int            @id @default(autoincrement())
   name              String
+  aliases           AccountAlias[]
   type              AccountType
   balance           Float
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId            String
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   transactions      Transaction[]
-  outgoingTransfers Transfer[]    @relation("FromAccount")
-  incomingTransfers Transfer[]    @relation("ToAccount")
+  outgoingTransfers Transfer[]     @relation("FromAccount")
+  incomingTransfers Transfer[]     @relation("ToAccount")
 }
 
 model Category {
@@ -76,6 +77,17 @@ model Transfer {
   toAccountId   Int
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+model AccountAlias {
+  id        Int         @id @default(autoincrement())
+  name      String
+  account   BankAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([name, accountId])
 }
 
 enum AccountType {

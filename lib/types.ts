@@ -12,6 +12,10 @@ export type TransactionOrTransfer =
   | TransactionWithAccountAndCategory
   | (TransferWithAccounts & { type: string });
 
+export type AccountWithAliases = Prisma.BankAccountGetPayload<{
+  include: { aliases: true };
+}>;
+
 export type DashboardStat = {
   value: number;
   change: number;

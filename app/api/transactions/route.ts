@@ -69,13 +69,20 @@ export async function POST(request: NextRequest) {
       account: accountName,
       date,
       autoCategorize,
+      source,
     } = validationResult.data;
 
-    // Verify the account belongs to the user
+    // Verify the account belongs to the user (check both name and aliases)
     const account = await prisma.bankAccount.findFirst({
       where: {
-        name: accountName,
+        OR: [
+          { name: accountName },
+          { aliases: { some: { name: accountName } } }
+        ],
         userId: user.id,
+      },
+      include: {
+        aliases: true,
       },
     });
 
@@ -136,6 +143,7 @@ export async function POST(request: NextRequest) {
         amount: finalAmount,
         accountId: account.id,
         date: date ? new Date(date) : new Date(),
+        source: source || null,
       },
       include: {
         account: true,

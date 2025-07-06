@@ -6,11 +6,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { AccountType, BankAccount } from "@prisma/client";
+import { AccountWithAliases } from "@/lib/types";
+import { AccountType } from "@prisma/client";
 import { AccountActionsCell } from "./account-actions-cell";
 
 interface AccountsListProps {
-  accounts: BankAccount[];
+  accounts: AccountWithAliases[];
 }
 
 const getAccountTypeLabel = (type: AccountType) => {
@@ -36,7 +37,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
     }
     acc[account.type].push(account);
     return acc;
-  }, {} as Record<AccountType, BankAccount[]>);
+  }, {} as Record<AccountType, AccountWithAliases[]>);
 
   // Define the desired order and ensure all types are included
   const desiredOrder = [
@@ -108,6 +109,12 @@ export function AccountsList({ accounts }: AccountsListProps) {
                 >
                   <div className="flex-1">
                     <div className="font-medium">{account.name}</div>
+                    {account.aliases.length > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        aka{" "}
+                        {account.aliases.map((alias) => alias.name).join(", ")}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">

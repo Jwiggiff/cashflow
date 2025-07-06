@@ -11,6 +11,9 @@ export default async function AccountsPage() {
 
   const accounts = await prisma.bankAccount.findMany({
     where: { userId: session.user.id },
+    include: {
+      aliases: true,
+    },
     orderBy: {
       createdAt: "desc",
     },

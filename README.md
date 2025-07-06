@@ -100,6 +100,7 @@ The API uses basic authentication using your username and password.
 | `account`        | string                | The account name of the transaction        | Yes                      |
 | `category`       | string                | The category of the transaction            | No                       |
 | `autoCategorize` | boolean               | Whether to auto-categorize the transaction | No (defaults to `false`) |
+| `source`         | string                | URL, email, or reference for the transaction | No                       |
 
 ##### Example Request
 
@@ -111,7 +112,8 @@ The API uses basic authentication using your username and password.
   "date": "2021-01-01",
   "account": "Checking",
   "category": "Groceries",
-  "autoCategorize": false
+  "autoCategorize": false,
+  "source": "https://metro.com/receipt/123"
 }
 ```
 

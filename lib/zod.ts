@@ -28,4 +28,5 @@ export const createTransactionSchema = object({
   account: string().min(1, "Account name is required"),
   category: string().nullable().optional(),
   autoCategorize: boolean().optional(),
+  source: string().optional(),
 });

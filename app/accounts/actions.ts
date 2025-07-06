@@ -36,6 +36,7 @@ export async function updateAccount(
     name: string;
     type: AccountType;
     balance: number;
+    aliases?: string[];
   }
 ) {
   const session = await auth();
@@ -44,14 +45,60 @@ export async function updateAccount(
   }
 
   try {
-    const account = await prisma.bankAccount.update({
-      where: { id, userId: session.user.id },
-      data: {
-        name: data.name,
-        type: data.type,
-        balance: data.balance,
-      },
+    const account = await prisma.$transaction(async (tx) => {
+      // Update the account
+      const updatedAccount = await tx.bankAccount.update({
+        where: { id, userId: session.user.id },
+        data: {
+          name: data.name,
+          type: data.type,
+          balance: data.balance,
+        },
+      });
+
+      // Handle aliases if provided
+      if (data.aliases !== undefined) {
+        // Get current aliases
+        const currentAliases = await tx.accountAlias.findMany({
+          where: { accountId: id },
+        });
+
+        // Filter out empty aliases
+        const newAliases = data.aliases.filter(alias => alias.trim() !== "");
+        
+        // Find aliases to add (new ones)
+        const aliasesToAdd = newAliases.filter(newAlias => 
+          !currentAliases.some(current => current.name === newAlias)
+        );
+
+        // Find aliases to remove (ones that no longer exist)
+        const aliasesToRemove = currentAliases.filter(current => 
+          !newAliases.includes(current.name)
+        );
+
+        // Remove aliases that no longer exist
+        if (aliasesToRemove.length > 0) {
+          await tx.accountAlias.deleteMany({
+            where: { 
+              id: { in: aliasesToRemove.map(a => a.id) }
+            },
+          });
+        }
+
+        // Add new aliases
+        if (aliasesToAdd.length > 0) {
+          await tx.accountAlias.createMany({
+            data: aliasesToAdd.map(alias => ({
+              name: alias,
+              accountId: id,
+            })),
+          });
+        }
+      }
+
+      return updatedAccount;
     });
+
     return { success: true, data: account };
   } catch (error) {
     console.error("Failed to update account:", error);

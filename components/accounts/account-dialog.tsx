@@ -18,24 +18,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { AccountType, BankAccount } from "@prisma/client";
+import { AccountType } from "@prisma/client";
 import { createAccount, updateAccount } from "@/app/accounts/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
+import { Trash2, Plus } from "lucide-react";
+import { AccountWithAliases } from "@/lib/types";
 
 interface AccountDialogProps {
   mode?: "add" | "edit";
-  account?: BankAccount;
+  account?: AccountWithAliases;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
 }
 
-export function AccountDialog({ 
-  mode = "add", 
-  account, 
-  open: controlledOpen, 
+export function AccountDialog({
+  mode = "add",
+  account,
+  open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
 }: AccountDialogProps) {
@@ -45,6 +47,7 @@ export function AccountDialog({
   const [name, setName] = useState("");
   const [type, setType] = useState<AccountType | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [aliases, setAliases] = useState<string[]>([]);
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -56,11 +59,13 @@ export function AccountDialog({
       setName(account.name);
       setType(account.type);
       setBalance(account.balance.toFixed(2));
+      setAliases(account.aliases?.map((a) => a.name) || []);
     } else {
       // Reset form for add mode
       setName("");
       setType("");
       setBalance("");
+      setAliases([]);
     }
   }, [mode, account, open]);
 
@@ -74,14 +79,20 @@ export function AccountDialog({
         name,
         type: type as AccountType,
         balance: parseFloat(balance),
+        ...(mode === "edit" && { aliases }),
       };
 
-      const result = mode === "edit" && account
-        ? await updateAccount(account.id, data)
-        : await createAccount(data);
+      const result =
+        mode === "edit" && account
+          ? await updateAccount(account.id, data)
+          : await createAccount(data);
 
       if (result.success) {
-        toast.success(mode === "edit" ? "Account updated successfully" : "Account created successfully");
+        toast.success(
+          mode === "edit"
+            ? "Account updated successfully"
+            : "Account created successfully"
+        );
         onOpenChange(false);
         router.refresh();
       } else {
@@ -100,7 +111,9 @@ export function AccountDialog({
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{mode === "edit" ? "Edit Account" : "Add New Account"}</DialogTitle>
+          <DialogTitle>
+            {mode === "edit" ? "Edit Account" : "Add New Account"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -133,9 +146,58 @@ export function AccountDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="balance">{mode === "edit" ? "Balance" : "Initial Balance"}</Label>
+            <Label htmlFor="balance">
+              {mode === "edit" ? "Balance" : "Initial Balance"}
+            </Label>
             <CurrencyInput value={balance} onChange={setBalance} />
           </div>
+
+          {mode === "edit" && (
+            <div className="space-y-2">
+              <Label>Account Aliases</Label>
+              <div className="space-y-2">
+                {aliases.map((alias, index) => (
+                  <div key={index} className="flex items-stretch gap-2">
+                    <Input
+                      value={alias}
+                      onChange={(e) => {
+                        const newAliases = [...aliases];
+                        newAliases[index] = e.target.value;
+                        setAliases(newAliases);
+                      }}
+                      placeholder="Alias name"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-auto"
+                      onClick={() => {
+                        const newAliases = aliases.filter(
+                          (_, i) => i !== index
+                        );
+                        setAliases(newAliases);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setAliases([...aliases, ""]);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Alias
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
@@ -146,11 +208,17 @@ export function AccountDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (mode === "edit" ? "Updating..." : "Adding...") : (mode === "edit" ? "Update Account" : "Add Account")}
+              {isSubmitting
+                ? mode === "edit"
+                  ? "Updating..."
+                  : "Adding..."
+                : mode === "edit"
+                ? "Update Account"
+                : "Add Account"}
             </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
   );
-} 
+}
