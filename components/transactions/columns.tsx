@@ -8,7 +8,7 @@ import {
 import { capitalize, cn } from "@/lib/utils";
 import { BankAccount, Category } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
 
@@ -39,6 +39,42 @@ export function getColumns(
       cell: ({ row }) => (
         <div className="font-medium">{row.getValue("description")}</div>
       ),
+    },
+    {
+      accessorKey: "source",
+      header: "Source",
+      cell: ({ row }) => {
+        const item = row.original;
+        if ("source" in item && item.source) {
+          // Check if it's a URL
+          const isUrl =
+            item.source.startsWith("http://") ||
+            item.source.startsWith("https://") ||
+            item.source.startsWith("mailto:");
+
+          if (isUrl) {
+            return (
+              <a
+                href={item.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline truncate max-w-[200px] flex items-center gap-1"
+              >
+                <span className="truncate">{item.source}</span>
+                <ExternalLinkIcon className="h-3 w-3 flex-shrink-0" />
+              </a>
+            );
+          }
+
+          return (
+            <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+              {item.source}
+            </div>
+          );
+        }
+        return <div>-</div>;
+      },
+      enableHiding: true,
     },
     {
       accessorKey: "account",
