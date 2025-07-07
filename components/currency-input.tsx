@@ -6,18 +6,22 @@ export interface CurrencyInputProps {
   onChange: (value: string) => void;
   className?: string;
   required?: boolean;
+  allowNegative?: boolean;
 }
 
 export function CurrencyInput({
   value,
   onChange,
   className,
-  required,
+  required = false,
+  allowNegative = false,
 }: CurrencyInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Remove any non-numeric characters except decimal point
-    const numericValue = value.replace(/[^0-9.]/g, "");
+    console.log(value, allowNegative);
+    const replaceRegex = allowNegative ? /[^0-9.-]/g : /[^0-9.]/g;
+    const numericValue = value.replace(replaceRegex, "");
     // Ensure only one decimal point
     const parts = numericValue.split(".");
     if (parts.length > 2) {

@@ -149,7 +149,11 @@ export function AccountDialog({
             <Label htmlFor="balance">
               {mode === "edit" ? "Balance" : "Initial Balance"}
             </Label>
-            <CurrencyInput value={balance} onChange={setBalance} />
+            <CurrencyInput
+              value={balance}
+              onChange={setBalance}
+              allowNegative={true}
+            />
           </div>
 
           {mode === "edit" && (
