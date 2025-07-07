@@ -50,7 +50,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // Find user by username
           const user = await prisma.user.findUnique({
             where: {
-              username,
+              username: username.toLowerCase(),
             },
           });
 
