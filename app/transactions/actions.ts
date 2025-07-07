@@ -152,6 +152,7 @@ export async function createTransfer(data: {
   amount: number;
   fromAccountId: number;
   toAccountId: number;
+  date?: Date;
 }) {
   const session = await auth();
   if (!session?.user) {
@@ -165,7 +166,7 @@ export async function createTransfer(data: {
         amount: Math.abs(data.amount),
         fromAccountId: data.fromAccountId,
         toAccountId: data.toAccountId,
-        date: new Date(),
+        date: data.date || new Date(),
       },
     });
 
@@ -194,6 +195,7 @@ export async function updateTransfer(
     amount: number;
     fromAccountId: number;
     toAccountId: number;
+    date?: Date;
   }
 ) {
   const session = await auth();
@@ -218,6 +220,7 @@ export async function updateTransfer(
         amount: Math.abs(data.amount),
         fromAccountId: data.fromAccountId,
         toAccountId: data.toAccountId,
+        date: data.date,
       },
     });
 

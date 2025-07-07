@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
@@ -54,6 +55,7 @@ export function TransferDialog({
   const [description, setDescription] = useState("");
   const [fromAccountId, setFromAccountId] = useState<number | "">("");
   const [toAccountId, setToAccountId] = useState<number | "">("");
+  const [date, setDate] = useState<Date>(new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use controlled or uncontrolled state
@@ -71,12 +73,14 @@ export function TransferDialog({
       setAmount(transfer.amount.toFixed(2));
       setFromAccountId(transfer.fromAccountId);
       setToAccountId(transfer.toAccountId);
+      setDate(new Date(transfer.date));
     } else {
       // Reset form for add mode
       setDescription("");
       setAmount("");
       setFromAccountId("");
       setToAccountId("");
+      setDate(new Date());
     }
   }, [mode, transfer, open]);
 
@@ -96,6 +100,7 @@ export function TransferDialog({
         amount: parseFloat(amount),
         fromAccountId: fromAccountId as number,
         toAccountId: toAccountId as number,
+        date: date,
       };
 
       const result =
@@ -196,6 +201,14 @@ export function TransferDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Monthly savings transfer"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <DatePicker
+              date={date}
+              onDateChange={(newDate) => setDate(newDate || new Date())}
+              placeholder="Select date"
             />
           </div>
           <div className="flex justify-end space-x-2">
