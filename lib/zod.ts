@@ -24,7 +24,7 @@ export const createTransactionSchema = object({
   description: string().min(1, "Description is required"),
   amount: number().positive("Amount must be positive"),
   type: enum_(["INCOME", "EXPENSE"]),
-  date: string().datetime().optional(),
+  date: string().datetime({ offset: true }).optional(),
   account: string().min(1, "Account name is required"),
   category: string().nullable().optional(),
   autoCategorize: boolean().optional(),
