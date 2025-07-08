@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CashFlow",
+  title: process.env.NODE_ENV === "development" ? "CashFlow (Dev)" : "CashFlow",
   description: "Track your cash flow",
 };
 
