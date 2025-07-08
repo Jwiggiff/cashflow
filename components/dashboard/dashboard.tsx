@@ -50,7 +50,7 @@ export default function Dashboard({
   return (
     <div className="flex-1 p-8">
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-8">
         <StatCard
           title="Total Balance"
           value={formatCurrency(stats?.totalBalance.value || 0)}
@@ -82,9 +82,9 @@ export default function Dashboard({
 
       {/* Charts Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <ChartCard title="Monthly Overview" className="col-span-4">
+        <ChartCard title="Monthly Overview" className="lg:col-span-4">
           <ChartContainer
-            className="aspect-auto h-full w-full min-h-[300px]"
+            className="aspect-auto h-full w-full min-h-[200px] md:min-h-[300px]"
             config={{
               income: {
                 label: "Income",
@@ -169,10 +169,10 @@ export default function Dashboard({
           </ChartContainer>
         </ChartCard>
 
-        <ChartCard title="Expense Breakdown" className="col-span-3">
+        <ChartCard title="Expense Breakdown" className="lg:col-span-3">
           <ChartContainer
             config={expenseConfig}
-            className="aspect-square h-full w-full mx-auto max-h-[300px]"
+            className="aspect-square h-full w-full mx-auto max-h-[200px] md:max-h-[300px]"
           >
             <PieChart>
               <ChartTooltip
