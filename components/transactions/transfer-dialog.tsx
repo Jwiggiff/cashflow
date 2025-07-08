@@ -1,15 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   Select,
   SelectContent,
@@ -128,110 +122,107 @@ export function TransferDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "edit" ? "Edit Transfer" : "Add New Transfer"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Transfer Between Accounts</Label>
-            <div className="flex items-center gap-3">
-              <Select
-                value={fromAccountId.toString()}
-                onValueChange={(value) => setFromAccountId(parseInt(value))}
-                required
-              >
-                <SelectTrigger
-                  className={cn(
-                    "flex-1",
-                    isSameAccount && "border-red-500 focus:border-red-500"
-                  )}
-                >
-                  <SelectValue placeholder="Select source account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <ArrowRightIcon className="h-5 w-5 text-muted-foreground" />
-              <Select
-                value={toAccountId.toString()}
-                onValueChange={(value) => setToAccountId(parseInt(value))}
-                required
-              >
-                <SelectTrigger
-                  className={cn(
-                    "flex-1",
-                    isSameAccount && "border-red-500 focus:border-red-500"
-                  )}
-                >
-                  <SelectValue placeholder="Select destination account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {isSameAccount && (
-              <div className="text-sm text-red-500">
-                From and To accounts must be different
-              </div>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <CurrencyInput value={amount} onChange={setAmount} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g., Monthly savings transfer"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="date">Date</Label>
-            <DatePicker
-              date={date}
-              onDateChange={(newDate) => setDate(newDate || new Date())}
-              placeholder="Select date"
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={mode === "edit" ? "Edit Transfer" : "Add New Transfer"}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label>Transfer Between Accounts</Label>
+          <div className="flex flex-row items-center gap-3">
+            <Select
+              value={fromAccountId.toString()}
+              onValueChange={(value) => setFromAccountId(parseInt(value))}
+              required
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isSameAccount}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                ? "Update Transfer"
-                : "Add Transfer"}
-            </Button>
+              <SelectTrigger
+                className={cn(
+                  "flex-1",
+                  isSameAccount && "border-red-500 focus:border-red-500"
+                )}
+              >
+                <SelectValue placeholder="Select source account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id.toString()}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <ArrowRightIcon className="h-5 w-5 text-muted-foreground" />
+            <Select
+              value={toAccountId.toString()}
+              onValueChange={(value) => setToAccountId(parseInt(value))}
+              required
+            >
+              <SelectTrigger
+                className={cn(
+                  "flex-1",
+                  isSameAccount && "border-red-500 focus:border-red-500"
+                )}
+              >
+                <SelectValue placeholder="Select destination account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id.toString()}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          {isSameAccount && (
+            <div className="text-sm text-red-500">
+              From and To accounts must be different
+            </div>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <CurrencyInput value={amount} onChange={setAmount} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description (Optional)</Label>
+          <Input
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g., Monthly savings transfer"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="date">Date</Label>
+          <DatePicker
+            date={date}
+            onDateChange={(newDate) => setDate(newDate || new Date())}
+            placeholder="Select date"
+          />
+        </div>
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting || isSameAccount}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+              ? "Update Transfer"
+              : "Add Transfer"}
+          </Button>
+        </div>
+      </form>
+    </ResponsiveDialog>
   );
 }

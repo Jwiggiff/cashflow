@@ -8,15 +8,9 @@ import {
 import { Combobox, ComboboxItem } from "@/components/combobox";
 import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   Select,
   SelectContent,
@@ -24,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import React from "react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
@@ -174,155 +167,152 @@ export function TransactionDialog({
   })) satisfies ComboboxItem[];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "edit" ? "Edit Transaction" : "Add New Transaction"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={mode === "edit" ? "Edit Transaction" : "Add New Transaction"}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="amount">Amount</Label>
+          <CurrencyInput
+            value={amount}
+            onChange={setAmount}
+            className={
+              errors.amount ? "border-red-500 focus:border-red-500" : ""
+            }
+          />
+          {errors.amount && (
+            <p className="text-sm text-red-500">{errors.amount}</p>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <CurrencyInput
-              value={amount}
-              onChange={setAmount}
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g., Grocery Store"
               className={
-                errors.amount ? "border-red-500 focus:border-red-500" : ""
+                errors.description
+                  ? "border-red-500 focus:border-red-500"
+                  : ""
               }
             />
-            {errors.amount && (
-              <p className="text-sm text-red-500">{errors.amount}</p>
+            {errors.description && (
+              <p className="text-sm text-red-500">{errors.description}</p>
             )}
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              placeholder="URL, email, or reference"
+              type="url"
+            />
+          </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Grocery Store"
-                className={
-                  errors.description
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <DatePicker
+              date={date}
+              onDateChange={(newDate) => setDate(newDate || new Date())}
+              placeholder="Select date"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="account">Account</Label>
+            <Select
+              value={accountId.toString()}
+              onValueChange={(value) => setAccountId(parseInt(value))}
+            >
+              <SelectTrigger
+                className={`w-full ${
+                  errors.accountId
                     ? "border-red-500 focus:border-red-500"
                     : ""
-                }
-              />
-              {errors.description && (
-                <p className="text-sm text-red-500">{errors.description}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="source">Source</Label>
-              <Input
-                id="source"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                placeholder="URL, email, or reference"
-                type="url"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
-              <DatePicker
-                date={date}
-                onDateChange={(newDate) => setDate(newDate || new Date())}
-                placeholder="Select date"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="account">Account</Label>
-              <Select
-                value={accountId.toString()}
-                onValueChange={(value) => setAccountId(parseInt(value))}
+                }`}
               >
-                <SelectTrigger
-                  className={`w-full ${
-                    errors.accountId
-                      ? "border-red-500 focus:border-red-500"
-                      : ""
-                  }`}
-                >
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.accountId && (
-                <p className="text-sm text-red-500">{errors.accountId}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Transaction Type</Label>
-              <Select
-                value={type}
-                onValueChange={(value) => setType(value as TransactionType)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select transaction type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(TransactionType).map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type.charAt(0) + type.slice(1).toLowerCase()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {type === TransactionType.EXPENSE && (
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Combobox
-                  items={categoryItems}
-                  value={categoryId?.toString() ?? ""}
-                  onChange={(value) =>
-                    setCategoryId(value ? parseInt(value) : null)
-                  }
-                  placeholder="Select or create category..."
-                  searchPlaceholder="Search categories..."
-                  onCreateItem={handleCreateCategory}
-                  createLabel="Create category"
-                />
-              </div>
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id.toString()}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.accountId && (
+              <p className="text-sm text-red-500">{errors.accountId}</p>
             )}
           </div>
+        </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="type">Transaction Type</Label>
+            <Select
+              value={type}
+              onValueChange={(value) => setType(value as TransactionType)}
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                ? "Update Transaction"
-                : "Add Transaction"}
-            </Button>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select transaction type" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.keys(TransactionType).map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type.charAt(0) + type.slice(1).toLowerCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          {type === TransactionType.EXPENSE && (
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Combobox
+                items={categoryItems}
+                value={categoryId?.toString() ?? ""}
+                onChange={(value) =>
+                  setCategoryId(value ? parseInt(value) : null)
+                }
+                placeholder="Select or create category..."
+                searchPlaceholder="Search categories..."
+                onCreateItem={handleCreateCategory}
+                createLabel="Create category"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+              ? "Update Transaction"
+              : "Add Transaction"}
+          </Button>
+        </div>
+      </form>
+    </ResponsiveDialog>
   );
 }

@@ -1,15 +1,11 @@
 "use client";
 
+import { createAccount, updateAccount } from "@/app/accounts/actions";
+import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   Select,
   SelectContent,
@@ -17,14 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
-import { AccountType } from "@prisma/client";
-import { createAccount, updateAccount } from "@/app/accounts/actions";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { CurrencyInput } from "@/components/currency-input";
-import { Trash2, Plus } from "lucide-react";
 import { BankAccountWithAliases } from "@/lib/types";
+import { AccountType } from "@prisma/client";
+import { Plus, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface AccountDialogProps {
   mode?: "add" | "edit";
@@ -107,122 +101,117 @@ export function AccountDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "edit" ? "Edit Account" : "Add New Account"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Account Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Main Checking"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="type">Account Type</Label>
-            <Select
-              value={type}
-              onValueChange={(value) => setType(value as AccountType)}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select account type" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(AccountType).map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type.charAt(0) + type.slice(1).toLowerCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="balance">
-              {mode === "edit" ? "Balance" : "Initial Balance"}
-            </Label>
-            <CurrencyInput
-              value={balance}
-              onChange={setBalance}
-              allowNegative={true}
-            />
-          </div>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={mode === "edit" ? "Edit Account" : "Add New Account"}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Account Name</Label>
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Main Checking"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="type">Account Type</Label>
+          <Select
+            value={type}
+            onValueChange={(value) => setType(value as AccountType)}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select account type" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(AccountType).map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.charAt(0) + type.slice(1).toLowerCase()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="balance">
+            {mode === "edit" ? "Balance" : "Initial Balance"}
+          </Label>
+          <CurrencyInput
+            value={balance}
+            onChange={setBalance}
+            allowNegative={true}
+          />
+        </div>
 
-          {mode === "edit" && (
+        {mode === "edit" && (
+          <div className="space-y-2">
+            <Label>Account Aliases</Label>
             <div className="space-y-2">
-              <Label>Account Aliases</Label>
-              <div className="space-y-2">
-                {aliases.map((alias, index) => (
-                  <div key={index} className="flex items-stretch gap-2">
-                    <Input
-                      value={alias}
-                      onChange={(e) => {
-                        const newAliases = [...aliases];
-                        newAliases[index] = e.target.value;
-                        setAliases(newAliases);
-                      }}
-                      placeholder="Alias name"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-auto"
-                      onClick={() => {
-                        const newAliases = aliases.filter(
-                          (_, i) => i !== index
-                        );
-                        setAliases(newAliases);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setAliases([...aliases, ""]);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Alias
-                </Button>
-              </div>
+              {aliases.map((alias, index) => (
+                <div key={index} className="flex items-stretch gap-2">
+                  <Input
+                    value={alias}
+                    onChange={(e) => {
+                      const newAliases = [...aliases];
+                      newAliases[index] = e.target.value;
+                      setAliases(newAliases);
+                    }}
+                    placeholder="Alias name"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-auto"
+                    onClick={() => {
+                      const newAliases = aliases.filter((_, i) => i !== index);
+                      setAliases(newAliases);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setAliases([...aliases, ""]);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Alias
+              </Button>
             </div>
-          )}
-
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                ? "Update Account"
-                : "Add Account"}
-            </Button>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        )}
+
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+              ? "Update Account"
+              : "Add Account"}
+          </Button>
+        </div>
+      </form>
+    </ResponsiveDialog>
   );
 }

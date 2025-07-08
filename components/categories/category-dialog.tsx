@@ -1,20 +1,14 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { updateCategory } from "@/app/categories/actions";
-import { useRouter } from "next/navigation";
-import { Category } from "@prisma/client";
 import { IconPicker } from "@/components/icon-picker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { Category } from "@prisma/client";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface CategoryDialogProps {
   category: Category;
@@ -74,44 +68,43 @@ export function CategoryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Category</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-2">
-            <IconPicker
-              className="w-9 h-9"
-              value={icon}
-              onChange={setIcon}
-              allowNone={true}
-            />
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Food & Dining"
-              required
-            />
-          </div>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title="Edit Category"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center gap-2">
+          <IconPicker
+            className="w-9 h-9"
+            value={icon}
+            onChange={setIcon}
+            allowNone={true}
+          />
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g., Food & Dining"
+            required
+          />
+        </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Category"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="flex justify-end space-x-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Updating..." : "Update Category"}
+          </Button>
+        </div>
+      </form>
+    </ResponsiveDialog>
   );
 }
