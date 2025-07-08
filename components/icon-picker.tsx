@@ -6,13 +6,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
-import { iconOptions } from "@/lib/icon-options";
+import { Input } from "@/components/ui/input";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { SearchIcon, Loader2 } from "lucide-react";
+import { dynamicIconImports } from "lucide-react/dynamic";
 
 interface IconPickerProps {
-  value?: string;
-  onChange: (value: string) => void;
+  value: string | null;
+  onChange: (value: string | null) => void;
   label?: string;
   className?: string;
   allowNone?: boolean;
@@ -26,12 +28,57 @@ export function IconPicker({
   allowNone = false,
 }: IconPickerProps) {
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIconComponent, setSelectedIconComponent] = useState<React.ComponentType<{ className?: string }> | null>(null);
+  const [loadedIcons, setLoadedIcons] = useState<Map<string, React.ComponentType<{ className?: string }>>>(new Map());
 
-  const selectedIcon = iconOptions.find((opt) => opt.value === value);
+  const iconNames = useMemo(() => Object.keys(dynamicIconImports).sort(), []);
 
-  const handleIconSelect = (iconValue: string) => {
-    onChange(iconValue === "none" ? "" : iconValue);
+  const filteredIcons = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return iconNames.slice(0, 100); // Show first 100 icons by default
+    }
+    return iconNames
+      .filter(name => name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .slice(0, 200); // Limit search results to 200
+  }, [searchQuery, iconNames]);
+
+  // Load selected icon when value changes
+  useEffect(() => {
+    if (value && dynamicIconImports[value as keyof typeof dynamicIconImports]) {
+      dynamicIconImports[value as keyof typeof dynamicIconImports]().then(module => {
+        setSelectedIconComponent(() => module.default);
+      });
+    } else {
+      setSelectedIconComponent(null);
+    }
+  }, [value]);
+
+  // Load icons as they come into view
+  useEffect(() => {
+    const loadIcons = async () => {
+      const iconsToLoad = filteredIcons.filter(name => !loadedIcons.has(name));
+      
+      for (const iconName of iconsToLoad.slice(0, 20)) { // Load 20 at a time
+        try {
+          const importFn = dynamicIconImports[iconName as keyof typeof dynamicIconImports];
+          if (importFn) {
+            const iconModule = await importFn();
+            setLoadedIcons(prev => new Map(prev).set(iconName, iconModule.default));
+          }
+        } catch (error) {
+          console.error(`Failed to load icon ${iconName}:`, error);
+        }
+      }
+    };
+
+    loadIcons();
+  }, [filteredIcons, loadedIcons]);
+
+  const handleIconSelect = (iconName: string | null) => {
+    onChange(iconName);
     setOpen(false);
+    setSearchQuery("");
   };
 
   return (
@@ -45,11 +92,14 @@ export function IconPicker({
             className
           )}
         >
-          {selectedIcon && <selectedIcon.icon className="h-5 w-5" />}
+          {selectedIconComponent && (() => {
+            const IconComponent = selectedIconComponent;
+            return <IconComponent className="h-5 w-5" />;
+          })()}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-4">
-        <div className="space-y-2">
+      <PopoverContent className="w-96 p-4">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{label}</span>
             {allowNone && (
@@ -58,27 +108,54 @@ export function IconPicker({
                 variant="link"
                 size="sm"
                 className="p-0"
-                onClick={() => handleIconSelect("none")}
+                onClick={() => handleIconSelect(null)}
               >
                 Remove
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-8 gap-2">
-            {iconOptions.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                variant={
-                  selectedIcon?.value === option.value ? "default" : "outline"
-                }
-                size="sm"
-                className="w-8 h-8 p-0"
-                onClick={() => handleIconSelect(option.value)}
-              >
-                <option.icon className="h-4 w-4" />
-              </Button>
-            ))}
+          
+          <div className="relative">
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search icons..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          <div className="max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-8 gap-2">
+              {filteredIcons.map((iconName) => {
+                const IconComponent = loadedIcons.get(iconName);
+                return (
+                  <Button
+                    key={iconName}
+                    type="button"
+                    variant={value === iconName ? "default" : "outline"}
+                    size="sm"
+                    className="w-8 h-8 p-0 flex flex-col items-center justify-center"
+                    onClick={() => handleIconSelect(iconName)}
+                    title={iconName}
+                  >
+                    {IconComponent ? (
+                      (() => {
+                        const Icon = IconComponent;
+                        return <Icon className="h-4 w-4" />;
+                      })()
+                    ) : (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    )}
+                  </Button>
+                );
+              })}
+            </div>
+            {filteredIcons.length === 0 && (
+              <div className="text-center text-muted-foreground py-4">
+                No icons found matching &quot;{searchQuery}&quot;
+              </div>
+            )}
           </div>
         </div>
       </PopoverContent>

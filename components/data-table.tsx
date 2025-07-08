@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -8,10 +7,12 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  VisibilityState,
   useReactTable,
+  VisibilityState,
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
+import * as React from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -28,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -37,9 +38,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TransactionType } from "@prisma/client";
 import { capitalize } from "@/lib/utils";
-import { iconOptions } from "@/lib/icon-options";
+import { TransactionType } from "@prisma/client";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -48,7 +48,7 @@ interface DataTableProps<TData, TValue> {
   categories: {
     id: number;
     name: string;
-    icon?: keyof typeof iconOptions | null;
+    icon?: string | null;
   }[];
   onDeleteSelected?: (selectedRows: TData[]) => void;
   onConvertToTransfer?: (selectedRows: TData[]) => void;
@@ -187,13 +187,15 @@ export function DataTable<TData, TValue>({
           <SelectContent>
             <SelectItem value="all">All categories</SelectItem>
             {categories.map((category) => {
-              const Icon = iconOptions.find(
-                (icon) => icon.value === category.icon
-              )?.icon;
               return (
                 <SelectItem key={category.id} value={category.id.toString()}>
                   <div className="w-4">
-                    {Icon && <Icon className="h-4 w-4" />}
+                    {category.icon && (
+                      <DynamicIcon
+                        name={category.icon as keyof typeof dynamicIconImports}
+                        className="h-4 w-4"
+                      />
+                    )}
                   </div>
                   {category.name}
                 </SelectItem>
@@ -234,7 +236,9 @@ export function DataTable<TData, TValue>({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onConvertToTransfer(selectedRows.map(row => row.original))}
+            onClick={() =>
+              onConvertToTransfer(selectedRows.map((row) => row.original))
+            }
             disabled={selectedRows.length !== 2}
           >
             Convert to Transfer

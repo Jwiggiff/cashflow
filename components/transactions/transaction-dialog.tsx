@@ -24,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import React from "react";
 import { DatePicker } from "@/components/ui/date-picker";
-import { iconOptions } from "@/lib/icon-options";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -170,8 +170,7 @@ export function TransactionDialog({
   const categoryItems: ComboboxItem[] = categories.map((cat) => ({
     value: cat.id.toString(),
     label: cat.name,
-    icon: iconOptions.find((icon) => icon.value === cat.icon)
-      ?.icon as React.ComponentType<{ className?: string }>,
+    icon: cat.icon || undefined,
   })) satisfies ComboboxItem[];
 
   return (

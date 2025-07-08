@@ -32,7 +32,7 @@ export function CategoryDialog({
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState("");
+  const [icon, setIcon] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Use controlled or uncontrolled state
@@ -43,7 +43,7 @@ export function CategoryDialog({
   useEffect(() => {
     if (category) {
       setName(category.name);
-      setIcon(category.icon ?? "");
+      setIcon(category.icon);
     }
   }, [category, open]);
 
@@ -55,7 +55,7 @@ export function CategoryDialog({
     try {
       const result = await updateCategory(category.id, {
         name: name.trim(),
-        icon: icon || undefined,
+        icon,
       });
 
       if (result.success) {

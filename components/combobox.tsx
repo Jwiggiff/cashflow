@@ -17,11 +17,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 
 export type ComboboxItem = {
   value: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
+  icon?: string;
 };
 
 export type ComboboxProps = {
@@ -111,7 +112,12 @@ export function Combobox({
                   }}
                 >
                   <div className="w-4">
-                    {item.icon && <item.icon className="mr-2 h-4 w-4" />}
+                    {item.icon && (
+                      <DynamicIcon
+                        name={item.icon as keyof typeof dynamicIconImports}
+                        className="mr-2 h-4 w-4"
+                      />
+                    )}
                   </div>
                   {item.label}
                 </CommandItem>

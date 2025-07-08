@@ -1,10 +1,11 @@
 "use client";
 
+import { formatCurrency } from "@/lib/formatter";
 import { Category } from "@prisma/client";
+import React from "react";
 import { CategoryActionsCell } from "./category-actions-cell";
 import { EmptyState } from "./empty-state";
-import { formatCurrency } from "@/lib/formatter";
-import { iconOptions } from "@/lib/icon-options";
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 
 interface CategoriesListProps {
   categories: Category[];
@@ -38,10 +39,6 @@ export function CategoriesList({
   return (
     <div className="w-full space-y-2">
       {categoriesWithData.map((category) => {
-        const Icon = iconOptions.find(
-          (icon) => icon.value === category.icon
-        )?.icon;
-
         return (
           <div
             key={category.name}
@@ -49,7 +46,12 @@ export function CategoriesList({
           >
             <div className="flex-1">
               <div className="font-medium text-lg flex items-center gap-2">
-                {Icon && <Icon className="h-4 w-4" />}
+                {category.icon && (
+                  <DynamicIcon
+                    name={category.icon as keyof typeof dynamicIconImports}
+                    className="h-4 w-4"
+                  />
+                )}
                 {category.name}
               </div>
               <div className="text-sm text-muted-foreground">

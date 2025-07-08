@@ -1,5 +1,4 @@
 import { formatDate } from "@/lib/formatter";
-import { iconOptions } from "@/lib/icon-options";
 import {
   TransactionOrTransfer,
   TransactionWithAccountAndCategory,
@@ -9,6 +8,8 @@ import { capitalize, cn } from "@/lib/utils";
 import { BankAccount, Category } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
+import React from "react";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
 
@@ -135,12 +136,14 @@ export function getColumns(
         const item = row.original;
 
         if ("category" in item && item.category) {
-          const Icon = iconOptions.find(
-            (icon) => icon.value === item.category?.icon
-          )?.icon;
           return (
             <div className="flex items-center gap-2">
-              {Icon && <Icon className="h-4 w-4" />}
+              {item.category.icon && (
+                <DynamicIcon
+                  name={item.category.icon as keyof typeof dynamicIconImports}
+                  className="h-4 w-4"
+                />
+              )}
               {item.category.name}
             </div>
           );

@@ -2,7 +2,6 @@
 
 import { bulkDeleteItems, convertTransactionsToTransfer } from "@/app/transactions/actions";
 import { DataTable } from "@/components/data-table";
-import { iconOptions } from "@/lib/icon-options";
 import { TransactionOrTransfer } from "@/lib/types";
 import { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
@@ -86,7 +85,7 @@ export function TransactionsTable({
       categories={categories.map((category) => ({
         id: category.id,
         name: category.name,
-        icon: category.icon as keyof typeof iconOptions,
+        icon: category.icon,
       }))}
       onDeleteSelected={handleDeleteSelected}
       onConvertToTransfer={handleConvertToTransfer}

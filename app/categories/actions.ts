@@ -50,7 +50,7 @@ export async function updateCategory(
   id: number,
   data: {
     name: string;
-    icon?: string;
+    icon?: string | null;
   }
 ) {
   const session = await auth();
