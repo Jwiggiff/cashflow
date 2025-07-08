@@ -10,7 +10,7 @@ export type TransferWithAccounts = Prisma.TransferGetPayload<{
 
 export type TransactionOrTransfer =
   | TransactionWithAccountAndCategory
-  | (TransferWithAccounts & { type: string });
+  | (TransferWithAccounts & { type: "TRANSFER" });
 
 export type BankAccountWithAliases = Prisma.BankAccountGetPayload<{
   include: { aliases: true };

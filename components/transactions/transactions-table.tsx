@@ -7,6 +7,10 @@ import { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getColumns } from "./columns";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import { TransactionDialog } from "./transaction-dialog";
+import { TransferDialog } from "./transfer-dialog";
 
 interface TransactionsTableProps {
   items: TransactionOrTransfer[];
@@ -21,6 +25,16 @@ export function TransactionsTable({
 }: TransactionsTableProps) {
   const columns = getColumns(accounts, categories);
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const [editItem, setEditItem] = useState<TransactionOrTransfer | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+  const handleRowClick = (item: TransactionOrTransfer) => {
+    if (isMobile) {
+      setEditItem(item);
+      setEditDialogOpen(true);
+    }
+  };
 
   const handleDeleteSelected = async (
     selectedItems: TransactionOrTransfer[]
@@ -78,17 +92,44 @@ export function TransactionsTable({
   };
 
   return (
-    <DataTable
-      columns={columns}
-      data={items}
-      accounts={accounts}
-      categories={categories.map((category) => ({
-        id: category.id,
-        name: category.name,
-        icon: category.icon,
-      }))}
-      onDeleteSelected={handleDeleteSelected}
-      onConvertToTransfer={handleConvertToTransfer}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={items}
+        accounts={accounts}
+        categories={categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          icon: category.icon,
+        }))}
+        onDeleteSelected={handleDeleteSelected}
+        onConvertToTransfer={handleConvertToTransfer}
+        onRowClick={handleRowClick}
+      />
+      
+      {/* Mobile Edit Dialogs */}
+      {editItem && (
+        <>
+          {editItem.type !== "TRANSFER" ? (
+            <TransactionDialog
+              mode="edit"
+              transaction={editItem}
+              accounts={accounts}
+              categories={categories}
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+            />
+          ) : (
+            <TransferDialog
+              mode="edit"
+              transfer={editItem}
+              accounts={accounts}
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+            />
+          )}
+        </>
+      )}
+    </>
   );
 }

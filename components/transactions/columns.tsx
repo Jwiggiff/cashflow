@@ -33,6 +33,7 @@ export function getColumns(
         const date = row.getValue("date") as Date;
         return <div>{formatDate(date, { dateStyle: "short" })}</div>;
       },
+      enableHiding: false,
     },
     {
       accessorKey: "description",
@@ -132,6 +133,12 @@ export function getColumns(
     {
       accessorKey: "category",
       header: "Category",
+      filterFn: (row, id, value) => {
+        const item = row.original;
+        return (
+          "category" in item && String(item.category?.id) === String(value)
+        );
+      },
       cell: ({ row }) => {
         const item = row.original;
 

@@ -9,6 +9,7 @@ import {
   getPaginationRowModel,
   useReactTable,
   VisibilityState,
+  Row,
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { capitalize } from "@/lib/utils";
 import { TransactionType } from "@prisma/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -52,6 +54,7 @@ interface DataTableProps<TData, TValue> {
   }[];
   onDeleteSelected?: (selectedRows: TData[]) => void;
   onConvertToTransfer?: (selectedRows: TData[]) => void;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -61,18 +64,57 @@ export function DataTable<TData, TValue>({
   categories,
   onDeleteSelected,
   onConvertToTransfer,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
+  const isMobile = useIsMobile();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       id: false,
+      select: false,
+      date: false,
+      source: false,
+      account: false,
       type: false,
+      category: false,
       createdAt: false,
       updatedAt: false,
+      actions: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
+
+  // Update column visibility when mobile state changes
+  React.useEffect(() => {
+    if (isMobile) {
+      setColumnVisibility({
+        id: false,
+        select: false,
+        date: false,
+        source: false,
+        account: false,
+        type: false,
+        category: false,
+        createdAt: false,
+        updatedAt: false,
+        actions: false,
+      });
+    } else {
+      setColumnVisibility({
+        id: false,
+        select: true,
+        date: true,
+        source: true,
+        account: true,
+        type: false,
+        category: true,
+        createdAt: false,
+        updatedAt: false,
+        actions: true,
+      });
+    }
+  }, [isMobile]);
 
   // Add selection column
   const selectionColumn: ColumnDef<TData, TValue> = {
@@ -136,6 +178,49 @@ export function DataTable<TData, TValue>({
     }
   };
 
+  // Prepare table data with date grouping for mobile
+  const tableData = React.useMemo(() => {
+    if (!isMobile) {
+      // For desktop, just return the table rows
+      return table.getRowModel().rows.map(row => ({ type: 'row' as const, row }));
+    }
+
+    // For mobile, group by date and add headers
+    type RowData = 
+      | { type: 'header'; date: string }
+      | { type: 'row'; row: Row<TData> };
+    
+    const groups: RowData[] = [];
+    const dateGroups: { [key: string]: Row<TData>[] } = {};
+
+    // Group filtered table rows by date (use filtered rows so filtering works)
+    table.getRowModel().rows.forEach((row) => {
+      const date = (row.original as { date?: Date }).date;
+      if (date) {
+        const dateKey = new Date(date).toDateString();
+        if (!dateGroups[dateKey]) {
+          dateGroups[dateKey] = [];
+        }
+        dateGroups[dateKey].push(row);
+      }
+    });
+
+    // Sort dates and create grouped structure
+    const sortedDates = Object.keys(dateGroups).sort((a, b) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+
+    sortedDates.forEach((dateKey) => {
+      groups.push({ type: 'header', date: dateKey });
+      dateGroups[dateKey].forEach((row) => {
+        groups.push({ type: 'row', row });
+      });
+    });
+
+    return groups;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, table, table.getRowModel().rows]);
+
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-2 flex-wrap">
@@ -147,82 +232,86 @@ export function DataTable<TData, TValue>({
           onChange={(event) =>
             table.getColumn("description")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className={isMobile ? "flex-1" : "max-w-sm"}
         />
-        <Select
-          value={
-            (table.getColumn("account")?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("account")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by account" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All accounts</SelectItem>
-            {accounts.map(({ id, name }) => (
-              <SelectItem key={id} value={id.toString()}>
-                {name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={
-            (table.getColumn("category")?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("category")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
-            {categories.map((category) => {
-              return (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  <div className="w-4">
-                    {category.icon && (
-                      <DynamicIcon
-                        name={category.icon as keyof typeof dynamicIconImports}
-                        className="h-4 w-4"
-                      />
-                    )}
-                  </div>
-                  {category.name}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <Select
-          value={(table.getColumn("type")?.getFilterValue() as string) ?? "all"}
-          onValueChange={(value) =>
-            table
-              .getColumn("type")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {types.map((type) => (
-              <SelectItem key={type} value={type}>
-                {capitalize(type)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isMobile && (
+          <>
+            <Select
+              value={
+                (table.getColumn("account")?.getFilterValue() as string) ?? "all"
+              }
+              onValueChange={(value) =>
+                table
+                  .getColumn("account")
+                  ?.setFilterValue(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by account" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All accounts</SelectItem>
+                {accounts.map(({ id, name }) => (
+                  <SelectItem key={id} value={id.toString()}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={
+                (table.getColumn("category")?.getFilterValue() as string) ?? "all"
+              }
+              onValueChange={(value) =>
+                table
+                  .getColumn("category")
+                  ?.setFilterValue(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((category) => {
+                  return (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      <div className="w-4">
+                        {category.icon && (
+                          <DynamicIcon
+                            name={category.icon as keyof typeof dynamicIconImports}
+                            className="h-4 w-4"
+                          />
+                        )}
+                      </div>
+                      {category.name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <Select
+              value={(table.getColumn("type")?.getFilterValue() as string) ?? "all"}
+              onValueChange={(value) =>
+                table
+                  .getColumn("type")
+                  ?.setFilterValue(value === "all" ? "" : value)
+              }
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All types</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {capitalize(type)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
         {hasSelectedRows && onDeleteSelected && (
           <Button
             variant="destructive"
@@ -244,32 +333,34 @@ export function DataTable<TData, TValue>({
             Convert to Transfer
           </Button>
         )}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isMobile && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <div className="rounded-md border">
         <Table>
@@ -292,26 +383,52 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+            {tableData.length ? (
+              tableData.map((rowData) => {
+                // Handle mobile date headers
+                if (rowData.type === 'header') {
+                  return (
+                    <TableRow key={`header-${rowData.date}`} className="bg-muted/50">
+                      <TableCell colSpan={table.getAllColumns().length} className="font-semibold text-foreground">
+                        {rowData.date && new Date(rowData.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+                
+                // Handle all data rows (both mobile and desktop)
+                if (rowData.type === 'row') {
+                  const row = rowData.row;
+                  return (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="cursor-pointer md:cursor-default"
+                      onClick={isMobile && onRowClick ? () => onRowClick(row.original) : undefined}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                }
+                
+                return null;
+              })
             ) : (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={table.getAllColumns().length}
                   className="h-24 text-center"
                 >
                   No transactions found.
