@@ -39,6 +39,21 @@ services:
       # Optional - User and group IDs for file permissions (default: 1000)
       # - PUID=1000
       # - PGID=1000
+    # Optional - Watchtower for automatic updates
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+
+  # Optional: Add Watchtower for automatic updates
+  # watchtower:
+  #   image: containrrr/watchtower:latest
+  #   container_name: watchtower
+  #   restart: unless-stopped
+  #   environment:
+  #     - WATCHTOWER_CLEANUP=true
+  #     - WATCHTOWER_SCHEDULE=0 0 4 * * *  # Check for updates at 4 AM daily
+  #     - WATCHTOWER_LABEL_ENABLE=true
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
 ```
 
 Deploy:

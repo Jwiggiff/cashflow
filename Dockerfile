@@ -23,6 +23,14 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Build arguments for version info
+ARG GIT_HASH=unknown
+
+# Generate version info during build
+RUN VERSION=$(node -p "require('./package.json').version") && \
+    BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
+    echo "{\"version\":\"$VERSION\",\"gitHash\":\"$GIT_HASH\",\"buildDate\":\"$BUILD_DATE\",\"githubUrl\":\"https://github.com/jwiggiff/cashflow/commit/$GIT_HASH\"}" > lib/version.json
+
 # Generate Prisma client
 RUN npx prisma generate
 

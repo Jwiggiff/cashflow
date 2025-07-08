@@ -29,8 +29,8 @@ elif [ "$(id -u)" = "0" ]; then
         echo "User $PUID created"
     fi
 
-    echo "Setting ownership of /app to $PUID:$PGID"
-    chown -R $PUID:$PGID /app
+    echo "Setting ownership of /app/data to $PUID:$PGID"
+    chown -R $PUID:$PGID /app/data
 fi
 
 # Run migrations as the new user

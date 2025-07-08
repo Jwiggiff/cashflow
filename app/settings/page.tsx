@@ -2,6 +2,8 @@ import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { VersionInfoCard } from "@/components/settings/version-info";
+import { getVersionInfo } from "@/lib/version";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -9,6 +11,8 @@ export default async function SettingsPage() {
   if (!session?.user) {
     redirect("/auth/signin");
   }
+
+  const versionInfo = await getVersionInfo();
 
   return (
     <div className="flex flex-col min-h-screen w-full">
@@ -28,6 +32,15 @@ export default async function SettingsPage() {
           </div>
           
           <ProfileForm user={session.user} />
+
+          <div>
+            <h2 className="text-lg font-semibold">Application Information</h2>
+            <p className="text-sm text-muted-foreground">
+              Current version and build information.
+            </p>
+          </div>
+          
+          <VersionInfoCard versionInfo={versionInfo} />
         </div>
       </div>
     </div>
