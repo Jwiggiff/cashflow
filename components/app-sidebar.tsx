@@ -5,9 +5,12 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { UserSection } from "@/components/user-section";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import {
   CreditCardIcon,
   DollarSign,
@@ -15,11 +18,8 @@ import {
   LandmarkIcon,
   TagIcon,
 } from "lucide-react";
-import Link from "next/link";
-import { UserSection } from "@/components/user-section";
 import { AddButton } from "./add-button";
-import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { SidebarLink } from "./sidebar-link";
 
 const sidebarItems = [
   {
@@ -93,12 +93,10 @@ export async function AppSidebar() {
           <SidebarMenu>
             {sidebarItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild>
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                <SidebarLink tooltip={item.label} href={item.href}>
+                  <item.icon />
+                  <span>{item.label}</span>
+                </SidebarLink>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
