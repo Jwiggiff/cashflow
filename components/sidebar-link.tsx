@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { SidebarMenuButton, useSidebar } from "./ui/sidebar";
 
-export interface SidebarLinkProps {
-  tooltip?: string;
+export interface SidebarLinkProps
+  extends React.ComponentProps<typeof SidebarMenuButton> {
   href: string;
-  children: React.ReactNode;
 }
 
-export function SidebarLink({ tooltip, href, children }: SidebarLinkProps) {
+export function SidebarLink({ href, children, ...props }: SidebarLinkProps) {
   const { setOpenMobile } = useSidebar();
 
   const handleLinkClick = () => {
@@ -17,7 +16,7 @@ export function SidebarLink({ tooltip, href, children }: SidebarLinkProps) {
   };
 
   return (
-    <SidebarMenuButton tooltip={tooltip} asChild>
+    <SidebarMenuButton asChild {...props}>
       <Link href={href} onClick={handleLinkClick}>
         {children}
       </Link>

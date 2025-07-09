@@ -17,7 +17,7 @@ import {
 import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { User } from "next-auth";
-import Link from "next/link";
+import { SidebarLink } from "./sidebar-link";
 
 function UserInfo({ user }: { user: User }) {
   const getInitials = (name: string | null, username: string) => {
@@ -94,10 +94,10 @@ export function UserSection() {
               <UserInfo user={user} />
             </DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link href="/settings" className="flex items-center gap-2">
+              <SidebarLink href="/settings" className="flex items-center gap-2">
                 <Settings className="h-4 w-4" />
                 Settings
-              </Link>
+              </SidebarLink>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
