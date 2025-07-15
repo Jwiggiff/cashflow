@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
@@ -63,11 +67,9 @@ export default async function RootLayout({
             <SessionProvider>
               <SidebarProvider>
                 <AppSidebar />
-                <SidebarInset>
-                  <main className="flex-1 p-4">
-                    <SidebarTrigger />
-                    {children}
-                  </main>
+                <SidebarInset className="flex-1 p-4 !ml-0">
+                  <SidebarTrigger />
+                  {children}
                 </SidebarInset>
               </SidebarProvider>
               <Toaster position="top-right" />
