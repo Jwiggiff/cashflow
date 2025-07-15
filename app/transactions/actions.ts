@@ -70,6 +70,7 @@ export async function createTransaction(data: {
         ? Math.abs(data.amount) * -1
         : Math.abs(data.amount);
 
+    // Create the transaction
     const transaction = await prisma.transaction.create({
       data: {
         description: data.description,
@@ -81,6 +82,13 @@ export async function createTransaction(data: {
         date: data.date || new Date(),
       },
     });
+
+    // Update the account balance
+    await prisma.bankAccount.update({
+      where: { id: data.accountId, userId: session.user.id },
+      data: { balance: { increment: finalAmount } },
+    });
+
     return { success: true, data: transaction };
   } catch (error) {
     console.error("Failed to create transaction:", error);
@@ -112,6 +120,16 @@ export async function updateTransaction(
         ? Math.abs(data.amount) * -1
         : Math.abs(data.amount);
 
+    // Get the original transaction to calculate balance adjustments
+    const originalTransaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!originalTransaction) {
+      return { success: false, error: "Transaction not found" };
+    }
+
+    // Update the transaction
     const transaction = await prisma.transaction.update({
       where: { id },
       data: {
@@ -124,6 +142,19 @@ export async function updateTransaction(
         date: data.date,
       },
     });
+
+    // Revert the original transaction balance
+    await prisma.bankAccount.update({
+      where: { id: originalTransaction.accountId, userId: session.user.id },
+      data: { balance: { decrement: originalTransaction.amount } },
+    });
+
+    // Update the account balance
+    await prisma.bankAccount.update({
+      where: { id: data.accountId, userId: session.user.id },
+      data: { balance: { increment: finalAmount } },
+    });
+
     return { success: true, data: transaction };
   } catch (error) {
     console.error("Failed to update transaction:", error);
@@ -138,7 +169,23 @@ export async function deleteTransaction(id: number) {
   }
 
   try {
+    // Get the original transaction to calculate balance adjustments
+    const originalTransaction = await prisma.transaction.findUnique({
+      where: { id },
+    });
+
+    if (!originalTransaction) {
+      return { success: false, error: "Transaction not found" };
+    }
+
+    // Delete the transaction
     await prisma.transaction.delete({ where: { id } });
+
+    // Revert the account balance
+    await prisma.bankAccount.update({
+      where: { id: originalTransaction?.accountId, userId: session.user.id },
+      data: { balance: { decrement: originalTransaction?.amount } },
+    });
     return { success: true };
   } catch (error) {
     console.error("Failed to delete transaction:", error);
@@ -313,12 +360,25 @@ export async function bulkDeleteItems(
       let deletedTransactions = 0;
       let deletedTransfers = 0;
 
-      // Delete transactions
+      // Delete transactions and revert account balances
       if (transactionIds.length > 0) {
+        const transactions = await tx.transaction.findMany({
+          where: { id: { in: transactionIds } },
+        });
+
+        // Delete transactions
         await tx.transaction.deleteMany({
           where: { id: { in: transactionIds } },
         });
         deletedTransactions = transactionIds.length;
+
+        // Revert account balances for all transactions
+        for (const transaction of transactions) {
+          await tx.bankAccount.update({
+            where: { id: transaction.accountId, userId: session.user.id },
+            data: { balance: { increment: transaction.amount } },
+          });
+        }
       }
 
       // Delete transfers and revert account balances
@@ -492,16 +552,17 @@ export async function bulkImportTransactions(
   }
 }
 
-export async function convertTransactionsToTransfer(
-  transactionIds: number[]
-) {
+export async function convertTransactionsToTransfer(transactionIds: number[]) {
   const session = await auth();
   if (!session?.user) {
     return { success: false, error: "Unauthorized" };
   }
 
   if (transactionIds.length !== 2) {
-    return { success: false, error: "Exactly 2 transactions are required to create a transfer" };
+    return {
+      success: false,
+      error: "Exactly 2 transactions are required to create a transfer",
+    };
   }
 
   try {
@@ -526,14 +587,18 @@ export async function convertTransactionsToTransfer(
 
     // Check if transactions are from different accounts
     if (transaction1.accountId === transaction2.accountId) {
-      return { success: false, error: "Transactions must be from different accounts to create a transfer" };
+      return {
+        success: false,
+        error:
+          "Transactions must be from different accounts to create a transfer",
+      };
     }
 
     // Determine which is the "from" and which is the "to" account
     // We'll use the transaction with negative amount as "from" (money leaving)
     // and positive amount as "to" (money entering)
     let fromTransaction, toTransaction;
-    
+
     if (transaction1.amount < 0 && transaction2.amount > 0) {
       fromTransaction = transaction1;
       toTransaction = transaction2;
@@ -541,12 +606,19 @@ export async function convertTransactionsToTransfer(
       fromTransaction = transaction2;
       toTransaction = transaction1;
     } else {
-      return { success: false, error: "Transactions must have opposite signs (one positive, one negative) to create a transfer" };
+      return {
+        success: false,
+        error:
+          "Transactions must have opposite signs (one positive, one negative) to create a transfer",
+      };
     }
 
     // Check if amounts are equal (absolute values)
     if (Math.abs(fromTransaction.amount) !== Math.abs(toTransaction.amount)) {
-      return { success: false, error: "Transaction amounts must be equal to create a transfer" };
+      return {
+        success: false,
+        error: "Transaction amounts must be equal to create a transfer",
+      };
     }
 
     // Use a transaction to ensure all operations succeed or fail together
@@ -558,10 +630,12 @@ export async function convertTransactionsToTransfer(
           amount: Math.abs(fromTransaction.amount),
           fromAccountId: fromTransaction.accountId,
           toAccountId: toTransaction.accountId,
-          date: new Date(Math.max(
-            new Date(fromTransaction.date).getTime(),
-            new Date(toTransaction.date).getTime()
-          )),
+          date: new Date(
+            Math.max(
+              new Date(fromTransaction.date).getTime(),
+              new Date(toTransaction.date).getTime()
+            )
+          ),
         },
       });
 
@@ -598,6 +672,9 @@ export async function convertTransactionsToTransfer(
     return { success: true, data: result };
   } catch (error) {
     console.error("Failed to convert transactions to transfer:", error);
-    return { success: false, error: "Failed to convert transactions to transfer" };
+    return {
+      success: false,
+      error: "Failed to convert transactions to transfer",
+    };
   }
 }
