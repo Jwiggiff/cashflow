@@ -65,10 +65,8 @@ export default async function TransactionsPage() {
   // Combine transactions and transfers into a single array
   const allItems: TransactionOrTransfer[] = [
     ...transactions,
-    ...transfers.map((t) => ({ ...t, type: "TRANSFER" })),
-  ].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-  );
+    ...transfers.map((t) => ({ ...t, type: "TRANSFER" as const })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="flex flex-col min-h-screen w-full">

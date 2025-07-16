@@ -13,13 +13,13 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   CreditCardIcon,
-  DollarSign,
   HomeIcon,
   LandmarkIcon,
   TagIcon,
 } from "lucide-react";
 import { AddButton } from "./add-button";
 import { SidebarLink } from "./sidebar-link";
+import Image from "next/image";
 
 const sidebarItems = [
   {
@@ -70,14 +70,22 @@ export async function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="group-data-[collapsible=icon]:p-1.5!"
-              asChild
-            >
-              <a href="#">
-                <DollarSign className="!size-5" />
-                <span className="text-xl font-semibold">CashFlow</span>
+            <SidebarMenuButton size="lg" asChild>
+              <a href="#" className="flex items-center justify-center">
+                <Image
+                  src="/wordmark.svg"
+                  alt="CashFlow"
+                  width={150}
+                  height={100}
+                  className="block group-data-[collapsible=icon]:hidden"
+                />
+                <Image
+                  src="/icon.svg"
+                  alt="CashFlow"
+                  width={24}
+                  height={24}
+                  className="hidden group-data-[collapsible=icon]:block !size-6 object-contain"
+                />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
