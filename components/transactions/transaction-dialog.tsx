@@ -24,6 +24,7 @@ import { Category, TransactionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ExternalLinkIcon } from "lucide-react";
 
 interface Account {
   id: number;
@@ -197,9 +198,7 @@ export function TransactionDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Grocery Store"
               className={
-                errors.description
-                  ? "border-red-500 focus:border-red-500"
-                  : ""
+                errors.description ? "border-red-500 focus:border-red-500" : ""
               }
             />
             {errors.description && (
@@ -208,13 +207,25 @@ export function TransactionDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="source">Source</Label>
-            <Input
-              id="source"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              placeholder="URL, email, or reference"
-              type="url"
-            />
+            <div className="flex flex-row items-center gap-2">
+              <Input
+                id="source"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                placeholder="URL, email, or reference"
+                type="url"
+              />
+              {mode === "edit" && transaction?.source && (
+                <a
+                  href={transaction.source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-muted-foreground"
+                >
+                  <ExternalLinkIcon className="w-4 h-4" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
@@ -235,9 +246,7 @@ export function TransactionDialog({
             >
               <SelectTrigger
                 className={`w-full ${
-                  errors.accountId
-                    ? "border-red-500 focus:border-red-500"
-                    : ""
+                  errors.accountId ? "border-red-500 focus:border-red-500" : ""
                 }`}
               >
                 <SelectValue placeholder="Select account" />
