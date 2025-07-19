@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useState } from "react";
 import { TransactionDialog } from "./transaction-dialog";
 import { TransferDialog } from "./transfer-dialog";
+import { useFormatters } from "@/hooks/use-formatters";
 
 interface TransactionsTableProps {
   items: TransactionOrTransfer[];
@@ -23,7 +24,8 @@ export function TransactionsTable({
   accounts,
   categories,
 }: TransactionsTableProps) {
-  const columns = getColumns(accounts, categories);
+  const { formatCurrency } = useFormatters();
+  const columns = getColumns(accounts, categories, formatCurrency);
   const router = useRouter();
   const isMobile = useIsMobile();
   const [editItem, setEditItem] = useState<TransactionOrTransfer | null>(null);

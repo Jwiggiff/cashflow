@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { BankAccount } from "@prisma/client";
 import { SessionProvider } from "next-auth/react";
+import { PrivacyProvider } from "@/components/privacy-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,18 +70,20 @@ export default async function RootLayout({
         >
           {loggedIn ? (
             <SessionProvider>
-              <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset className="flex-1 p-4 !ml-0">
-                  <SidebarTrigger />
-                  {children}
-                </SidebarInset>
-              </SidebarProvider>
-              <Toaster position="top-right" />
-              <CSVDropzoneWrapper
-                accounts={accounts}
-                canAutoCategorize={canAutoCategorize}
-              />
+              <PrivacyProvider>
+                <SidebarProvider>
+                  <AppSidebar />
+                  <SidebarInset className="flex-1 p-4 !ml-0">
+                    <SidebarTrigger />
+                    {children}
+                  </SidebarInset>
+                </SidebarProvider>
+                <Toaster position="top-right" />
+                <CSVDropzoneWrapper
+                  accounts={accounts}
+                  canAutoCategorize={canAutoCategorize}
+                />
+              </PrivacyProvider>
             </SessionProvider>
           ) : (
             children

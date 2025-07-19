@@ -9,6 +9,7 @@ import {
 import { BankAccountWithAliases } from "@/lib/types";
 import { AccountType } from "@prisma/client";
 import { AccountActionsCell } from "./account-actions-cell";
+import { useFormatters } from "@/hooks/use-formatters";
 
 interface AccountsListProps {
   accounts: BankAccountWithAliases[];
@@ -30,6 +31,8 @@ const getAccountTypeLabel = (type: AccountType) => {
 };
 
 export function AccountsList({ accounts }: AccountsListProps) {
+  const { formatCurrency } = useFormatters();
+  
   // Group accounts by type
   const accountsByType = accounts.reduce((acc, account) => {
     if (!acc[account.type]) {
@@ -119,11 +122,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <div className="font-semibold">
-                        $
-                        {account.balance.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {formatCurrency(account.balance)}
                       </div>
                     </div>
                     <AccountActionsCell account={account} />

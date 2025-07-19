@@ -1,9 +1,9 @@
-import { formatCurrency } from "@/lib/formatter";
 import {
   NameType,
   Payload,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent";
+import { useFormatters } from "@/hooks/use-formatters";
 
 export type CurrencyTooltipFormatterProps = {
   item: Payload<ValueType, NameType>;
@@ -12,6 +12,7 @@ export type CurrencyTooltipFormatterProps = {
 export function CurrencyTooltipFormatter({
   item,
 }: CurrencyTooltipFormatterProps) {
+  const { formatCurrency } = useFormatters();
   const indicatorColor = item.payload.fill || item.color;
 
   return (

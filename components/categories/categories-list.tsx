@@ -1,11 +1,11 @@
 "use client";
 
-import { formatCurrency } from "@/lib/formatter";
 import { Category } from "@prisma/client";
 import React from "react";
 import { CategoryActionsCell } from "./category-actions-cell";
 import { EmptyState } from "./empty-state";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
+import { useFormatters } from "@/hooks/use-formatters";
 
 interface CategoriesListProps {
   categories: Category[];
@@ -20,6 +20,8 @@ export function CategoriesList({
   categories,
   currentMonthData,
 }: CategoriesListProps) {
+  const { formatCurrency } = useFormatters();
+  
   if (categories.length === 0) {
     return <EmptyState />;
   }

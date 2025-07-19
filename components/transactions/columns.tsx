@@ -12,10 +12,10 @@ import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import React from "react";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
-
 export function getColumns(
   accounts: BankAccount[],
-  categories: Category[]
+  categories: Category[],
+  formatCurrencyWithPrivacy: (amount: number) => string
 ): ColumnDef<TransactionOrTransfer>[] {
   return [
     {
@@ -169,10 +169,7 @@ export function getColumns(
         const isTransfer = "fromAccount" in item && item.fromAccount;
 
         const amount = parseFloat(item.amount.toString());
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: "USD",
-        }).format(Math.abs(amount));
+        const formatted = formatCurrencyWithPrivacy(Math.abs(amount));
 
         return (
           <div

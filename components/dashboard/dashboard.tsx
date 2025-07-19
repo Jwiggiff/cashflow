@@ -7,14 +7,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  formatChange,
-  formatCurrency,
-  formatPercentage,
-} from "@/lib/formatter";
 import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
 import { capitalize } from "@/lib/utils";
 import { DollarSign, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
+import { useFormatters } from "@/hooks/use-formatters";
+import { formatChange } from "@/lib/formatter";
 import {
   Area,
   AreaChart,
@@ -39,6 +36,8 @@ export default function Dashboard({
   monthlyData,
   expenseData,
 }: DashboardProps) {
+  const { formatCurrency, formatPercentage } = useFormatters();
+  
   const expenseConfig = expenseData.reduce((acc, expense, index) => {
     acc[expense.category] = {
       label: capitalize(expense.category),

@@ -1,11 +1,11 @@
-import { Separator } from "@/components/ui/separator";
-import { Greeting } from "@/components/dashboard/greeting";
-import { Suspense } from "react";
 import DashboardWrapper from "@/components/dashboard/dashboard-wrapper";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { Header } from "@/components/dashboard/header";
 import { Welcome } from "@/components/dashboard/welcome";
+import { Separator } from "@/components/ui/separator";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
 
 const Loading = () => {
   return (
@@ -46,9 +46,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="flex items-center justify-between p-8">
-        <Greeting />
-      </div>
+      <Header />
 
       <Separator />
 
