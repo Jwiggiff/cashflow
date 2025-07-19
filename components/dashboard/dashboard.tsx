@@ -197,6 +197,7 @@ export default function Dashboard({
                 stroke="0"
               />
               <ChartLegend
+                className="overflow-x-auto max-w-full whitespace-nowrap pb-4"
                 content={<ChartLegendContent nameKey="category" />}
               />
             </PieChart>
