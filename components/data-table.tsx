@@ -182,14 +182,16 @@ export function DataTable<TData, TValue>({
   const tableData = React.useMemo(() => {
     if (!isMobile) {
       // For desktop, just return the table rows
-      return table.getRowModel().rows.map(row => ({ type: 'row' as const, row }));
+      return table
+        .getRowModel()
+        .rows.map((row) => ({ type: "row" as const, row }));
     }
 
     // For mobile, group by date and add headers
-    type RowData = 
-      | { type: 'header'; date: string }
-      | { type: 'row'; row: Row<TData> };
-    
+    type RowData =
+      | { type: "header"; date: string }
+      | { type: "row"; row: Row<TData> };
+
     const groups: RowData[] = [];
     const dateGroups: { [key: string]: Row<TData>[] } = {};
 
@@ -206,19 +208,19 @@ export function DataTable<TData, TValue>({
     });
 
     // Sort dates and create grouped structure
-    const sortedDates = Object.keys(dateGroups).sort((a, b) => 
-      new Date(b).getTime() - new Date(a).getTime()
+    const sortedDates = Object.keys(dateGroups).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime()
     );
 
     sortedDates.forEach((dateKey) => {
-      groups.push({ type: 'header', date: dateKey });
+      groups.push({ type: "header", date: dateKey });
       dateGroups[dateKey].forEach((row) => {
-        groups.push({ type: 'row', row });
+        groups.push({ type: "row", row });
       });
     });
 
     return groups;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMobile, table, table.getRowModel().rows]);
 
   return (
@@ -238,7 +240,8 @@ export function DataTable<TData, TValue>({
           <>
             <Select
               value={
-                (table.getColumn("account")?.getFilterValue() as string) ?? "all"
+                (table.getColumn("account")?.getFilterValue() as string) ??
+                "all"
               }
               onValueChange={(value) =>
                 table
@@ -260,7 +263,8 @@ export function DataTable<TData, TValue>({
             </Select>
             <Select
               value={
-                (table.getColumn("category")?.getFilterValue() as string) ?? "all"
+                (table.getColumn("category")?.getFilterValue() as string) ??
+                "all"
               }
               onValueChange={(value) =>
                 table
@@ -275,11 +279,16 @@ export function DataTable<TData, TValue>({
                 <SelectItem value="all">All categories</SelectItem>
                 {categories.map((category) => {
                   return (
-                    <SelectItem key={category.id} value={category.id.toString()}>
+                    <SelectItem
+                      key={category.id}
+                      value={category.id.toString()}
+                    >
                       <div className="w-4">
                         {category.icon && (
                           <DynamicIcon
-                            name={category.icon as keyof typeof dynamicIconImports}
+                            name={
+                              category.icon as keyof typeof dynamicIconImports
+                            }
                             className="h-4 w-4"
                           />
                         )}
@@ -291,7 +300,9 @@ export function DataTable<TData, TValue>({
               </SelectContent>
             </Select>
             <Select
-              value={(table.getColumn("type")?.getFilterValue() as string) ?? "all"}
+              value={
+                (table.getColumn("type")?.getFilterValue() as string) ?? "all"
+              }
               onValueChange={(value) =>
                 table
                   .getColumn("type")
@@ -362,7 +373,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenu>
         )}
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -386,30 +397,41 @@ export function DataTable<TData, TValue>({
             {tableData.length ? (
               tableData.map((rowData) => {
                 // Handle mobile date headers
-                if (rowData.type === 'header') {
+                if (rowData.type === "header") {
                   return (
-                    <TableRow key={`header-${rowData.date}`} className="bg-muted/50">
-                      <TableCell colSpan={table.getAllColumns().length} className="font-semibold text-foreground">
-                        {rowData.date && new Date(rowData.date).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
+                    <TableRow
+                      key={`header-${rowData.date}`}
+                      className="bg-muted/50"
+                    >
+                      <TableCell
+                        colSpan={table.getAllColumns().length}
+                        className="font-semibold text-foreground"
+                      >
+                        {rowData.date &&
+                          new Date(rowData.date).toLocaleDateString("en-US", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
                       </TableCell>
                     </TableRow>
                   );
                 }
-                
+
                 // Handle all data rows (both mobile and desktop)
-                if (rowData.type === 'row') {
+                if (rowData.type === "row") {
                   const row = rowData.row;
                   return (
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       className="cursor-pointer md:cursor-default"
-                      onClick={isMobile && onRowClick ? () => onRowClick(row.original) : undefined}
+                      onClick={
+                        isMobile && onRowClick
+                          ? () => onRowClick(row.original)
+                          : undefined
+                      }
                     >
                       {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id}>
@@ -422,7 +444,7 @@ export function DataTable<TData, TValue>({
                     </TableRow>
                   );
                 }
-                
+
                 return null;
               })
             ) : (

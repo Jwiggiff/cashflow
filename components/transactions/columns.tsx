@@ -39,7 +39,9 @@ export function getColumns(
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("description")}</div>
+        <div className="font-medium truncate max-w-[200px] md:max-w-full">
+          {row.getValue("description")}
+        </div>
       ),
     },
     {
@@ -103,7 +105,7 @@ export function getColumns(
 
         // Check if it has 'account' property (transaction) or 'fromAccount' property (transfer)
         if ("account" in item && item.account) {
-          return <div>{item.account.name}</div>;
+          return <div className="truncate max-w-[150px]">{item.account.name}</div>;
         } else if (
           "fromAccount" in item &&
           item.fromAccount &&
@@ -111,10 +113,10 @@ export function getColumns(
           item.toAccount
         ) {
           return (
-            <div className="flex items-center gap-1">
-              <span>{item.fromAccount.name}</span>
-              <ArrowRightIcon className="h-3 w-3 text-muted-foreground" />
-              <span>{item.toAccount.name}</span>
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="truncate">{item.fromAccount.name}</span>
+              <ArrowRightIcon className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              <span className="truncate">{item.toAccount.name}</span>
             </div>
           );
         }
@@ -175,7 +177,7 @@ export function getColumns(
         return (
           <div
             className={cn(
-              "text-right font-medium",
+              "text-right font-medium min-w-[80px]",
               amount > 0 ? "text-green-600" : "text-red-600",
               isTransfer ? "text-muted-foreground" : ""
             )}
