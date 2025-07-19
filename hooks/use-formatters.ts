@@ -2,10 +2,13 @@ import { usePrivacy } from "@/components/privacy-provider";
 import { formatCurrency } from "@/lib/formatter";
 
 export function useFormatters() {
-  const { isPrivate } = usePrivacy();
+  const { isPrivate, isLoading } = usePrivacy();
+
+  // During loading, use the default state (true) to match server-side rendering
+  const effectiveIsPrivate = isLoading ? true : isPrivate;
 
   const formatCurrencyWithPrivacy = (amount: number) => {
-    if (!isPrivate) {
+    if (!effectiveIsPrivate) {
       return formatCurrency(amount);
     }
     
@@ -18,7 +21,7 @@ export function useFormatters() {
   };
 
   const formatPercentageWithPrivacy = (value: number) => {
-    if (isPrivate) {
+    if (effectiveIsPrivate) {
       return "•••%";
     }
     return `${value.toFixed(1)}%`;
@@ -27,6 +30,6 @@ export function useFormatters() {
   return {
     formatCurrency: formatCurrencyWithPrivacy,
     formatPercentage: formatPercentageWithPrivacy,
-    isPrivate,
+    isPrivate: effectiveIsPrivate,
   };
 } 
