@@ -6,11 +6,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { SearchIcon, Loader2 } from "lucide-react";
 import { dynamicIconImports } from "lucide-react/dynamic";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface IconPickerProps {
   value: string | null;
@@ -27,6 +35,7 @@ export function IconPicker({
   className,
   allowNone = false,
 }: IconPickerProps) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIconComponent, setSelectedIconComponent] = useState<React.ComponentType<{ className?: string }> | null>(null);
@@ -81,83 +90,111 @@ export function IconPicker({
     setSearchQuery("");
   };
 
+  const triggerButton = (
+    <Button
+      type="button"
+      variant="outline"
+      className={cn(
+        "w-12 h-12 p-0 flex items-center justify-center",
+        className
+      )}
+    >
+      {selectedIconComponent && (() => {
+        const IconComponent = selectedIconComponent;
+        return <IconComponent className="h-5 w-5" />;
+      })()}
+    </Button>
+  );
+
+  const iconPickerContent = (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">{label}</span>
+        {allowNone && (
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            className="p-0"
+            onClick={() => handleIconSelect(null)}
+          >
+            Remove
+          </Button>
+        )}
+      </div>
+      
+      <div className="relative">
+        <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search icons..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      <div className="max-h-64 overflow-y-auto">
+        <div className="grid grid-cols-8 gap-2">
+          {filteredIcons.map((iconName) => {
+            const IconComponent = loadedIcons.get(iconName);
+            return (
+              <Button
+                key={iconName}
+                type="button"
+                variant={value === iconName ? "default" : "outline"}
+                size="sm"
+                className="w-8 h-8 p-0 flex flex-col items-center justify-center"
+                onClick={() => handleIconSelect(iconName)}
+                title={iconName}
+              >
+                {IconComponent ? (
+                  (() => {
+                    const Icon = IconComponent;
+                    return <Icon className="h-4 w-4" />;
+                  })()
+                ) : (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+              </Button>
+            );
+          })}
+        </div>
+        {filteredIcons.length === 0 && (
+          <div className="text-center text-muted-foreground py-4">
+            No icons found matching &quot;{searchQuery}&quot;
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Mobile: Use Sheet (bottom sheet)
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          {triggerButton}
+        </SheetTrigger>
+        <SheetContent side="bottom" className="h-auto max-h-[80vh] pb-16">
+          <SheetHeader>
+            <SheetTitle>{label}</SheetTitle>
+          </SheetHeader>
+          <div className="px-4 pb-4">
+            {iconPickerContent}
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Desktop: Use Popover
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          className={cn(
-            "w-12 h-12 p-0 flex items-center justify-center",
-            className
-          )}
-        >
-          {selectedIconComponent && (() => {
-            const IconComponent = selectedIconComponent;
-            return <IconComponent className="h-5 w-5" />;
-          })()}
-        </Button>
+        {triggerButton}
       </PopoverTrigger>
       <PopoverContent className="w-96 p-4">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">{label}</span>
-            {allowNone && (
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                className="p-0"
-                onClick={() => handleIconSelect(null)}
-              >
-                Remove
-              </Button>
-            )}
-          </div>
-          
-          <div className="relative">
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search icons..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <div className="max-h-64 overflow-y-auto">
-            <div className="grid grid-cols-8 gap-2">
-              {filteredIcons.map((iconName) => {
-                const IconComponent = loadedIcons.get(iconName);
-                return (
-                  <Button
-                    key={iconName}
-                    type="button"
-                    variant={value === iconName ? "default" : "outline"}
-                    size="sm"
-                    className="w-8 h-8 p-0 flex flex-col items-center justify-center"
-                    onClick={() => handleIconSelect(iconName)}
-                    title={iconName}
-                  >
-                    {IconComponent ? (
-                      (() => {
-                        const Icon = IconComponent;
-                        return <Icon className="h-4 w-4" />;
-                      })()
-                    ) : (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-            {filteredIcons.length === 0 && (
-              <div className="text-center text-muted-foreground py-4">
-                No icons found matching &quot;{searchQuery}&quot;
-              </div>
-            )}
-          </div>
-        </div>
+        {iconPickerContent}
       </PopoverContent>
     </Popover>
   );
