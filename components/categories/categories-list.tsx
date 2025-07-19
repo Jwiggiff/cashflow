@@ -61,7 +61,7 @@ export function CategoriesList({
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="font-semibold">
-                  {formatCurrency(category.currentMonthSpent * -1)}
+                  {formatCurrency(Math.abs(category.currentMonthSpent))}
                 </div>
                 <div className="text-sm text-muted-foreground">This month</div>
               </div>
