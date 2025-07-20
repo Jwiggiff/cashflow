@@ -15,6 +15,7 @@ import { auth } from "@/lib/auth";
 import { BankAccount } from "@prisma/client";
 import { SessionProvider } from "next-auth/react";
 import { PrivacyProvider } from "@/components/privacy-provider";
+import { NotificationProvider } from "@/components/notification-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,7 +57,10 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className="h-full">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+        />
         <meta name="apple-mobile-web-app-title" content="CashFlow" />
       </head>
       <body
@@ -71,18 +75,20 @@ export default async function RootLayout({
           {loggedIn ? (
             <SessionProvider>
               <PrivacyProvider>
-                <SidebarProvider>
-                  <AppSidebar />
-                  <SidebarInset className="flex-1 p-4 !ml-0">
-                    <SidebarTrigger />
-                    {children}
-                  </SidebarInset>
-                </SidebarProvider>
-                <Toaster position="top-right" />
-                <CSVDropzoneWrapper
-                  accounts={accounts}
-                  canAutoCategorize={canAutoCategorize}
-                />
+                <NotificationProvider>
+                  <SidebarProvider>
+                    <AppSidebar />
+                    <SidebarInset className="flex-1 p-4 !ml-0">
+                      <SidebarTrigger />
+                      {children}
+                    </SidebarInset>
+                  </SidebarProvider>
+                  <Toaster position="top-right" />
+                  <CSVDropzoneWrapper
+                    accounts={accounts}
+                    canAutoCategorize={canAutoCategorize}
+                  />
+                </NotificationProvider>
               </PrivacyProvider>
             </SessionProvider>
           ) : (

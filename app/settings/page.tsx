@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/settings/profile-form";
+import { NotificationForm } from "@/components/settings/notification-form";
 import { VersionInfoCard } from "@/components/settings/version-info";
 import { getVersionInfo } from "@/lib/version";
 
@@ -32,6 +33,15 @@ export default async function SettingsPage() {
           </div>
           
           <ProfileForm user={session.user} />
+
+          <div>
+            <h2 className="text-lg font-semibold">Notification Preferences</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your push notification settings and preferences.
+            </p>
+          </div>
+          
+          <NotificationForm />
 
           <div>
             <h2 className="text-lg font-semibold">Application Information</h2>

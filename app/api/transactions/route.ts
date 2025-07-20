@@ -4,6 +4,8 @@ import { TransactionType } from "@prisma/client";
 import { createTransactionSchema } from "@/lib/zod";
 import bcrypt from "bcryptjs";
 import { autoCategorize as autoCategorizeTransaction } from "@/lib/auto-categorizer";
+import { sendNotificationToUser } from "@/lib/notifications";
+import { formatCurrency } from "@/lib/formatter";
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
       where: {
         OR: [
           { name: accountName },
-          { aliases: { some: { name: accountName } } }
+          { aliases: { some: { name: accountName } } },
         ],
         userId: user.id,
       },
@@ -156,6 +158,14 @@ export async function POST(request: NextRequest) {
       where: { id: account.id },
       data: { balance: { increment: finalAmount } },
     });
+
+    // Send push notification
+    await sendNotificationToUser(
+      type === TransactionType.EXPENSE ? "New Expense" : "New Income",
+      `${description} - ${formatCurrency(Math.abs(finalAmount))}`,
+      "/transactions",
+      user.id
+    );
 
     return NextResponse.json(
       {
