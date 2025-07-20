@@ -39,6 +39,9 @@ services:
       # Optional - User and group IDs for file permissions (default: 1000)
       # - PUID=1000
       # - PGID=1000
+      # Optional - VAPID keys for push notifications (generate with `npx web-push generate-vapid-keys`)
+      # - VAPID_PUBLIC_KEY=your-vapid-public-key
+      # - VAPID_PRIVATE_KEY=your-vapid-private-key
     # Optional - Watchtower for automatic updates
     # labels:
     #   - "com.centurylinklabs.watchtower.enable=true"

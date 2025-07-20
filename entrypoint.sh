@@ -4,6 +4,7 @@ set -e
 # Set NEXT_PUBLIC_TZ to TZ if not already set
 export NEXT_PUBLIC_TZ=${NEXT_PUBLIC_TZ:-$TZ}
 export NEXTAUTH_URL=${NEXTAUTH_URL:-$BASE_URL}
+export NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY:-$VAPID_PUBLIC_KEY}
 
 # Handle PUID and PGID for user creation
 PUID=${PUID:-1000}

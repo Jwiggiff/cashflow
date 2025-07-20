@@ -4,11 +4,15 @@ import webpush, { PushSubscription } from "web-push";
 import { prisma } from "./prisma";
 import { auth } from "./auth";
 
-webpush.setVapidDetails(
-  "https://github.com/Jwiggiff/cashflow/issues",
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    "https://github.com/Jwiggiff/cashflow/issues",
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
+} else {
+  console.warn("VAPID keys not set, push notifications will not work");
+}
 
 export async function subscribeUser(sub: PushSubscription) {
   const session = await auth();
