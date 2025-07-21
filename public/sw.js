@@ -13,8 +13,6 @@ self.addEventListener("push", function (event) {
 });
 
 self.addEventListener("notificationclick", function (event) {
-  console.log("Notification click received.");
   event.notification.close();
-  console.log(event.notification.data);
   event.waitUntil(clients.openWindow(event.notification.data.url));
 });

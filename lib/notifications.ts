@@ -4,10 +4,10 @@ import webpush, { PushSubscription } from "web-push";
 import { prisma } from "./prisma";
 import { auth } from "./auth";
 
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
     "https://github.com/Jwiggiff/cashflow/issues",
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
   );
 } else {

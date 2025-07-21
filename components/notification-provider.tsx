@@ -8,6 +8,7 @@ import {
   sendNotificationToUser,
 } from "@/lib/notifications";
 import { urlBase64ToUint8Array } from "@/lib/utils";
+import { getVapidPublicKey } from "@/lib/config";
 
 interface NotificationPreferences {
   enabled: boolean;
@@ -52,6 +53,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   );
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
 
   // Check browser support and register service worker
   useEffect(() => {
@@ -76,6 +78,17 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         console.error("Error parsing saved notification preferences:", error);
       }
     }
+
+    const loadVapidKey = async () => {
+      try {
+        const vapidKey = await getVapidPublicKey();
+        setVapidPublicKey(vapidKey);
+      } catch (error) {
+        console.error("Error loading VAPID public key:", error);
+      }
+    };
+    loadVapidKey();
+
     setIsLoading(false);
   }, []);
 
@@ -115,13 +128,16 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   }
 
   async function subscribeToPush() {
+    if (!vapidPublicKey) {
+      toast.error("VAPID public key not available");
+      return;
+    }
+
     try {
       const registration = await navigator.serviceWorker.ready;
       const sub = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(
-          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-        ),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
       setSubscription(sub);
       const serializedSub = JSON.parse(JSON.stringify(sub));
