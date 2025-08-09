@@ -1,6 +1,12 @@
 "use client";
 
+import {
+  createRecurringTransfer,
+  updateRecurringTransfer,
+} from "@/app/recurring/actions";
+import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
@@ -11,50 +17,92 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import { useState } from "react";
-import { toast } from "sonner";
-import { CurrencyInput } from "@/components/currency-input";
-import { createTransfer, updateTransfer } from "@/app/transactions/actions";
-import { useRouter } from "next/navigation";
-import { Transfer, BankAccount } from "@prisma/client";
-import { cn } from "@/lib/utils";
+import { cn, getOccurenceInMonth } from "@/lib/utils";
+import { BankAccount, RecurringTransfer } from "@prisma/client";
 import { ArrowRightIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { RRule, Weekday } from "rrule";
+import { toast } from "sonner";
+import { RecurrenceTypeSelectItems } from "./recurrence-type-select-items";
 
-interface TransferWithAccounts extends Transfer {
+interface RecurringTransferWithAccounts extends RecurringTransfer {
   fromAccount: BankAccount;
   toAccount: BankAccount;
 }
 
-interface TransferDialogProps {
+interface RecurringTransferDialogProps {
   accounts: BankAccount[];
   mode?: "add" | "edit";
-  transfer?: TransferWithAccounts;
+  recurringTransfer?: RecurringTransferWithAccounts;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  onSuccess?: () => void;
 }
 
-export function TransferDialog({
+export function RecurringTransferDialog({
   accounts,
   mode = "add",
-  transfer,
+  recurringTransfer,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
-}: TransferDialogProps) {
+  onSuccess,
+}: RecurringTransferDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(transfer?.amount || 0);
-  const [description, setDescription] = useState(transfer?.description || "");
+  const [amount, setAmount] = useState(recurringTransfer?.amount || 0);
+  const [description, setDescription] = useState(
+    recurringTransfer?.description || ""
+  );
   const [fromAccountId, setFromAccountId] = useState<number | "">(
-    transfer?.fromAccountId || ""
+    recurringTransfer?.fromAccountId || ""
   );
   const [toAccountId, setToAccountId] = useState<number | "">(
-    transfer?.toAccountId || ""
+    recurringTransfer?.toAccountId || ""
   );
-  const [date, setDate] = useState<Date>(transfer?.date || new Date());
+  const [startDate, setStartDate] = useState<Date>(
+    recurringTransfer?.startDate || new Date()
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState(
+    recurringTransfer?.rrule || ""
+  );
+
+  // Update recurrenceType when startDate changes to maintain the same pattern
+  useEffect(() => {
+    if (recurrenceType) {
+      try {
+        const options = RRule.parseString(recurrenceType);
+
+        if (options.freq === RRule.WEEKLY) {
+          // For weekly/biweekly, just update the byweekday to match the new date's weekday
+          options.byweekday =
+            startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
+        } else if (options.freq === RRule.MONTHLY) {
+          if (options.byweekday) {
+            // For monthly by weekday (e.g., "third Wednesday"), update both byweekday and bysetpos
+            const occurrence = getOccurenceInMonth(startDate);
+            const weekday = new Weekday(
+              startDate.getDay() === 0 ? 6 : startDate.getDay() - 1
+            );
+            options.byweekday = weekday.nth(occurrence);
+          } else {
+            // For monthly by day of month (e.g., "15th of every month"), update bymonthday
+            options.bymonthday = startDate.getDate();
+          }
+        }
+
+        // Create new rule with updated options
+        setRecurrenceType(RRule.optionsToString(options));
+      } catch (error) {
+        // If there's an error parsing the rule, just keep the current value
+        console.error("Error updating recurrence type:", error);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startDate]);
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -75,33 +123,47 @@ export function TransferDialog({
 
     setIsSubmitting(true);
     try {
+      const rrule_opts = RRule.parseString(recurrenceType);
+      const rrule = new RRule(rrule_opts);
+
+      const nextDueDate =
+        startDate !== recurringTransfer?.startDate
+          ? startDate
+          : recurringTransfer?.nextDueDate;
+
       const data = {
         description: description || undefined,
-        amount: parseFloat(amount),
+        amount: amount,
         fromAccountId: fromAccountId as number,
         toAccountId: toAccountId as number,
-        date: date,
+        rrule: rrule.toString(),
+        startDate: startDate,
+        nextDueDate,
       };
 
       const result =
-        mode === "edit" && transfer
-          ? await updateTransfer(transfer.id, data)
-          : await createTransfer(data);
+        mode === "edit" && recurringTransfer
+          ? await updateRecurringTransfer(recurringTransfer.id, data)
+          : await createRecurringTransfer(data);
 
       if (result.success) {
         toast.success(
           mode === "edit"
-            ? "Transfer updated successfully"
-            : "Transfer created successfully"
+            ? "Recurring transfer updated successfully"
+            : "Recurring transfer created successfully"
         );
         onOpenChange(false);
-        router.refresh();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+        }
       } else {
-        toast.error(result.error || `Failed to ${mode} transfer`);
+        toast.error(result.error || `Failed to ${mode} recurring transfer`);
       }
     } catch (error) {
       toast.error("An unexpected error occurred");
-      console.error(`Failed to ${mode} transfer:`, error);
+      console.error(`Failed to ${mode} recurring transfer:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +174,9 @@ export function TransferDialog({
       open={open}
       onOpenChange={onOpenChange}
       trigger={trigger}
-      title={mode === "edit" ? "Edit Transfer" : "Add New Transfer"}
+      title={
+        mode === "edit" ? "Edit Recurring Transfer" : "Add Recurring Transfer"
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
@@ -185,12 +249,26 @@ export function TransferDialog({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
+          <Label htmlFor="date">Start Date</Label>
           <DatePicker
-            date={date}
-            onDateChange={(newDate) => setDate(newDate || new Date())}
-            placeholder="Select date"
+            date={startDate}
+            onDateChange={(newDate) => setStartDate(newDate || new Date())}
+            placeholder="Select start date"
           />
+        </div>
+        <div className="space-y-2">
+          <Label>Repeats</Label>
+          <Select
+            value={recurrenceType}
+            onValueChange={(value) => setRecurrenceType(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <RecurrenceTypeSelectItems startDate={startDate} />
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex justify-end space-x-2">
           <Button
@@ -207,8 +285,8 @@ export function TransferDialog({
                 ? "Updating..."
                 : "Adding..."
               : mode === "edit"
-              ? "Update Transfer"
-              : "Add Transfer"}
+              ? "Update Recurring Transfer"
+              : "Add Recurring Transfer"}
           </Button>
         </div>
       </form>

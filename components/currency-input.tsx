@@ -19,7 +19,6 @@ export function CurrencyInput({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Remove any non-numeric characters except decimal point
-    console.log(value, allowNegative);
     const replaceRegex = allowNegative ? /[^0-9.-]/g : /[^0-9.]/g;
     const numericValue = value.replace(replaceRegex, "");
     // Ensure only one decimal point

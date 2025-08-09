@@ -5,6 +5,7 @@ import {
   CreditCardIcon,
   ArrowLeftRightIcon,
   LandmarkIcon,
+  RepeatIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,6 +16,8 @@ import {
 import { AccountDialog } from "@/components/accounts/account-dialog";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
 import { TransferDialog } from "@/components/transactions/transfer-dialog";
+import { RecurringTransactionDialog } from "@/components/recurring/recurring-transaction-dialog";
+import { RecurringTransferDialog } from "@/components/recurring/recurring-transfer-dialog";
 import { useState } from "react";
 import { BankAccount, Category } from "@prisma/client";
 import { SidebarMenuButton } from "./ui/sidebar";
@@ -28,6 +31,10 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [recurringTransactionDialogOpen, setRecurringTransactionDialogOpen] =
+    useState(false);
+  const [recurringTransferDialogOpen, setRecurringTransferDialogOpen] =
+    useState(false);
 
   const handleAddAccount = () => {
     setAccountDialogOpen(true);
@@ -39,6 +46,14 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
 
   const handleAddTransfer = () => {
     setTransferDialogOpen(true);
+  };
+
+  const handleAddRecurringTransaction = () => {
+    setRecurringTransactionDialogOpen(true);
+  };
+
+  const handleAddRecurringTransfer = () => {
+    setRecurringTransferDialogOpen(true);
   };
 
   return (
@@ -63,6 +78,14 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
             <ArrowLeftRightIcon className="mr-2 h-4 w-4" />
             Transfer
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleAddRecurringTransaction}>
+            <RepeatIcon className="mr-2 h-4 w-4" />
+            Recurring Transaction
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleAddRecurringTransfer}>
+            <RepeatIcon className="mr-2 h-4 w-4" />
+            Recurring Transfer
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -83,6 +106,27 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
         accounts={accounts}
         open={transferDialogOpen}
         onOpenChange={setTransferDialogOpen}
+      />
+
+      <RecurringTransactionDialog
+        accounts={accounts}
+        categories={categories}
+        open={recurringTransactionDialogOpen}
+        onOpenChange={setRecurringTransactionDialogOpen}
+        onSuccess={() => {
+          setRecurringTransactionDialogOpen(false);
+          window.location.reload();
+        }}
+      />
+
+      <RecurringTransferDialog
+        accounts={accounts}
+        open={recurringTransferDialogOpen}
+        onOpenChange={setRecurringTransferDialogOpen}
+        onSuccess={() => {
+          setRecurringTransferDialogOpen(false);
+          window.location.reload();
+        }}
       />
     </>
   );

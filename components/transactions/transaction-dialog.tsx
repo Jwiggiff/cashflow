@@ -22,7 +22,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ExternalLinkIcon } from "lucide-react";
 
@@ -52,41 +52,27 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [source, setSource] = useState("");
-  const [type, setType] = useState<TransactionType>(TransactionType.EXPENSE);
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [accountId, setAccountId] = useState<number | "">("");
-  const [date, setDate] = useState<Date>(new Date());
+  const [amount, setAmount] = useState(transaction?.amount || 0);
+  const [description, setDescription] = useState(
+    transaction?.description || ""
+  );
+  const [source, setSource] = useState(transaction?.source || "");
+  const [type, setType] = useState<TransactionType>(
+    transaction?.type || TransactionType.EXPENSE
+  );
+  const [categoryId, setCategoryId] = useState<number | null>(
+    transaction?.categoryId || null
+  );
+  const [accountId, setAccountId] = useState<number | "">(
+    transaction?.accountId || ""
+  );
+  const [date, setDate] = useState<Date>(transaction?.date || new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
-
-  // Initialize form with transaction data when editing
-  useEffect(() => {
-    if (mode === "edit" && transaction) {
-      setDescription(transaction.description);
-      setSource(transaction.source || "");
-      setType(transaction.type);
-      setCategoryId(transaction.categoryId);
-      setAmount(Math.abs(transaction.amount).toFixed(2));
-      setAccountId(transaction.accountId);
-      setDate(transaction.date);
-    } else {
-      // Reset form for add mode
-      setDescription("");
-      setSource("");
-      setType(TransactionType.EXPENSE);
-      setCategoryId(null);
-      setAmount("");
-      setAccountId("");
-      setDate(new Date());
-    }
-  }, [mode, transaction, open]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });
@@ -111,7 +97,7 @@ export function TransactionDialog({
       newErrors.description = "Description is required";
     }
 
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || amount <= 0) {
       newErrors.amount = "Amount is required and must be greater than 0";
     }
 
@@ -131,7 +117,7 @@ export function TransactionDialog({
         source: source || null,
         type: type as TransactionType,
         categoryId: categoryId,
-        amount: parseFloat(amount),
+        amount: amount,
         accountId: accountId as number,
         date,
       };
@@ -178,8 +164,8 @@ export function TransactionDialog({
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <CurrencyInput
-            value={amount}
-            onChange={setAmount}
+            value={amount.toString()}
+            onChange={(value) => setAmount(Number(value))}
             className={
               errors.amount ? "border-red-500 focus:border-red-500" : ""
             }

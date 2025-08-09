@@ -12,6 +12,19 @@ export type TransactionOrTransfer =
   | TransactionWithAccountAndCategory
   | (TransferWithAccounts & { type: "TRANSFER" });
 
+export type RecurringTransactionWithAccountAndCategory =
+  Prisma.RecurringTransactionGetPayload<{
+    include: { account: true; category: true };
+  }>;
+
+export type RecurringTransferWithAccounts = Prisma.RecurringTransferGetPayload<{
+  include: { fromAccount: true; toAccount: true };
+}>;
+
+export type RecurringTransactionOrTransfer =
+  | RecurringTransactionWithAccountAndCategory
+  | (RecurringTransferWithAccounts & { type: "RECURRING_TRANSFER" });
+
 export type BankAccountWithAliases = Prisma.BankAccountGetPayload<{
   include: { aliases: true };
 }>;
