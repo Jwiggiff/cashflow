@@ -77,9 +77,9 @@ export function TransferDialog({
     try {
       const data = {
         description: description || undefined,
-        amount: parseFloat(amount),
-        fromAccountId: fromAccountId as number,
-        toAccountId: toAccountId as number,
+        amount: amount,
+        fromAccountId: fromAccountId,
+        toAccountId: toAccountId,
         date: date,
       };
 
