@@ -1,19 +1,15 @@
 import { TransactionsTable } from "@/components/transactions/transactions-table";
 import { Separator } from "@/components/ui/separator";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionOrTransfer } from "@/lib/types";
-import { redirect } from "next/navigation";
 
 export default async function TransactionsPage() {
-  const session = await auth();
-  if (!session?.user) {
-    return redirect("/auth/signin");
-  }
+  const user = await requireUser();
 
   const accounts = await prisma.bankAccount.findMany({
     where: {
-      userId: session.user.id,
+      userId: user.id,
     },
     orderBy: {
       name: "asc",
@@ -22,7 +18,7 @@ export default async function TransactionsPage() {
 
   const categories = await prisma.category.findMany({
     where: {
-      userId: session.user.id,
+      userId: user.id,
     },
     orderBy: {
       name: "asc",
@@ -32,7 +28,7 @@ export default async function TransactionsPage() {
   const transactions = await prisma.transaction.findMany({
     where: {
       account: {
-        userId: session.user.id,
+        userId: user.id,
       },
     },
     orderBy: {
@@ -47,10 +43,10 @@ export default async function TransactionsPage() {
   const transfers = await prisma.transfer.findMany({
     where: {
       fromAccount: {
-        userId: session.user.id,
+        userId: user.id,
       },
       toAccount: {
-        userId: session.user.id,
+        userId: user.id,
       },
     },
     orderBy: {

@@ -30,6 +30,7 @@ export default function SignInPage() {
     setError("");
 
     try {
+      const callbackUrl = params.get("callbackUrl") || "/";
       const result = await signIn("credentials", {
         username,
         password,
@@ -39,7 +40,7 @@ export default function SignInPage() {
       if (result?.error) {
         setError("Invalid username or password");
       } else {
-        router.push(params.get("redirect") || "/");
+        router.push(callbackUrl);
         router.refresh();
       }
     } catch (error) {

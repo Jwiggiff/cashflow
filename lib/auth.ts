@@ -110,6 +110,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session;
     },
+    async authorized({ auth }) {
+      return !!auth;
+    },
   },
   pages: {
     signIn: "/auth/signin",

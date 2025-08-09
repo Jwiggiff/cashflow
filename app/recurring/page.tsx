@@ -1,18 +1,14 @@
 import { RecurringList } from "@/components/recurring/recurring-list";
 import { Separator } from "@/components/ui/separator";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 
 export default async function RecurringPage() {
-  const session = await auth();
-  if (!session?.user) {
-    return redirect("/auth/signin");
-  }
+  const user = await requireUser();
 
   const accounts = await prisma.bankAccount.findMany({
     where: {
-      userId: session.user.id,
+      userId: user.id,
     },
     orderBy: {
       name: "asc",
@@ -21,7 +17,7 @@ export default async function RecurringPage() {
 
   const categories = await prisma.category.findMany({
     where: {
-      userId: session.user.id,
+      userId: user.id,
     },
     orderBy: {
       name: "asc",
@@ -31,7 +27,7 @@ export default async function RecurringPage() {
   const recurringTransactions = await prisma.recurringTransaction.findMany({
     where: {
       account: {
-        userId: session.user.id,
+        userId: user.id,
       },
     },
     orderBy: {
@@ -46,10 +42,10 @@ export default async function RecurringPage() {
   const recurringTransfers = await prisma.recurringTransfer.findMany({
     where: {
       fromAccount: {
-        userId: session.user.id,
+        userId: user.id,
       },
       toAccount: {
-        userId: session.user.id,
+        userId: user.id,
       },
     },
     orderBy: {

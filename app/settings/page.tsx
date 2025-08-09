@@ -1,17 +1,12 @@
 import { Separator } from "@/components/ui/separator";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { requireUser } from "@/lib/require-auth";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { NotificationForm } from "@/components/settings/notification-form";
 import { VersionInfoCard } from "@/components/settings/version-info";
 import { getVersionInfo } from "@/lib/version";
 
 export default async function SettingsPage() {
-  const session = await auth();
-  
-  if (!session?.user) {
-    redirect("/auth/signin");
-  }
+  const user = await requireUser();
 
   const versionInfo = await getVersionInfo();
 
@@ -32,7 +27,7 @@ export default async function SettingsPage() {
             </p>
           </div>
           
-          <ProfileForm user={session.user} />
+          <ProfileForm user={user} />
 
           <div>
             <h2 className="text-lg font-semibold">Notification Preferences</h2>
