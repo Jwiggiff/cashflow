@@ -15,6 +15,7 @@ import {
   CreditCardIcon,
   HomeIcon,
   LandmarkIcon,
+  RepeatIcon,
   TagIcon,
 } from "lucide-react";
 import { AddButton } from "./add-button";
@@ -41,6 +42,11 @@ const sidebarItems = [
     label: "Categories",
     icon: TagIcon,
     href: "/categories",
+  },
+  {
+    label: "Recurring Transactions",
+    icon: RepeatIcon,
+    href: "/recurring",
   },
 ];
 
