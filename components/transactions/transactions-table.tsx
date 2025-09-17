@@ -1,7 +1,7 @@
 "use client";
 
 import { bulkDeleteItems, convertTransactionsToTransfer } from "@/app/transactions/actions";
-import { DataTable } from "@/components/data-table";
+import { DataTable } from "@/components/transactions/data-table";
 import { TransactionOrTransfer } from "@/lib/types";
 import { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";

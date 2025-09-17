@@ -50,6 +50,8 @@ import {
 import { capitalize } from "@/lib/utils";
 import { TransactionType } from "@prisma/client";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { formatCurrency } from "@/lib/formatter";
+import { TransactionOrTransfer } from "@/lib/types";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -60,12 +62,12 @@ interface DataTableProps<TData, TValue> {
     name: string;
     icon?: string | null;
   }[];
-  onDeleteSelected?: (selectedRows: TData[]) => void;
-  onConvertToTransfer?: (selectedRows: TData[]) => void;
-  onRowClick?: (row: TData) => void;
+  onDeleteSelected?: (selectedRows: TransactionOrTransfer[]) => void;
+  onConvertToTransfer?: (selectedRows: TransactionOrTransfer[]) => void;
+  onRowClick?: (row: TransactionOrTransfer) => void;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TransactionOrTransfer, TValue>({
   columns,
   data,
   accounts,
@@ -73,7 +75,7 @@ export function DataTable<TData, TValue>({
   onDeleteSelected,
   onConvertToTransfer,
   onRowClick,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TransactionOrTransfer, TValue>) {
   const isMobile = useIsMobile();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -274,7 +276,10 @@ export function DataTable<TData, TValue>({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange.from && dateRange.to ? (
-                      `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
+                      `${format(dateRange.from, "MMM dd")} - ${format(
+                        dateRange.to,
+                        "MMM dd"
+                      )}`
                     ) : dateRange.from ? (
                       `From ${format(dateRange.from, "MMM dd")}`
                     ) : dateRange.to ? (
@@ -305,7 +310,9 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDateRange({ from: undefined, to: undefined })}
+                  onClick={() =>
+                    setDateRange({ from: undefined, to: undefined })
+                  }
                   className="h-8 px-2 lg:px-3"
                 >
                   Clear
@@ -539,6 +546,17 @@ export function DataTable<TData, TValue>({
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
+        {hasSelectedRows && (
+          <div className="text-sm text-muted-foreground">
+            Total:{" "}
+            {formatCurrency(
+              selectedRows.reduce((sum, row) => {
+                const amount = row.original.amount;
+                return sum + (amount || 0);
+              }, 0)
+            )}
+          </div>
+        )}
         <div className="space-x-2">
           <Button
             variant="outline"
