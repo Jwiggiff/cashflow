@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Fingerprint, Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { signIn as signInWithPasskey } from "next-auth/webauthn";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -122,6 +123,15 @@ export default function SignInPage() {
                 ) : (
                   "Sign in"
                 )}
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={isLoading}
+                onClick={() => signInWithPasskey("passkey")}
+              >
+                <Fingerprint className="mr-2 h-4 w-4" />
+                Sign in with Passkey
               </Button>
             </form>
           </CardContent>

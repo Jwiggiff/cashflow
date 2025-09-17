@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { requireUser } from "@/lib/require-auth";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { NotificationForm } from "@/components/settings/notification-form";
+import { PasskeysForm } from "@/components/settings/passkeys-form";
 import { VersionInfoCard } from "@/components/settings/version-info";
 import { getVersionInfo } from "@/lib/version";
 
@@ -37,6 +38,15 @@ export default async function SettingsPage() {
           </div>
           
           <NotificationForm />
+
+          <div>
+            <h2 className="text-lg font-semibold">Security</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your authentication methods and security settings.
+            </p>
+          </div>
+          
+          <PasskeysForm />
 
           <div>
             <h2 className="text-lg font-semibold">Application Information</h2>

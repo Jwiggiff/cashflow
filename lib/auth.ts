@@ -1,8 +1,10 @@
+import { prisma } from "@/lib/prisma";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import bcrypt from "bcryptjs";
 import NextAuth from "next-auth";
 import "next-auth/jwt";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
+import Passkey from "next-auth/providers/passkey";
 import { authSchema } from "./zod";
 
 declare module "next-auth" {
@@ -35,6 +37,7 @@ declare module "next-auth/jwt" {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
       credentials: {
@@ -77,7 +80,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
       },
     }),
+    Passkey,
   ],
+  experimental: { enableWebAuthn: true },
   session: {
     strategy: "jwt",
     maxAge: 60 * 60, // 1 hour in seconds
