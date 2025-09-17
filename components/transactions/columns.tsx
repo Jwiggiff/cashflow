@@ -6,12 +6,42 @@ import {
 } from "@/lib/types";
 import { capitalize, cn } from "@/lib/utils";
 import { BankAccount, Category } from "@prisma/client";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, FilterFn } from "@tanstack/react-table";
 import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import React from "react";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
+
+const dateRangeFilter: FilterFn<TransactionOrTransfer> = (row, columnId, value) => {
+  const date = row.getValue(columnId) as Date;
+  if (!date) return false;
+  
+  const { from, to } = value as { from: Date | undefined; to: Date | undefined };
+  
+  if (!from && !to) return true;
+  
+  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  
+  if (from && to) {
+    const fromDate = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const toDate = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    return dateOnly >= fromDate && dateOnly <= toDate;
+  }
+  
+  if (from) {
+    const fromDate = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    return dateOnly >= fromDate;
+  }
+  
+  if (to) {
+    const toDate = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    return dateOnly <= toDate;
+  }
+  
+  return true;
+};
+
 export function getColumns(
   accounts: BankAccount[],
   categories: Category[],
@@ -34,6 +64,7 @@ export function getColumns(
         return <div>{formatDate(date, { dateStyle: "short" })}</div>;
       },
       enableHiding: false,
+      filterFn: dateRangeFilter,
     },
     {
       accessorKey: "description",

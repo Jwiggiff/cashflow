@@ -31,6 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -84,6 +92,13 @@ export function DataTable<TData, TValue>({
       actions: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
+  const [dateRange, setDateRange] = React.useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({
+    from: undefined,
+    to: undefined,
+  });
 
   // Update column visibility when mobile state changes
   React.useEffect(() => {
@@ -164,6 +179,18 @@ export function DataTable<TData, TValue>({
     },
   });
 
+  // Apply date filter when date range changes
+  React.useEffect(() => {
+    const dateColumn = table.getColumn("date");
+    if (dateColumn) {
+      if (dateRange.from || dateRange.to) {
+        dateColumn.setFilterValue(dateRange);
+      } else {
+        dateColumn.setFilterValue(undefined);
+      }
+    }
+  }, [dateRange, table]);
+
   const types = [...Object.values(TransactionType), "TRANSFER"];
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -238,6 +265,53 @@ export function DataTable<TData, TValue>({
         />
         {!isMobile && (
           <>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[240px] justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange.from && dateRange.to ? (
+                      `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
+                    ) : dateRange.from ? (
+                      `From ${format(dateRange.from, "MMM dd")}`
+                    ) : dateRange.to ? (
+                      `Until ${format(dateRange.to, "MMM dd")}`
+                    ) : (
+                      <span>Select date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{
+                      from: dateRange.from,
+                      to: dateRange.to,
+                    }}
+                    onSelect={(range) =>
+                      setDateRange({
+                        from: range?.from,
+                        to: range?.to,
+                      })
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {(dateRange.from || dateRange.to) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDateRange({ from: undefined, to: undefined })}
+                  className="h-8 px-2 lg:px-3"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
             <Select
               value={
                 (table.getColumn("account")?.getFilterValue() as string) ??
