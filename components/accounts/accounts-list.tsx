@@ -42,6 +42,11 @@ export function AccountsList({ accounts }: AccountsListProps) {
     return acc;
   }, {} as Record<AccountType, BankAccountWithAliases[]>);
 
+  // Calculate total balance for each account type
+  const getTotalBalance = (accountType: AccountType) => {
+    return accountsByType[accountType]?.reduce((total, account) => total + account.balance, 0) || 0;
+  };
+
   // Define the desired order and ensure all types are included
   const desiredOrder = [
     AccountType.CREDIT,
@@ -90,12 +95,22 @@ export function AccountsList({ accounts }: AccountsListProps) {
           className="rounded-lg !border bg-card overflow-hidden"
         >
           <AccordionTrigger className="p-3 hover:bg-accent/50 transition-colors hover:no-underline [&[data-state=open]>svg]:rotate-180">
-            <div className="flex flex-col">
-              <div className="text-xl font-bold">
-                {getAccountTypeLabel(type)}
+            <div className="flex justify-between w-full">
+              <div className="flex flex-col">
+                <div className="text-xl font-bold">
+                  {getAccountTypeLabel(type)}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {accountsByType[type].length} accounts
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                {accountsByType[type].length} accounts
+              <div className="text-right">
+                <div className="text-lg font-semibold">
+                  {formatCurrency(getTotalBalance(type))}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Total
+                </div>
               </div>
             </div>
           </AccordionTrigger>
