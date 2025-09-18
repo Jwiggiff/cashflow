@@ -15,7 +15,11 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
-import { createTransfer, updateTransfer } from "@/app/transactions/actions";
+import {
+  createTransfer,
+  deleteTransfer,
+  updateTransfer,
+} from "@/app/transactions/actions";
 import { useRouter } from "next/navigation";
 import { Transfer, BankAccount } from "@prisma/client";
 import { cn } from "@/lib/utils";
@@ -107,6 +111,18 @@ export function TransferDialog({
     }
   };
 
+  const handleDeleteTransfer = async () => {
+    if (!transfer) return;
+    const result = await deleteTransfer(transfer.id);
+    if (result.success) {
+      toast.success("Transfer deleted");
+      onOpenChange(false);
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to delete transfer");
+    }
+  };
+
   return (
     <ResponsiveDialog
       open={open}
@@ -192,24 +208,37 @@ export function TransferDialog({
             placeholder="Select date"
           />
         </div>
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || isSameAccount}>
-            {isSubmitting
-              ? mode === "edit"
-                ? "Updating..."
-                : "Adding..."
-              : mode === "edit"
-              ? "Update Transfer"
-              : "Add Transfer"}
-          </Button>
+
+        <div className="flex justify-between">
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => handleDeleteTransfer()}
+              disabled={isSubmitting}
+            >
+              Delete Transfer
+            </Button>
+          )}
+          <div className="flex justify-end space-x-2 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isSameAccount}>
+              {isSubmitting
+                ? mode === "edit"
+                  ? "Updating..."
+                  : "Adding..."
+                : mode === "edit"
+                ? "Update Transfer"
+                : "Add Transfer"}
+            </Button>
+          </div>
         </div>
       </form>
     </ResponsiveDialog>

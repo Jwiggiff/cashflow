@@ -52,6 +52,10 @@ import { TransactionType } from "@prisma/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
+import {
+  MobileFilterSheet,
+  ActiveFiltersDisplay,
+} from "./mobile-filter-sheet";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -102,6 +106,7 @@ export function DataTable<TransactionOrTransfer, TValue>({
     to: undefined,
   });
 
+
   // Update column visibility when mobile state changes
   React.useEffect(() => {
     if (isMobile) {
@@ -134,7 +139,7 @@ export function DataTable<TransactionOrTransfer, TValue>({
   }, [isMobile]);
 
   // Add selection column
-  const selectionColumn: ColumnDef<TData, TValue> = {
+  const selectionColumn: ColumnDef<TransactionOrTransfer, TValue> = {
     id: "select",
     header: ({ table }) => (
       <div className="grid place-items-center">
@@ -219,10 +224,10 @@ export function DataTable<TransactionOrTransfer, TValue>({
     // For mobile, group by date and add headers
     type RowData =
       | { type: "header"; date: string }
-      | { type: "row"; row: Row<TData> };
+      | { type: "row"; row: Row<TransactionOrTransfer> };
 
     const groups: RowData[] = [];
-    const dateGroups: { [key: string]: Row<TData>[] } = {};
+    const dateGroups: { [key: string]: Row<TransactionOrTransfer>[] } = {};
 
     // Group filtered table rows by date (use filtered rows so filtering works)
     table.getRowModel().rows.forEach((row) => {
@@ -255,18 +260,44 @@ export function DataTable<TransactionOrTransfer, TValue>({
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-2 flex-wrap">
-        <Input
-          placeholder="Filter descriptions..."
-          value={
-            (table.getColumn("description")?.getFilterValue() as string) ?? ""
-          }
-          onChange={(event) =>
-            table.getColumn("description")?.setFilterValue(event.target.value)
-          }
-          className={isMobile ? "flex-1" : "max-w-sm"}
-        />
-        {!isMobile && (
+        {isMobile ? (
           <>
+            <Input
+              placeholder="Filter descriptions..."
+              value={
+                (table.getColumn("description")?.getFilterValue() as string) ??
+                ""
+              }
+              onChange={(event) =>
+                table
+                  .getColumn("description")
+                  ?.setFilterValue(event.target.value)
+              }
+              className="flex-1"
+            />
+            <MobileFilterSheet
+              accounts={accounts}
+              categories={categories}
+              table={table}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+            />
+          </>
+        ) : (
+          <>
+            <Input
+              placeholder="Filter descriptions..."
+              value={
+                (table.getColumn("description")?.getFilterValue() as string) ??
+                ""
+              }
+              onChange={(event) =>
+                table
+                  .getColumn("description")
+                  ?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
             <div className="flex items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -404,6 +435,18 @@ export function DataTable<TransactionOrTransfer, TValue>({
             </Select>
           </>
         )}
+
+        {/* Mobile Active Filters Display */}
+        {isMobile && (
+          <div className="w-full mt-2">
+            <ActiveFiltersDisplay
+              table={table}
+              dateRange={dateRange}
+              setDateRange={setDateRange}
+            />
+          </div>
+        )}
+
         {hasSelectedRows && onDeleteSelected && (
           <Button
             variant="destructive"

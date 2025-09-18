@@ -1,21 +1,21 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { AppSidebar } from "@/components/app-sidebar";
+import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
+import { NotificationProvider } from "@/components/notification-provider";
+import { PrivacyProvider } from "@/components/privacy-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "sonner";
-import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
-import { prisma } from "@/lib/prisma";
+import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { BankAccount } from "@prisma/client";
+import type { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
-import { PrivacyProvider } from "@/components/privacy-provider";
-import { NotificationProvider } from "@/components/notification-provider";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

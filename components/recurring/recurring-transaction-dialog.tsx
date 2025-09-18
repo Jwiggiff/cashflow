@@ -4,6 +4,7 @@ import { createCategory } from "@/app/categories/actions";
 import {
   createRecurringTransaction,
   updateRecurringTransaction,
+  deleteRecurringTransaction,
 } from "@/app/recurring/actions";
 import { Combobox, ComboboxItem } from "@/components/combobox";
 import { CurrencyInput } from "@/components/currency-input";
@@ -187,6 +188,24 @@ export function RecurringTransactionDialog({
     }
   };
 
+  const handleDeleteTransaction = async () => {
+    if (!recurringTransaction) return;
+    
+    try {
+      const result = await deleteRecurringTransaction(recurringTransaction.id);
+      if (result.success) {
+        toast.success("Recurring transaction deleted");
+        onSuccess();
+        onOpenChange(false);
+      } else {
+        toast.error(result.error || "Failed to delete recurring transaction");
+      }
+    } catch (error) {
+      console.error("Error deleting recurring transaction:", error);
+      toast.error("Failed to delete recurring transaction");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -312,17 +331,28 @@ export function RecurringTransactionDialog({
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1">
-              {isEditing ? "Update" : "Create"}
-            </Button>
+          <div className="flex justify-between">
+            {isEditing && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeleteTransaction}
+              >
+                Delete Transaction
+              </Button>
+            )}
+            <div className="flex gap-2 ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">
+                {isEditing ? "Update" : "Create"}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

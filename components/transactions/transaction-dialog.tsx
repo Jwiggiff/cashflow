@@ -3,6 +3,7 @@
 import { createCategory } from "@/app/categories/actions";
 import {
   createTransaction,
+  deleteTransaction,
   updateTransaction,
 } from "@/app/transactions/actions";
 import { Combobox, ComboboxItem } from "@/components/combobox";
@@ -81,6 +82,18 @@ export function TransactionDialog({
       router.refresh();
     } else {
       toast.error(result.error || "Failed to create category");
+    }
+  };
+
+  const handleDeleteTransaction = async () => {
+    if (!transaction) return;
+    const result = await deleteTransaction(transaction.id);
+    if (result.success) {
+      toast.success("Transaction deleted");
+      onOpenChange(false);
+      router.refresh();
+    } else {
+      toast.error(result.error || "Failed to delete transaction");
     }
   };
 
@@ -288,24 +301,36 @@ export function TransactionDialog({
           )}
         </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting
-              ? mode === "edit"
-                ? "Updating..."
-                : "Adding..."
-              : mode === "edit"
-              ? "Update Transaction"
-              : "Add Transaction"}
-          </Button>
+        <div className="flex justify-between">
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => handleDeleteTransaction()}
+              disabled={isSubmitting}
+            >
+              Delete Transaction
+            </Button>
+          )}
+          <div className="flex justify-end space-x-2 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? mode === "edit"
+                  ? "Updating..."
+                  : "Adding..."
+                : mode === "edit"
+                ? "Update Transaction"
+                : "Add Transaction"}
+            </Button>
+          </div>
         </div>
       </form>
     </ResponsiveDialog>

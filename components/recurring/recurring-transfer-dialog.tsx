@@ -3,6 +3,7 @@
 import {
   createRecurringTransfer,
   updateRecurringTransfer,
+  deleteRecurringTransfer,
 } from "@/app/recurring/actions";
 import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
@@ -169,6 +170,28 @@ export function RecurringTransferDialog({
     }
   };
 
+  const handleDeleteTransfer = async () => {
+    if (!recurringTransfer) return;
+    
+    try {
+      const result = await deleteRecurringTransfer(recurringTransfer.id);
+      if (result.success) {
+        toast.success("Recurring transfer deleted");
+        onOpenChange(false);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+        }
+      } else {
+        toast.error(result.error || "Failed to delete recurring transfer");
+      }
+    } catch (error) {
+      console.error("Error deleting recurring transfer:", error);
+      toast.error("Failed to delete recurring transfer");
+    }
+  };
+
   return (
     <ResponsiveDialog
       open={open}
@@ -270,24 +293,36 @@ export function RecurringTransferDialog({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || isSameAccount}>
-            {isSubmitting
-              ? mode === "edit"
-                ? "Updating..."
-                : "Adding..."
-              : mode === "edit"
-              ? "Update Recurring Transfer"
-              : "Add Recurring Transfer"}
-          </Button>
+        <div className="flex justify-between">
+          {mode === "edit" && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteTransfer}
+              disabled={isSubmitting}
+            >
+              Delete Transfer
+            </Button>
+          )}
+          <div className="flex gap-2 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isSameAccount}>
+              {isSubmitting
+                ? mode === "edit"
+                  ? "Updating..."
+                  : "Adding..."
+                : mode === "edit"
+                ? "Update Recurring Transfer"
+                : "Add Recurring Transfer"}
+            </Button>
+          </div>
         </div>
       </form>
     </ResponsiveDialog>
