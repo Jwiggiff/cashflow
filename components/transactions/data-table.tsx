@@ -98,6 +98,10 @@ export function DataTable<TransactionOrTransfer, TValue>({
       actions: false,
     });
   const [rowSelection, setRowSelection] = React.useState({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const [dateRange, setDateRange] = React.useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -179,10 +183,12 @@ export function DataTable<TransactionOrTransfer, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
   });
 
@@ -259,34 +265,56 @@ export function DataTable<TransactionOrTransfer, TValue>({
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4 gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row items-center py-4 gap-2">
         {isMobile ? (
           <>
-            <Input
-              placeholder="Filter descriptions..."
-              value={
-                (table.getColumn("description")?.getFilterValue() as string) ??
-                ""
-              }
-              onChange={(event) =>
-                table
-                  .getColumn("description")
-                  ?.setFilterValue(event.target.value)
-              }
-              className="flex-1"
-            />
-            <MobileFilterSheet
-              accounts={accounts}
-              categories={categories}
-              table={table}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
+            <div className="flex items-center gap-2 w-full">
+              <Input
+                placeholder="Search transactions..."
+                value={
+                  (table.getColumn("description")?.getFilterValue() as string) ??
+                  ""
+                }
+                onChange={(event) =>
+                  table
+                    .getColumn("description")
+                    ?.setFilterValue(event.target.value)
+                }
+                className="flex-1"
+              />
+              <MobileFilterSheet
+                accounts={accounts}
+                categories={categories}
+                table={table}
+                dateRange={dateRange}
+                setDateRange={setDateRange}
+              />
+            </div>
+            <div className="flex items-center space-x-2 ml-auto">
+              <p className="text-sm font-medium">Rows per page</p>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 50, 100].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </>
         ) : (
           <>
             <Input
-              placeholder="Filter descriptions..."
+              placeholder="Search transactions..."
               value={
                 (table.getColumn("description")?.getFilterValue() as string) ??
                 ""
@@ -433,6 +461,26 @@ export function DataTable<TransactionOrTransfer, TValue>({
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Rows per page</p>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 30, 40, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </>
         )}
 
@@ -584,39 +632,48 @@ export function DataTable<TransactionOrTransfer, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="flex-1 text-sm text-muted-foreground hidden md:block">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        {hasSelectedRows && (
+      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 py-4">
+        <div className="flex items-center space-x-4">
           <div className="text-sm text-muted-foreground">
-            Total:{" "}
-            {formatCurrency(
-              selectedRows.reduce((sum, row) => {
-                const amount = row.original.amount;
-                return sum + (amount || 0);
-              }, 0)
-            )}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </div>
-        )}
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          <div className="flex-1 text-sm text-muted-foreground hidden md:block">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
+          {hasSelectedRows && (
+            <div className="text-sm text-muted-foreground">
+              Total:{" "}
+              {formatCurrency(
+                selectedRows.reduce((sum, row) => {
+                  const amount = row.original.amount;
+                  return sum + (amount || 0);
+                }, 0)
+              )}
+            </div>
+          )}
+          <div className="space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
     </div>
