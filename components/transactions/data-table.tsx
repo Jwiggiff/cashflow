@@ -52,26 +52,23 @@ import { TransactionType } from "@prisma/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
-import {
-  MobileFilterSheet,
-  ActiveFiltersDisplay,
-} from "./mobile-filter-sheet";
+import { MobileFilterSheet, ActiveFiltersDisplay } from "./mobile-filter-sheet";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
+interface DataTableProps {
+  columns: ColumnDef<TransactionOrTransfer>[];
+  data: TransactionOrTransfer[];
   accounts: { id: number; name: string }[];
   categories: {
     id: number;
     name: string;
     icon?: string | null;
   }[];
-  onDeleteSelected?: (selectedRows: TransactionOrTransfer[]) => void;
   onConvertToTransfer?: (selectedRows: TransactionOrTransfer[]) => void;
+  onDeleteSelected?: (selectedRows: TransactionOrTransfer[]) => void;
   onRowClick?: (row: TransactionOrTransfer) => void;
 }
 
-export function DataTable<TransactionOrTransfer, TValue>({
+export function DataTable({
   columns,
   data,
   accounts,
@@ -79,7 +76,7 @@ export function DataTable<TransactionOrTransfer, TValue>({
   onDeleteSelected,
   onConvertToTransfer,
   onRowClick,
-}: DataTableProps<TransactionOrTransfer, TValue>) {
+}: DataTableProps) {
   const isMobile = useIsMobile();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -109,7 +106,6 @@ export function DataTable<TransactionOrTransfer, TValue>({
     from: undefined,
     to: undefined,
   });
-
 
   // Update column visibility when mobile state changes
   React.useEffect(() => {
@@ -143,7 +139,7 @@ export function DataTable<TransactionOrTransfer, TValue>({
   }, [isMobile]);
 
   // Add selection column
-  const selectionColumn: ColumnDef<TransactionOrTransfer, TValue> = {
+  const selectionColumn: ColumnDef<TransactionOrTransfer> = {
     id: "select",
     header: ({ table }) => (
       <div className="grid place-items-center">
@@ -211,7 +207,9 @@ export function DataTable<TransactionOrTransfer, TValue>({
 
   const handleDeleteSelected = () => {
     if (onDeleteSelected && hasSelectedRows) {
-      const selectedData = selectedRows.map((row) => row.original);
+      const selectedData = selectedRows.map(
+        (row) => row.original as TransactionOrTransfer
+      );
       onDeleteSelected(selectedData);
       // Clear selection after deletion
       table.toggleAllPageRowsSelected(false);
@@ -272,8 +270,9 @@ export function DataTable<TransactionOrTransfer, TValue>({
               <Input
                 placeholder="Search transactions..."
                 value={
-                  (table.getColumn("description")?.getFilterValue() as string) ??
-                  ""
+                  (table
+                    .getColumn("description")
+                    ?.getFilterValue() as string) ?? ""
                 }
                 onChange={(event) =>
                   table
@@ -299,7 +298,9 @@ export function DataTable<TransactionOrTransfer, TValue>({
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {[10, 20, 50, 100].map((pageSize) => (
@@ -470,7 +471,9 @@ export function DataTable<TransactionOrTransfer, TValue>({
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -639,7 +642,7 @@ export function DataTable<TransactionOrTransfer, TValue>({
             {table.getPageCount()}
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <div className="flex-1 text-sm text-muted-foreground hidden md:block">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
