@@ -4,7 +4,6 @@ import { processRecurringItems } from "./recurring";
 let initialized = false;
 
 declare global {
-   
   var __schedulerInitialized: boolean | undefined;
 }
 

@@ -1,7 +1,7 @@
 import { RRule } from "rrule";
-import { prisma } from "../lib/prisma";
-import { sendNotificationToUser } from "../lib/notifications";
-import { formatCurrency } from "../lib/formatter";
+import { prisma } from "@/lib/prisma";
+import { sendNotificationToUser } from "@/lib/notifications";
+import { formatCurrency } from "@/lib/formatter";
 import { TransactionType } from "@prisma/client";
 
 /**
