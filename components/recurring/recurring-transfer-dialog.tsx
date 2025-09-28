@@ -53,7 +53,7 @@ export function RecurringTransferDialog({
 }: RecurringTransferDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(recurringTransfer?.amount || 0);
+  const [amount, setAmount] = useState(recurringTransfer?.amount.toString() || "0.00");
   const [description, setDescription] = useState(
     recurringTransfer?.description || ""
   );
@@ -134,7 +134,7 @@ export function RecurringTransferDialog({
 
       const data = {
         description: description || undefined,
-        amount: amount,
+        amount: Number(amount),
         fromAccountId: fromAccountId as number,
         toAccountId: toAccountId as number,
         rrule: rrule.toString(),
@@ -258,8 +258,8 @@ export function RecurringTransferDialog({
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <CurrencyInput
-            value={amount.toString()}
-            onChange={(value) => setAmount(Number(value))}
+            value={amount}
+            onChange={(value) => setAmount(value)}
           />
         </div>
         <div className="space-y-2">

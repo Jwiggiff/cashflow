@@ -71,7 +71,9 @@ export function RecurringTransactionDialog({
   const [description, setDescription] = useState(
     recurringTransaction?.description || ""
   );
-  const [amount, setAmount] = useState(recurringTransaction?.amount || 0);
+  const [amount, setAmount] = useState(
+    recurringTransaction?.amount ? Math.abs(recurringTransaction.amount).toString() : "0.00"
+  );
   const [type, setType] = useState<TransactionType>(
     recurringTransaction?.type || "EXPENSE"
   );
@@ -158,7 +160,7 @@ export function RecurringTransactionDialog({
 
       const data = {
         description,
-        amount: amount,
+        amount: Number(amount),
         type,
         categoryId: categoryId ? parseInt(categoryId) : null,
         accountId: parseInt(accountId),
@@ -232,8 +234,8 @@ export function RecurringTransactionDialog({
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
               <CurrencyInput
-                value={amount.toString()}
-                onChange={(value) => setAmount(Number(value))}
+                value={amount}
+                onChange={(value) => setAmount(value)}
                 required
               />
             </div>

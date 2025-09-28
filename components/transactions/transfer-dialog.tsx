@@ -49,7 +49,7 @@ export function TransferDialog({
 }: TransferDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(transfer?.amount || 0);
+  const [amount, setAmount] = useState(transfer?.amount.toString() || "0.00");
   const [description, setDescription] = useState(transfer?.description || "");
   const [fromAccountId, setFromAccountId] = useState<number | "">(
     transfer?.fromAccountId || ""
@@ -81,7 +81,7 @@ export function TransferDialog({
     try {
       const data = {
         description: description || undefined,
-        amount: amount,
+        amount: Number(amount),
         fromAccountId: fromAccountId,
         toAccountId: toAccountId,
         date: date,
@@ -187,8 +187,8 @@ export function TransferDialog({
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <CurrencyInput
-            value={amount.toString()}
-            onChange={(value) => setAmount(Number(value))}
+            value={amount}
+            onChange={(value) => setAmount(value)}
           />
         </div>
         <div className="space-y-2">

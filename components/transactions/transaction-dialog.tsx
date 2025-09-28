@@ -53,7 +53,9 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(transaction?.amount || 0);
+  const [amount, setAmount] = useState(
+    transaction?.amount ? Math.abs(transaction.amount).toString() : "0.00"
+  );
   const [description, setDescription] = useState(
     transaction?.description || ""
   );
@@ -110,7 +112,7 @@ export function TransactionDialog({
       newErrors.description = "Description is required";
     }
 
-    if (!amount || amount <= 0) {
+    if (!amount || Number(amount) <= 0) {
       newErrors.amount = "Amount is required and must be greater than 0";
     }
 
@@ -130,7 +132,7 @@ export function TransactionDialog({
         source: source || null,
         type: type as TransactionType,
         categoryId: categoryId,
-        amount: amount,
+        amount: Number(amount),
         accountId: accountId as number,
         date,
       };
@@ -177,8 +179,8 @@ export function TransactionDialog({
         <div className="space-y-2">
           <Label htmlFor="amount">Amount</Label>
           <CurrencyInput
-            value={amount.toString()}
-            onChange={(value) => setAmount(Number(value))}
+            value={amount}
+            onChange={(value) => setAmount(value)}
             className={
               errors.amount ? "border-red-500 focus:border-red-500" : ""
             }
