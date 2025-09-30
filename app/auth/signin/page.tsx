@@ -25,13 +25,14 @@ export default function SignInPage() {
   const router = useRouter();
   const params = useSearchParams();
 
+  const callbackUrl = params.get("callbackUrl") || "/";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     try {
-      const callbackUrl = params.get("callbackUrl") || "/";
       const result = await signIn("credentials", {
         username,
         password,
@@ -47,6 +48,27 @@ export default function SignInPage() {
     } catch (error) {
       console.error(error);
       setError("An error occurred during sign in");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignInWithPasskey = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const result = await signInWithPasskey("passkey", { redirect: false });
+
+      if (result?.error) {
+        setError("An error occurred during sign in with passkey");
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch (error) {
+      console.error(error);
+      setError("An error occurred during sign in with passkey");
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +150,7 @@ export default function SignInPage() {
                 type="button"
                 className="w-full"
                 disabled={isLoading}
-                onClick={() => signInWithPasskey("passkey")}
+                onClick={handleSignInWithPasskey}
               >
                 <Fingerprint className="mr-2 h-4 w-4" />
                 Sign in with Passkey
