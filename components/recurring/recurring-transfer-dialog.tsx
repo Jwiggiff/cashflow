@@ -53,7 +53,9 @@ export function RecurringTransferDialog({
 }: RecurringTransferDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(recurringTransfer?.amount.toString() || "0.00");
+  const [amount, setAmount] = useState(
+    recurringTransfer?.amount.toString() || "0.00"
+  );
   const [description, setDescription] = useState(
     recurringTransfer?.description || ""
   );
@@ -112,6 +114,18 @@ export function RecurringTransferDialog({
   // Check if accounts are the same for validation
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
+
+  // Reset the form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setAmount(recurringTransfer?.amount.toString() || "0.00");
+      setDescription(recurringTransfer?.description || "");
+      setFromAccountId(recurringTransfer?.fromAccountId || "");
+      setToAccountId(recurringTransfer?.toAccountId || "");
+      setStartDate(recurringTransfer?.startDate || new Date());
+      setRecurrenceType(recurringTransfer?.rrule || "");
+    }
+  }, [recurringTransfer, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +186,7 @@ export function RecurringTransferDialog({
 
   const handleDeleteTransfer = async () => {
     if (!recurringTransfer) return;
-    
+
     try {
       const result = await deleteRecurringTransfer(recurringTransfer.id);
       if (result.success) {

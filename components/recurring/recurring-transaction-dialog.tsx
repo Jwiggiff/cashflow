@@ -72,7 +72,9 @@ export function RecurringTransactionDialog({
     recurringTransaction?.description || ""
   );
   const [amount, setAmount] = useState(
-    recurringTransaction?.amount ? Math.abs(recurringTransaction.amount).toString() : "0.00"
+    recurringTransaction?.amount
+      ? Math.abs(recurringTransaction.amount).toString()
+      : "0.00"
   );
   const [type, setType] = useState<TransactionType>(
     recurringTransaction?.type || "EXPENSE"
@@ -124,6 +126,23 @@ export function RecurringTransactionDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate]);
+
+  // Reset the form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setDescription(recurringTransaction?.description || "");
+      setAmount(
+        recurringTransaction?.amount
+          ? Math.abs(recurringTransaction.amount).toString()
+          : "0.00"
+      );
+      setType(recurringTransaction?.type || TransactionType.EXPENSE);
+      setCategoryId(recurringTransaction?.categoryId?.toString() || "");
+      setAccountId(recurringTransaction?.accountId?.toString() || "");
+      setStartDate(recurringTransaction?.startDate || new Date());
+      setRecurrenceType(recurringTransaction?.rrule || "");
+    }
+  }, [recurringTransaction, open]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });
@@ -192,7 +211,7 @@ export function RecurringTransactionDialog({
 
   const handleDeleteTransaction = async () => {
     if (!recurringTransaction) return;
-    
+
     try {
       const result = await deleteRecurringTransaction(recurringTransaction.id);
       if (result.success) {
@@ -351,9 +370,7 @@ export function RecurringTransactionDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {isEditing ? "Update" : "Create"}
-              </Button>
+              <Button type="submit">{isEditing ? "Update" : "Create"}</Button>
             </div>
           </div>
         </form>

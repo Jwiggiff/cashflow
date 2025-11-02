@@ -23,7 +23,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ExternalLinkIcon } from "lucide-react";
 
@@ -76,6 +76,23 @@ export function TransactionDialog({
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
+
+  // Reset the form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setAmount(
+        transaction?.amount ? Math.abs(transaction.amount).toString() : "0.00"
+      );
+      setDescription(transaction?.description || "");
+      setSource(transaction?.source || "");
+      setType(transaction?.type || TransactionType.EXPENSE);
+      setCategoryId(transaction?.categoryId || null);
+      setAccountId(transaction?.accountId || "");
+      setDate(transaction?.date || new Date());
+      setIsSubmitting(false);
+      setErrors({});
+    }
+  }, [transaction, open]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });

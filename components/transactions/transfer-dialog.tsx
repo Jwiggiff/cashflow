@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import {
@@ -67,6 +67,17 @@ export function TransferDialog({
   // Check if accounts are the same for validation
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
+
+  // Reset the form state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setAmount(transfer?.amount.toString() || "0.00");
+      setDescription(transfer?.description || "");
+      setFromAccountId(transfer?.fromAccountId || "");
+      setToAccountId(transfer?.toAccountId || "");
+      setDate(transfer?.date || new Date());
+    }
+  }, [transfer, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
