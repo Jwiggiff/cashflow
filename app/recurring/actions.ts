@@ -50,7 +50,7 @@ export async function createRecurringTransaction(data: {
       data: {
         description: data.description,
         type: data.type,
-        categoryId: data.categoryId,
+        categoryId: data.type === TransactionType.EXPENSE ? data.categoryId : null,
         amount: finalAmount,
         accountId: data.accountId,
         rrule: data.rrule,
@@ -129,7 +129,7 @@ export async function updateRecurringTransaction(
       data: {
         description: data.description,
         type: data.type,
-        categoryId: data.categoryId,
+        categoryId: data.type === TransactionType.EXPENSE ? data.categoryId : null,
         amount: finalAmount,
         accountId: data.accountId,
         rrule: data.rrule,
