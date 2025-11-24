@@ -106,7 +106,7 @@ export function Combobox({
                   key={item.value}
                   value={item.value}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
+                    onChange(currentValue);
                     setOpen(false);
                     setSearchValue("");
                   }}

@@ -179,11 +179,14 @@ export function TransactionDialog({
   };
 
   // Convert categories to combobox items
-  const categoryItems: ComboboxItem[] = categories.map((cat) => ({
-    value: cat.id.toString(),
-    label: cat.name,
-    icon: cat.icon || undefined,
-  })) satisfies ComboboxItem[];
+  const categoryItems: ComboboxItem[] = [
+    { value: "", label: "No category" },
+    ...categories.map((cat) => ({
+      value: cat.id.toString(),
+      label: cat.name,
+      icon: cat.icon || undefined,
+    })),
+  ] satisfies ComboboxItem[];
 
   return (
     <ResponsiveDialog
