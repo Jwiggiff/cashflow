@@ -72,7 +72,7 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-RUN npm install -g prisma
+RUN npm install -g prisma@6.13.0
 
 EXPOSE 3000
 
