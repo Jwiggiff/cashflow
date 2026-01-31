@@ -6,6 +6,7 @@ import {
   ArrowLeftRightIcon,
   LandmarkIcon,
   RepeatIcon,
+  TagIcon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AccountDialog } from "@/components/accounts/account-dialog";
+import { CategoryDialog } from "@/components/categories/category-dialog";
 import { TransactionDialog } from "@/components/transactions/transaction-dialog";
 import { TransferDialog } from "@/components/transactions/transfer-dialog";
 import { RecurringTransactionDialog } from "@/components/recurring/recurring-transaction-dialog";
@@ -35,6 +37,7 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
     useState(false);
   const [recurringTransferDialogOpen, setRecurringTransferDialogOpen] =
     useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
 
   const handleAddAccount = () => {
     setAccountDialogOpen(true);
@@ -56,6 +59,10 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
     setRecurringTransferDialogOpen(true);
   };
 
+  const handleAddCategory = () => {
+    setCategoryDialogOpen(true);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -69,6 +76,10 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
           <DropdownMenuItem onClick={handleAddAccount}>
             <LandmarkIcon className="mr-2 h-4 w-4" />
             Account
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={handleAddCategory}>
+            <TagIcon className="mr-2 h-4 w-4" />
+            Category
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleAddTransaction}>
             <CreditCardIcon className="mr-2 h-4 w-4" />
@@ -93,6 +104,11 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
       <AccountDialog
         open={accountDialogOpen}
         onOpenChange={setAccountDialogOpen}
+      />
+
+      <CategoryDialog
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
       />
 
       <TransactionDialog
