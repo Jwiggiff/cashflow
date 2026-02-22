@@ -28,18 +28,17 @@ export function VersionInfoCard({ versionInfo }: VersionInfoProps) {
   const [isChecking, setIsChecking] = useState(false);
   const [checkError, setCheckError] = useState<string | null>(null);
 
-  const checkForUpdates = async () => {
-    setIsChecking(true);
-    setCheckError(null);
-    
-    const { version, error, releaseUrl } = await checkForLatestVersion();
-    setLatestVersion(version);
-    setReleaseUrl(releaseUrl || null);
-    setCheckError(error);
-    setIsChecking(false);
-  };
-
   useEffect(() => {
+    const checkForUpdates = async () => {
+      setIsChecking(true);
+      setCheckError(null);
+
+      const { version, error, releaseUrl } = await checkForLatestVersion();
+      setLatestVersion(version);
+      setReleaseUrl(releaseUrl || null);
+      setCheckError(error);
+      setIsChecking(false);
+    };
     // Check for updates when component mounts
     checkForUpdates();
   }, []);

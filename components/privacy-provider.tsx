@@ -6,7 +6,6 @@ interface PrivacyContextType {
   isPrivate: boolean;
   togglePrivacy: () => void;
   setPrivacy: (isPrivate: boolean) => void;
-  isLoading: boolean;
 }
 
 const PrivacyContext = createContext<PrivacyContextType | undefined>(undefined);
@@ -24,27 +23,19 @@ interface PrivacyProviderProps {
 }
 
 export function PrivacyProvider({ children }: PrivacyProviderProps) {
-  const [isPrivate, setIsPrivate] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Load privacy state from localStorage on mount
-  useEffect(() => {
+  const [isPrivate, setIsPrivate] = useState(() => {
+    if (typeof window === "undefined") return true;
     const savedPrivacy = localStorage.getItem("cashflow-privacy-mode");
-    if (savedPrivacy !== null) {
-      setIsPrivate(JSON.parse(savedPrivacy));
-    }
-    setIsLoading(false);
-  }, []);
+    return savedPrivacy !== null ? JSON.parse(savedPrivacy) : true;
+  });
 
   // Save privacy state to localStorage whenever it changes
   useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem("cashflow-privacy-mode", JSON.stringify(isPrivate));
-    }
-  }, [isPrivate, isLoading]);
+    localStorage.setItem("cashflow-privacy-mode", JSON.stringify(isPrivate));
+  }, [isPrivate]);
 
   const togglePrivacy = () => {
-    setIsPrivate(prev => !prev);
+    setIsPrivate((prev: boolean) => !prev);
   };
 
   const setPrivacy = (isPrivate: boolean) => {
@@ -55,7 +46,6 @@ export function PrivacyProvider({ children }: PrivacyProviderProps) {
     isPrivate,
     togglePrivacy,
     setPrivacy,
-    isLoading,
   };
 
   return (

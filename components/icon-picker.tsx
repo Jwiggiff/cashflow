@@ -58,8 +58,6 @@ export function IconPicker({
       dynamicIconImports[value as keyof typeof dynamicIconImports]().then(module => {
         setSelectedIconComponent(() => module.default);
       });
-    } else {
-      setSelectedIconComponent(null);
     }
   }, [value]);
 
