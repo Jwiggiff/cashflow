@@ -12,6 +12,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Input } from "./input";
+import { useState } from "react";
+import { parseDate } from "chrono-node";
 
 interface DatePickerProps {
   date?: Date;
@@ -26,6 +29,18 @@ export function DatePicker({
   placeholder = "Pick a date",
   className,
 }: DatePickerProps) {
+  const [inputValue, setInputValue] = useState(date ? format(date, "PPP") : "");
+  const [month, setMonth] = useState(date ? date : new Date());
+
+  const handleTextInputSubmit = () => {
+    const parsedDate = parseDate(inputValue);
+    if (parsedDate) {
+      setInputValue(format(parsedDate, "PPP"));
+      setMonth(parsedDate);
+      onDateChange?.(parsedDate);
+    }
+  };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,7 +49,7 @@ export function DatePicker({
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
-            className
+            className,
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -42,11 +57,24 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
+        <div className="p-3 border-b">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleTextInputSubmit();
+            }}
+            placeholder="e.g. feb 24, today, tomorrow"
+            className="h-9"
+          />
+        </div>
         <Calendar
           mode="single"
           selected={date}
           onSelect={onDateChange}
-          autoFocus
+          disabled={{ after: new Date() }}
+          month={month}
+          onMonthChange={setMonth}
         />
       </PopoverContent>
     </Popover>
