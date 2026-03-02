@@ -49,7 +49,7 @@ export function TransferDialog({
 }: TransferDialogProps) {
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(transfer?.amount.toString() || "0.00");
+  const [amount, setAmount] = useState(transfer?.amount.toString() || "");
   const [description, setDescription] = useState(transfer?.description || "");
   const [fromAccountId, setFromAccountId] = useState<number | "">(
     transfer?.fromAccountId || ""
@@ -71,7 +71,7 @@ export function TransferDialog({
   // Reset the form state when dialog opens
   useEffect(() => {
     if (open) {
-      setAmount(transfer?.amount.toString() || "0.00");
+      setAmount(transfer?.amount.toString() || "");
       setDescription(transfer?.description || "");
       setFromAccountId(transfer?.fromAccountId || "");
       setToAccountId(transfer?.toAccountId || "");

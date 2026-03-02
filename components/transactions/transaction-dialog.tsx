@@ -54,7 +54,7 @@ export function TransactionDialog({
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
   const [amount, setAmount] = useState(
-    transaction?.amount ? Math.abs(transaction.amount).toString() : "0.00"
+    transaction?.amount ? Math.abs(transaction.amount).toString() : ""
   );
   const [description, setDescription] = useState(
     transaction?.description || ""
@@ -81,7 +81,7 @@ export function TransactionDialog({
   useEffect(() => {
     if (open) {
       setAmount(
-        transaction?.amount ? Math.abs(transaction.amount).toString() : "0.00"
+        transaction?.amount ? Math.abs(transaction.amount).toString() : ""
       );
       setDescription(transaction?.description || "");
       setSource(transaction?.source || "");
