@@ -63,6 +63,7 @@ interface DataTableProps {
     name: string;
     icon?: string | null;
   }[];
+  initialAccountFilter?: string;
   onConvertToTransfer?: (selectedRows: TransactionOrTransfer[]) => void;
   onDeleteSelected?: (selectedRows: TransactionOrTransfer[]) => void;
   onRowClick?: (row: TransactionOrTransfer) => void;
@@ -73,13 +74,17 @@ export function DataTable({
   data,
   accounts,
   categories,
+  initialAccountFilter,
   onDeleteSelected,
   onConvertToTransfer,
   onRowClick,
 }: DataTableProps) {
   const isMobile = useIsMobile();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
+    () =>
+      initialAccountFilter
+        ? [{ id: "account", value: initialAccountFilter }]
+        : []
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({

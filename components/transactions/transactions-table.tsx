@@ -17,12 +17,14 @@ interface TransactionsTableProps {
   items: TransactionOrTransfer[];
   accounts: BankAccount[];
   categories: Category[];
+  initialAccountFilter?: string;
 }
 
 export function TransactionsTable({
   items,
   accounts,
   categories,
+  initialAccountFilter,
 }: TransactionsTableProps) {
   const { formatCurrency } = useFormatters();
   const columns = getColumns(accounts, categories, formatCurrency);
@@ -104,6 +106,7 @@ export function TransactionsTable({
           name: category.name,
           icon: category.icon,
         }))}
+        initialAccountFilter={initialAccountFilter}
         onDeleteSelected={handleDeleteSelected}
         onConvertToTransfer={handleConvertToTransfer}
         onRowClick={handleRowClick}

@@ -4,7 +4,12 @@ import { requireUser } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
 import { TransactionOrTransfer } from "@/lib/types";
 
-export default async function TransactionsPage() {
+export default async function TransactionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ account?: string }>;
+}) {
+  const { account } = await searchParams;
   const user = await requireUser();
 
   const accounts = await prisma.bankAccount.findMany({
@@ -77,6 +82,7 @@ export default async function TransactionsPage() {
           items={allItems}
           accounts={accounts}
           categories={categories}
+          initialAccountFilter={account}
         />
       </div>
     </div>

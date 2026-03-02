@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Accordion,
   AccordionContent,
@@ -121,9 +122,10 @@ export function AccountsList({ accounts }: AccountsListProps) {
               </div>
             ) : (
               accountsByType[type].map((account) => (
-                <div
+                <Link
                   key={account.id}
-                  className="flex items-center justify-between p-3 border-t hover:bg-accent/50 transition-colors"
+                  href={`/transactions?account=${account.id}`}
+                  className="flex items-center justify-between p-3 border-t hover:bg-accent/50 transition-colors cursor-pointer"
                 >
                   <div className="flex-1">
                     <div className="font-medium">{account.name}</div>
@@ -140,9 +142,17 @@ export function AccountsList({ accounts }: AccountsListProps) {
                         {formatCurrency(account.balance)}
                       </div>
                     </div>
-                    <AccountActionsCell account={account} />
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="flex"
+                    >
+                      <AccountActionsCell account={account} />
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </AccordionContent>
