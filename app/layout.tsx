@@ -78,7 +78,7 @@ export default async function RootLayout({
                 <NotificationProvider>
                   <SidebarProvider>
                     <AppSidebar />
-                    <SidebarInset className="flex-1 p-4 !ml-0">
+                    <SidebarInset className="flex-1 p-4 !ml-0 @container">
                       <SidebarTrigger />
                       {children}
                     </SidebarInset>

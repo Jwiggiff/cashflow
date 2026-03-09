@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/table";
 import { capitalize } from "@/lib/utils";
 import { TransactionType } from "@prisma/client";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useFilterSheet, useIsMobile } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
 import { MobileFilterSheet, ActiveFiltersDisplay } from "./mobile-filter-sheet";
@@ -79,12 +79,12 @@ export function DataTable({
   onConvertToTransfer,
   onRowClick,
 }: DataTableProps) {
-  const isMobile = useIsMobile();
+  const useFilterSheetLayout = useFilterSheet();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     () =>
       initialAccountFilter
         ? [{ id: "account", value: initialAccountFilter }]
-        : []
+        : [],
   );
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
@@ -114,7 +114,7 @@ export function DataTable({
 
   // Update column visibility when mobile state changes
   React.useEffect(() => {
-    if (isMobile) {
+    if (useFilterSheetLayout) {
       setColumnVisibility({
         id: false,
         select: false,
@@ -141,7 +141,7 @@ export function DataTable({
         actions: true,
       });
     }
-  }, [isMobile]);
+  }, [useFilterSheetLayout]);
 
   // Add selection column
   const selectionColumn: ColumnDef<TransactionOrTransfer> = {
@@ -213,7 +213,7 @@ export function DataTable({
   const handleDeleteSelected = () => {
     if (onDeleteSelected && hasSelectedRows) {
       const selectedData = selectedRows.map(
-        (row) => row.original as TransactionOrTransfer
+        (row) => row.original as TransactionOrTransfer,
       );
       onDeleteSelected(selectedData);
       // Clear selection after deletion
@@ -223,7 +223,7 @@ export function DataTable({
 
   // Prepare table data with date grouping for mobile
   const tableData = React.useMemo(() => {
-    if (!isMobile) {
+    if (!useFilterSheetLayout) {
       // For desktop, just return the table rows
       return table
         .getRowModel()
@@ -252,7 +252,7 @@ export function DataTable({
 
     // Sort dates and create grouped structure
     const sortedDates = Object.keys(dateGroups).sort(
-      (a, b) => new Date(b).getTime() - new Date(a).getTime()
+      (a, b) => new Date(b).getTime() - new Date(a).getTime(),
     );
 
     sortedDates.forEach((dateKey) => {
@@ -264,12 +264,12 @@ export function DataTable({
 
     return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, table, table.getRowModel().rows]);
+  }, [useFilterSheetLayout, table, table.getRowModel().rows]);
 
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row items-center py-4 gap-2">
-        {isMobile ? (
+        {useFilterSheetLayout ? (
           <>
             <div className="flex items-center gap-2 w-full">
               <Input
@@ -284,7 +284,7 @@ export function DataTable({
                     .getColumn("description")
                     ?.setFilterValue(event.target.value)
                 }
-                className="flex-1"
+                className="flex-1 max-w-sm"
               />
               <MobileFilterSheet
                 accounts={accounts}
@@ -294,8 +294,8 @@ export function DataTable({
                 setDateRange={setDateRange}
               />
             </div>
-            <div className="flex items-center space-x-2 ml-auto">
-              <p className="text-sm font-medium">Rows per page</p>
+            <div className="flex items-center space-x-2 ml-auto pl-4">
+              <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
@@ -343,7 +343,7 @@ export function DataTable({
                     {dateRange.from && dateRange.to ? (
                       `${format(dateRange.from, "MMM dd")} - ${format(
                         dateRange.to,
-                        "MMM dd"
+                        "MMM dd",
                       )}`
                     ) : dateRange.from ? (
                       `From ${format(dateRange.from, "MMM dd")}`
@@ -467,8 +467,8 @@ export function DataTable({
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-medium">Rows per page</p>
+            <div className="flex items-center space-x-2 ml-auto pl-4">
+              <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
@@ -492,17 +492,6 @@ export function DataTable({
           </>
         )}
 
-        {/* Mobile Active Filters Display */}
-        {isMobile && (
-          <div className="w-full mt-2">
-            <ActiveFiltersDisplay
-              table={table}
-              dateRange={dateRange}
-              setDateRange={setDateRange}
-            />
-          </div>
-        )}
-
         {hasSelectedRows && onDeleteSelected && (
           <Button
             variant="destructive"
@@ -524,10 +513,10 @@ export function DataTable({
             Convert to Transfer
           </Button>
         )}
-        {!isMobile && (
+        {!useFilterSheetLayout && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="ml-auto">
+              <Button variant="outline">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -553,6 +542,18 @@ export function DataTable({
           </DropdownMenu>
         )}
       </div>
+
+      {/* Mobile Active Filters Display */}
+      {useFilterSheetLayout && (
+        <div className="w-full mb-4">
+          <ActiveFiltersDisplay
+            table={table}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+          />
+        </div>
+      )}
+
       <div className="rounded-md border overflow-x-hidden">
         <Table>
           <TableHeader>
@@ -565,7 +566,7 @@ export function DataTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   );
@@ -608,7 +609,7 @@ export function DataTable({
                       data-state={row.getIsSelected() && "selected"}
                       className="cursor-pointer md:cursor-default"
                       onClick={
-                        isMobile && onRowClick
+                        useFilterSheetLayout && onRowClick
                           ? () => onRowClick(row.original)
                           : undefined
                       }
@@ -617,7 +618,7 @@ export function DataTable({
                         <TableCell key={cell.id}>
                           {flexRender(
                             cell.column.columnDef.cell,
-                            cell.getContext()
+                            cell.getContext(),
                           )}
                         </TableCell>
                       ))}
@@ -660,7 +661,7 @@ export function DataTable({
                 selectedRows.reduce((sum, row) => {
                   const amount = row.original.amount;
                   return sum + (amount || 0);
-                }, 0)
+                }, 0),
               )}
             </div>
           )}

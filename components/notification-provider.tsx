@@ -84,7 +84,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         const vapidKey = await getVapidPublicKey();
         setVapidPublicKey(vapidKey);
       } catch (error) {
-        console.error("Error loading VAPID public key:", error);
+        console.log("Error loading VAPID public key, notifications will not work", error);
       }
     };
     loadVapidKey();

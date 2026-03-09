@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,7 +19,11 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon, FilterIcon, X } from "lucide-react";
 import { format } from "date-fns";
 // import { BankAccount, Category } from "@prisma/client";
@@ -28,15 +31,18 @@ import { TransactionType } from "@prisma/client";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import { Table } from "@tanstack/react-table";
 import { TransactionOrTransfer } from "@/lib/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MobileFilterSheetProps {
   accounts: { id: number; name: string }[];
   categories: { id: number; name: string; icon?: string | null }[];
   table: Table<TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
-  setDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
+  setDateRange: (range: {
+    from: Date | undefined;
+    to: Date | undefined;
+  }) => void;
 }
-
 
 export function MobileFilterSheet({
   accounts,
@@ -45,6 +51,7 @@ export function MobileFilterSheet({
   dateRange,
   setDateRange,
 }: MobileFilterSheetProps) {
+  const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
 
   const handleFilterChange = (columnId: string, value: string) => {
@@ -54,7 +61,10 @@ export function MobileFilterSheet({
     }
   };
 
-  const handleDateRangeChange = (range: { from: Date | undefined; to: Date | undefined }) => {
+  const handleDateRangeChange = (range: {
+    from: Date | undefined;
+    to: Date | undefined;
+  }) => {
     setDateRange(range);
     const dateColumn = table.getColumn("date");
     if (dateColumn) {
@@ -66,9 +76,8 @@ export function MobileFilterSheet({
     }
   };
 
-
   // Check if any filters are active
-  const hasActiveFilters = 
+  const hasActiveFilters =
     (table.getColumn("description")?.getFilterValue() as string) ||
     (table.getColumn("account")?.getFilterValue() as string) ||
     (table.getColumn("category")?.getFilterValue() as string) ||
@@ -81,11 +90,7 @@ export function MobileFilterSheet({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative"
-        >
+        <Button variant="outline" size="sm" className="relative">
           <FilterIcon className="h-4 w-4 mr-2" />
           Filters
           {hasActiveFilters && (
@@ -93,26 +98,18 @@ export function MobileFilterSheet({
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-auto max-h-[80vh] p-4 pb-16">
+      <SheetContent
+        side={isMobile ? "bottom" : "right"}
+        className="h-auto max-h-[80vh] p-4 pb-16"
+      >
         <SheetHeader>
           <SheetTitle>Filter Transactions</SheetTitle>
           <SheetDescription>
             Use the filters below to find specific transactions
           </SheetDescription>
         </SheetHeader>
-        
-        <div className="space-y-6 py-4">
-          {/* Description Filter */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="Search descriptions..."
-              value={(table.getColumn("description")?.getFilterValue() as string) || ""}
-              onChange={(e) => handleFilterChange("description", e.target.value)}
-            />
-          </div>
 
+        <div className="space-y-6 py-4">
           {/* Date Range Filter */}
           <div className="space-y-2">
             <Label>Date Range</Label>
@@ -126,7 +123,7 @@ export function MobileFilterSheet({
                   {dateRange.from && dateRange.to ? (
                     `${format(dateRange.from, "MMM dd")} - ${format(
                       dateRange.to,
-                      "MMM dd"
+                      "MMM dd",
                     )}`
                   ) : dateRange.from ? (
                     `From ${format(dateRange.from, "MMM dd")}`
@@ -172,8 +169,13 @@ export function MobileFilterSheet({
           <div className="space-y-2">
             <Label>Account</Label>
             <Select
-              value={(table.getColumn("account")?.getFilterValue() as string) || "all"}
-              onValueChange={(value) => handleFilterChange("account", value === "all" ? "" : value)}
+              value={
+                (table.getColumn("account")?.getFilterValue() as string) ||
+                "all"
+              }
+              onValueChange={(value) =>
+                handleFilterChange("account", value === "all" ? "" : value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by account" />
@@ -193,8 +195,13 @@ export function MobileFilterSheet({
           <div className="space-y-2">
             <Label>Category</Label>
             <Select
-              value={(table.getColumn("category")?.getFilterValue() as string) || "all"}
-              onValueChange={(value) => handleFilterChange("category", value === "all" ? "" : value)}
+              value={
+                (table.getColumn("category")?.getFilterValue() as string) ||
+                "all"
+              }
+              onValueChange={(value) =>
+                handleFilterChange("category", value === "all" ? "" : value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by category" />
@@ -206,7 +213,9 @@ export function MobileFilterSheet({
                     <div className="flex items-center gap-2">
                       {category.icon && (
                         <DynamicIcon
-                          name={category.icon as keyof typeof dynamicIconImports}
+                          name={
+                            category.icon as keyof typeof dynamicIconImports
+                          }
                           className="h-4 w-4"
                         />
                       )}
@@ -222,8 +231,12 @@ export function MobileFilterSheet({
           <div className="space-y-2">
             <Label>Transaction Type</Label>
             <Select
-              value={(table.getColumn("type")?.getFilterValue() as string) || "all"}
-              onValueChange={(value) => handleFilterChange("type", value === "all" ? "" : value)}
+              value={
+                (table.getColumn("type")?.getFilterValue() as string) || "all"
+              }
+              onValueChange={(value) =>
+                handleFilterChange("type", value === "all" ? "" : value)
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Filter by type" />
@@ -241,10 +254,7 @@ export function MobileFilterSheet({
 
           {/* Action Button */}
           <div className="flex gap-2 pt-4">
-            <Button
-              onClick={() => setOpen(false)}
-              className="w-full"
-            >
+            <Button onClick={() => setOpen(false)} className="w-full">
               Apply Filters
             </Button>
           </div>
@@ -255,18 +265,23 @@ export function MobileFilterSheet({
 }
 
 // Component to display active filters in a compact way
-export function ActiveFiltersDisplay({ 
+export function ActiveFiltersDisplay({
   table,
   dateRange,
-  setDateRange
-}: { 
+  setDateRange,
+}: {
   table: Table<TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
-  setDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
+  setDateRange: (range: {
+    from: Date | undefined;
+    to: Date | undefined;
+  }) => void;
 }) {
   const activeFilters = [];
 
-  const descriptionFilter = table.getColumn("description")?.getFilterValue() as string;
+  const descriptionFilter = table
+    .getColumn("description")
+    ?.getFilterValue() as string;
   if (descriptionFilter) {
     activeFilters.push({
       key: "description",
@@ -276,12 +291,13 @@ export function ActiveFiltersDisplay({
   }
 
   if (dateRange.from || dateRange.to) {
-    const dateLabel = dateRange.from && dateRange.to
-      ? `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
-      : dateRange.from
-      ? `From ${format(dateRange.from, "MMM dd")}`
-      : `Until ${format(dateRange.to!, "MMM dd")}`;
-    
+    const dateLabel =
+      dateRange.from && dateRange.to
+        ? `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
+        : dateRange.from
+          ? `From ${format(dateRange.from, "MMM dd")}`
+          : `Until ${format(dateRange.to!, "MMM dd")}`;
+
     activeFilters.push({
       key: "dateRange",
       label: `Date: ${dateLabel}`,
@@ -301,7 +317,9 @@ export function ActiveFiltersDisplay({
     });
   }
 
-  const categoryFilter = table.getColumn("category")?.getFilterValue() as string;
+  const categoryFilter = table
+    .getColumn("category")
+    ?.getFilterValue() as string;
   if (categoryFilter) {
     activeFilters.push({
       key: "category",
