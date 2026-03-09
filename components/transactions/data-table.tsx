@@ -7,15 +7,16 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
+  Row,
   useReactTable,
   VisibilityState,
-  Row,
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -25,20 +26,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
 import {
   Table,
   TableBody,
@@ -47,12 +45,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { capitalize } from "@/lib/utils";
-import { TransactionType } from "@prisma/client";
-import { useFilterSheet, useIsMobile } from "@/hooks/use-mobile";
+import { useFilterSheet } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
-import { MobileFilterSheet, ActiveFiltersDisplay } from "./mobile-filter-sheet";
+import { capitalize } from "@/lib/utils";
+import { TransactionType } from "@prisma/client";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { ActiveFiltersDisplay, MobileFilterSheet } from "./mobile-filter-sheet";
 
 interface DataTableProps {
   columns: ColumnDef<TransactionOrTransfer>[];
