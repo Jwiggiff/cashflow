@@ -122,37 +122,31 @@ export function AccountsList({ accounts }: AccountsListProps) {
               </div>
             ) : (
               accountsByType[type].map((account) => (
-                <Link
+                <div
                   key={account.id}
-                  href={`/transactions?account=${account.id}`}
-                  className="flex items-center justify-between p-3 border-t hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-between gap-4 border-t p-3 transition-colors hover:bg-accent/50"
                 >
-                  <div className="flex-1">
-                    <div className="font-medium">{account.name}</div>
-                    {account.aliases.length > 0 && (
-                      <div className="text-sm text-muted-foreground">
-                        aka{" "}
-                        {account.aliases.map((alias) => alias.name).join(", ")}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <Link
+                    href={`/transactions?account=${account.id}`}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{account.name}</div>
+                      {account.aliases.length > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          aka{" "}
+                          {account.aliases.map((alias) => alias.name).join(", ")}
+                        </div>
+                      )}
+                    </div>
+                    <div className="shrink-0 text-right tabular-nums">
                       <div className="font-semibold">
                         {formatCurrency(account.balance)}
                       </div>
                     </div>
-                    <div
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      className="flex"
-                    >
-                      <AccountActionsCell account={account} />
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <AccountActionsCell account={account} />
+                </div>
               ))
             )}
           </AccordionContent>
