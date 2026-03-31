@@ -65,7 +65,10 @@ export function AccountDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !type || !balance) return;
+    if (!name.trim() || !type || !balance.trim()) {
+      toast.error("Please fill in account name, type, and balance.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
