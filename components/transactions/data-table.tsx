@@ -544,13 +544,14 @@ export function DataTable({
         )}
       </div>
 
-      {/* Mobile Active Filters Display */}
-      {isMobile && (
+      {/* Filter Sheet Active Filters Display */}
+      {useFilterSheetLayout && (
         <div className="w-full mb-4">
           <ActiveFiltersDisplay
             table={table}
             dateRange={dateRange}
             setDateRange={setDateRange}
+            accounts={accounts}
           />
         </div>
       )}

@@ -269,6 +269,7 @@ export function ActiveFiltersDisplay({
   table,
   dateRange,
   setDateRange,
+  accounts,
 }: {
   table: Table<TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
@@ -276,6 +277,7 @@ export function ActiveFiltersDisplay({
     from: Date | undefined;
     to: Date | undefined;
   }) => void;
+  accounts: { id: number; name: string }[];
 }) {
   const activeFilters = [];
 
@@ -310,9 +312,12 @@ export function ActiveFiltersDisplay({
 
   const accountFilter = table.getColumn("account")?.getFilterValue() as string;
   if (accountFilter) {
+    const accountName =
+      accounts.find((a) => String(a.id) === String(accountFilter))?.name ??
+      accountFilter;
     activeFilters.push({
       key: "account",
-      label: `Account: ${accountFilter}`,
+      label: `Account: ${accountName}`,
       onRemove: () => table.getColumn("account")?.setFilterValue(""),
     });
   }
