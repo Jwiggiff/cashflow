@@ -45,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useFilterSheet } from "@/hooks/use-mobile";
+import { useFilterSheet, useIsMobile } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
 import { capitalize } from "@/lib/utils";
@@ -79,6 +79,7 @@ export function DataTable({
   onConvertToTransfer,
   onRowClick,
 }: DataTableProps) {
+  const isMobile = useIsMobile();
   const useFilterSheetLayout = useFilterSheet();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     () =>
@@ -114,7 +115,7 @@ export function DataTable({
 
   // Update column visibility when mobile state changes
   React.useEffect(() => {
-    if (useFilterSheetLayout) {
+    if (isMobile) {
       setColumnVisibility({
         id: false,
         select: false,
@@ -141,7 +142,7 @@ export function DataTable({
         actions: true,
       });
     }
-  }, [useFilterSheetLayout]);
+  }, [isMobile]);
 
   // Add selection column
   const selectionColumn: ColumnDef<TransactionOrTransfer> = {
@@ -223,7 +224,7 @@ export function DataTable({
 
   // Prepare table data with date grouping for mobile
   const tableData = React.useMemo(() => {
-    if (!useFilterSheetLayout) {
+    if (!isMobile) {
       // For desktop, just return the table rows
       return table
         .getRowModel()
@@ -264,7 +265,7 @@ export function DataTable({
 
     return groups;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [useFilterSheetLayout, table, table.getRowModel().rows]);
+  }, [isMobile, table, table.getRowModel().rows]);
 
   return (
     <div className="w-full">
@@ -513,7 +514,7 @@ export function DataTable({
             Convert to Transfer
           </Button>
         )}
-        {!useFilterSheetLayout && (
+        {!isMobile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -544,7 +545,7 @@ export function DataTable({
       </div>
 
       {/* Mobile Active Filters Display */}
-      {useFilterSheetLayout && (
+      {isMobile && (
         <div className="w-full mb-4">
           <ActiveFiltersDisplay
             table={table}
@@ -609,7 +610,7 @@ export function DataTable({
                       data-state={row.getIsSelected() && "selected"}
                       className="cursor-pointer md:cursor-default"
                       onClick={
-                        useFilterSheetLayout && onRowClick
+                        isMobile && onRowClick
                           ? () => onRowClick(row.original)
                           : undefined
                       }
