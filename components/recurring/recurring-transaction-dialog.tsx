@@ -45,6 +45,15 @@ import { RRule, Weekday } from "rrule";
 import { toast } from "sonner";
 import { RecurrenceTypeSelectItems } from "./recurrence-type-select-items";
 
+export type RecurringTransactionPrefill = {
+  description: string;
+  amount: number;
+  type: TransactionType;
+  accountId: number;
+  startDate: Date;
+  rrule: string;
+};
+
 interface RecurringTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -52,6 +61,8 @@ interface RecurringTransactionDialogProps {
     account: BankAccount;
     category: Category | null;
   };
+  /** When creating (no recurringTransaction), seed the form from a dashboard recommendation */
+  prefillForCreate?: RecurringTransactionPrefill | null;
   accounts: BankAccount[];
   categories: Category[];
   onSuccess: () => void;
@@ -61,6 +72,7 @@ export function RecurringTransactionDialog({
   open,
   onOpenChange,
   recurringTransaction,
+  prefillForCreate = null,
   accounts,
   categories,
   onSuccess,
@@ -130,19 +142,37 @@ export function RecurringTransactionDialog({
   // Reset the form state when dialog opens
   useEffect(() => {
     if (open) {
-      setDescription(recurringTransaction?.description || "");
-      setAmount(
-        recurringTransaction?.amount
-          ? Math.abs(recurringTransaction.amount).toString()
-          : "0.00"
-      );
-      setType(recurringTransaction?.type || TransactionType.EXPENSE);
-      setCategoryId(recurringTransaction?.categoryId?.toString() || "");
-      setAccountId(recurringTransaction?.accountId?.toString() || "");
-      setStartDate(recurringTransaction?.startDate || new Date());
-      setRecurrenceType(recurringTransaction?.rrule || "");
+      if (recurringTransaction) {
+        setDescription(recurringTransaction.description || "");
+        setAmount(
+          recurringTransaction.amount
+            ? Math.abs(recurringTransaction.amount).toString()
+            : "0.00"
+        );
+        setType(recurringTransaction.type || TransactionType.EXPENSE);
+        setCategoryId(recurringTransaction.categoryId?.toString() || "");
+        setAccountId(recurringTransaction.accountId?.toString() || "");
+        setStartDate(recurringTransaction.startDate || new Date());
+        setRecurrenceType(recurringTransaction.rrule || "");
+      } else if (prefillForCreate) {
+        setDescription(prefillForCreate.description);
+        setAmount(Math.abs(prefillForCreate.amount).toFixed(2));
+        setType(prefillForCreate.type);
+        setCategoryId("");
+        setAccountId(prefillForCreate.accountId.toString());
+        setStartDate(prefillForCreate.startDate);
+        setRecurrenceType(prefillForCreate.rrule);
+      } else {
+        setDescription("");
+        setAmount("0.00");
+        setType(TransactionType.EXPENSE);
+        setCategoryId("");
+        setAccountId("");
+        setStartDate(new Date());
+        setRecurrenceType("");
+      }
     }
-  }, [recurringTransaction, open]);
+  }, [recurringTransaction, open, prefillForCreate]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });

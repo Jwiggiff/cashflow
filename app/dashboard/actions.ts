@@ -1,8 +1,14 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import {
+  detectRecurringPatternRecommendations,
+  RECOMMENDATIONS_LOOKBACK_MONTHS,
+  type DashboardRecurringPatternRecommendation,
+} from "@/lib/recommendations/detect-recurring-patterns";
 import { prisma } from "@/lib/prisma";
 import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import type { BankAccount, Category } from "@prisma/client";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const session = await auth();
@@ -265,4 +271,107 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
     category: categories.find((c) => c.id === expense.categoryId)?.name ?? "",
     value: (expense._sum.amount || 0) * -1,
   }));
+}
+
+export async function getDashboardRecommendations(): Promise<
+  DashboardRecurringPatternRecommendation[]
+> {
+  const session = await auth();
+  if (!session?.user) {
+    return [];
+  }
+
+  const userId = session.user.id;
+  const since = new Date();
+  since.setMonth(since.getMonth() - RECOMMENDATIONS_LOOKBACK_MONTHS);
+
+  const [
+    transactions,
+    transfers,
+    existingRecurringTransactions,
+    existingRecurringTransfers,
+  ] = await Promise.all([
+    prisma.transaction.findMany({
+      where: {
+        account: { userId },
+        date: { gte: since },
+      },
+      include: { account: true },
+    }),
+    prisma.transfer.findMany({
+      where: {
+        date: { gte: since },
+        fromAccount: { userId },
+        toAccount: { userId },
+      },
+      include: { fromAccount: true, toAccount: true },
+    }),
+    prisma.recurringTransaction.findMany({
+      where: { account: { userId } },
+      select: {
+        accountId: true,
+        type: true,
+        amount: true,
+        description: true,
+      },
+    }),
+    prisma.recurringTransfer.findMany({
+      where: {
+        fromAccount: { userId },
+        toAccount: { userId },
+      },
+      select: {
+        fromAccountId: true,
+        toAccountId: true,
+        amount: true,
+        description: true,
+      },
+    }),
+  ]);
+
+  return detectRecurringPatternRecommendations({
+    transactions: transactions.map((t) => ({
+      date: t.date,
+      description: t.description,
+      amount: t.amount,
+      type: t.type,
+      accountId: t.accountId,
+      accountName: t.account.name,
+    })),
+    transfers: transfers.map((t) => ({
+      date: t.date,
+      description: t.description,
+      amount: t.amount,
+      fromAccountId: t.fromAccountId,
+      toAccountId: t.toAccountId,
+      fromAccountName: t.fromAccount.name,
+      toAccountName: t.toAccount.name,
+    })),
+    existingRecurringTransactions,
+    existingRecurringTransfers,
+  });
+}
+
+export async function getAccountsAndCategoriesForRecurringDialogs(): Promise<{
+  accounts: BankAccount[];
+  categories: Category[];
+}> {
+  const session = await auth();
+  if (!session?.user) {
+    return { accounts: [], categories: [] };
+  }
+
+  const userId = session.user.id;
+  const [accounts, categories] = await Promise.all([
+    prisma.bankAccount.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+    }),
+    prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  return { accounts, categories };
 }

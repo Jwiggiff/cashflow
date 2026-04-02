@@ -32,10 +32,21 @@ interface RecurringTransferWithAccounts extends RecurringTransfer {
   toAccount: BankAccount;
 }
 
+export type RecurringTransferPrefill = {
+  amount: number;
+  description: string;
+  fromAccountId: number;
+  toAccountId: number;
+  startDate: Date;
+  rrule: string;
+};
+
 interface RecurringTransferDialogProps {
   accounts: BankAccount[];
   mode?: "add" | "edit";
   recurringTransfer?: RecurringTransferWithAccounts;
+  /** When adding, seed the form (e.g. from dashboard recommendations) */
+  prefillForCreate?: RecurringTransferPrefill | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
@@ -46,6 +57,7 @@ export function RecurringTransferDialog({
   accounts,
   mode = "add",
   recurringTransfer,
+  prefillForCreate = null,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
@@ -118,14 +130,30 @@ export function RecurringTransferDialog({
   // Reset the form state when dialog opens
   useEffect(() => {
     if (open) {
-      setAmount(recurringTransfer?.amount.toString() || "0.00");
-      setDescription(recurringTransfer?.description || "");
-      setFromAccountId(recurringTransfer?.fromAccountId || "");
-      setToAccountId(recurringTransfer?.toAccountId || "");
-      setStartDate(recurringTransfer?.startDate || new Date());
-      setRecurrenceType(recurringTransfer?.rrule || "");
+      if (recurringTransfer) {
+        setAmount(recurringTransfer.amount.toString() || "0.00");
+        setDescription(recurringTransfer.description || "");
+        setFromAccountId(recurringTransfer.fromAccountId || "");
+        setToAccountId(recurringTransfer.toAccountId || "");
+        setStartDate(recurringTransfer.startDate || new Date());
+        setRecurrenceType(recurringTransfer.rrule || "");
+      } else if (prefillForCreate && mode === "add") {
+        setAmount(prefillForCreate.amount.toFixed(2));
+        setDescription(prefillForCreate.description);
+        setFromAccountId(prefillForCreate.fromAccountId);
+        setToAccountId(prefillForCreate.toAccountId);
+        setStartDate(prefillForCreate.startDate);
+        setRecurrenceType(prefillForCreate.rrule);
+      } else {
+        setAmount("0.00");
+        setDescription("");
+        setFromAccountId("");
+        setToAccountId("");
+        setStartDate(new Date());
+        setRecurrenceType("");
+      }
     }
-  }, [recurringTransfer, open]);
+  }, [recurringTransfer, open, prefillForCreate, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

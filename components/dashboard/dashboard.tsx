@@ -7,7 +7,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import type { DashboardRecurringPatternRecommendation } from "@/lib/recommendations/detect-recurring-patterns";
 import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import type { BankAccount, Category } from "@prisma/client";
+import { DashboardRecommendations } from "./dashboard-recommendations";
 import { capitalize } from "@/lib/utils";
 import { DollarSign, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
 import { useFormatters } from "@/hooks/use-formatters";
@@ -29,12 +32,18 @@ export interface DashboardProps {
   stats: DashboardStats;
   monthlyData: MonthlyData[];
   expenseData: ExpenseData[];
+  recommendations?: DashboardRecurringPatternRecommendation[];
+  accounts?: BankAccount[];
+  categories?: Category[];
 }
 
 export default function Dashboard({
   stats,
   monthlyData,
   expenseData,
+  recommendations = [],
+  accounts = [],
+  categories = [],
 }: DashboardProps) {
   const { formatCurrency, formatPercentage } = useFormatters();
   
@@ -203,6 +212,14 @@ export default function Dashboard({
           </ChartContainer>
         </ChartCard>
       </div>
+
+      {recommendations.length > 0 && accounts.length > 0 && (
+        <DashboardRecommendations
+          recommendations={recommendations}
+          accounts={accounts}
+          categories={categories}
+        />
+      )}
     </div>
   );
 }

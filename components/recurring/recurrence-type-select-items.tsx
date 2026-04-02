@@ -1,44 +1,29 @@
 import { SelectItem } from "@/components/ui/select";
-import {
-  capitalizeFirstLetter,
-  getOccurenceInMonth,
-  getOrdinal,
-} from "@/lib/utils";
+import { capitalizeFirstLetter } from "@/lib/utils";
+import { getStandardRecurrenceRRules } from "@/lib/standard-recurrence-rrules";
 import { RRule } from "rrule";
 
 export function RecurrenceTypeSelectItems({ startDate }: { startDate: Date }) {
-  const weekly_rrule = RRule.fromText(
-    `Every week on ${startDate.toLocaleDateString("en-US", {
-      weekday: "long",
-    })}`
-  );
-  const biweekly_rrule = RRule.fromText(
-    `Every 2 weeks on ${startDate.toLocaleDateString("en-US", {
-      weekday: "long",
-    })}`
-  );
-  const monthly_day_rrule = RRule.fromText(
-    `Every month on the ${getOrdinal(startDate.getDate())}`
-  );
-  const monthly_nth_day_rrule = RRule.fromText(
-    `Every month on the ${getOrdinal(
-      getOccurenceInMonth(startDate)
-    )} ${startDate.toLocaleDateString("en-US", { weekday: "long" })}`
-  );
+  const {
+    weekly: weekly_rrule,
+    biweekly: biweekly_rrule,
+    monthlyOnDay: monthly_day_rrule,
+    monthlyOnNthWeekday: monthly_nth_day_rrule,
+  } = getStandardRecurrenceRRules(startDate);
 
   return (
     <>
-      <SelectItem value={weekly_rrule.toString()}>
-        {capitalizeFirstLetter(weekly_rrule.toText())}
+      <SelectItem value={weekly_rrule}>
+        {capitalizeFirstLetter(RRule.fromString(weekly_rrule).toText())}
       </SelectItem>
-      <SelectItem value={biweekly_rrule.toString()}>
-        {capitalizeFirstLetter(biweekly_rrule.toText())}
+      <SelectItem value={biweekly_rrule}>
+        {capitalizeFirstLetter(RRule.fromString(biweekly_rrule).toText())}
       </SelectItem>
-      <SelectItem value={monthly_day_rrule.toString()}>
-        {capitalizeFirstLetter(monthly_day_rrule.toText())}
+      <SelectItem value={monthly_day_rrule}>
+        {capitalizeFirstLetter(RRule.fromString(monthly_day_rrule).toText())}
       </SelectItem>
-      <SelectItem value={monthly_nth_day_rrule.toString()}>
-        {capitalizeFirstLetter(monthly_nth_day_rrule.toText())}
+      <SelectItem value={monthly_nth_day_rrule}>
+        {capitalizeFirstLetter(RRule.fromString(monthly_nth_day_rrule).toText())}
       </SelectItem>
     </>
   );
