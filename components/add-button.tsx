@@ -35,7 +35,29 @@ function isInputFocused() {
   const el = document.activeElement;
   if (!el) return false;
   const tag = el.tagName.toLowerCase();
-  return tag === "input" || tag === "textarea" || el.getAttribute("contenteditable") === "true";
+  if (tag === "input" || tag === "textarea" || el.getAttribute("contenteditable") === "true") {
+    return true;
+  }
+  if (el.getAttribute("role") === "combobox" || tag === "select") {
+    return true;
+  }
+  return false;
+}
+
+/** Radix modals: disable global shortcuts when any overlay is open (including dialogs opened outside Add). */
+function isAnyModalOpen() {
+  if (typeof document === "undefined") return false;
+  return (
+    document.querySelector(
+      '[data-slot="dialog-content"][data-state="open"]',
+    ) != null ||
+    document.querySelector(
+      '[data-slot="alert-dialog-content"][data-state="open"]',
+    ) != null ||
+    document.querySelector(
+      '[data-slot="sheet-content"][data-state="open"]',
+    ) != null
+  );
 }
 
 export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
@@ -57,7 +79,8 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
         !e.ctrlKey &&
         !e.altKey &&
         !dropdownOpen &&
-        !isInputFocused()
+        !isInputFocused() &&
+        !isAnyModalOpen()
       ) {
         e.preventDefault();
         setDropdownOpen(true);
