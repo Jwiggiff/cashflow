@@ -376,7 +376,7 @@ export async function bulkDeleteItems(
         for (const transaction of transactions) {
           await tx.bankAccount.update({
             where: { id: transaction.accountId, userId: session.user.id },
-            data: { balance: { increment: transaction.amount } },
+            data: { balance: { decrement: transaction.amount } },
           });
         }
       }
