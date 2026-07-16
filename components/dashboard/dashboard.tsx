@@ -1,5 +1,6 @@
 "use client";
 
+import { BalanceHistoryChart } from "@/components/balance-history-chart";
 import {
   ChartContainer,
   ChartLegend,
@@ -8,7 +9,12 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import type { DashboardRecurringPatternRecommendation } from "@/lib/recommendations/detect-recurring-patterns";
-import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import {
+  BalanceHistoryPoint,
+  DashboardStats,
+  ExpenseData,
+  MonthlyData,
+} from "@/lib/types";
 import type { BankAccount, Category } from "@prisma/client";
 import { DashboardRecommendations } from "./dashboard-recommendations";
 import { capitalize } from "@/lib/utils";
@@ -32,6 +38,7 @@ export interface DashboardProps {
   stats: DashboardStats;
   monthlyData: MonthlyData[];
   expenseData: ExpenseData[];
+  netWorthHistory: BalanceHistoryPoint[];
   recommendations?: DashboardRecurringPatternRecommendation[];
   accounts?: BankAccount[];
   categories?: Category[];
@@ -41,6 +48,7 @@ export default function Dashboard({
   stats,
   monthlyData,
   expenseData,
+  netWorthHistory,
   recommendations = [],
   accounts = [],
   categories = [],
@@ -90,6 +98,13 @@ export default function Dashboard({
 
       {/* Charts Section */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <ChartCard title="Net Worth Over Time" className="md:col-span-2 lg:col-span-7">
+          <BalanceHistoryChart
+            data={netWorthHistory}
+            className="h-[240px] w-full md:h-[300px]"
+          />
+        </ChartCard>
+
         <ChartCard title="Monthly Overview" className="lg:col-span-4">
           <ChartContainer
             className="aspect-auto h-full w-full min-h-[200px] md:min-h-[300px]"

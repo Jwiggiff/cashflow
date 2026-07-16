@@ -28,7 +28,7 @@ export function CurrencyTooltipFormatter({
       />
       <div className="flex flex-1 justify-between leading-none gap-2">
         <span className="text-muted-foreground capitalize">{item.name}</span>
-        {item.value && (
+        {item.value !== undefined && item.value !== null && (
           <span className="text-foreground font-mono font-medium tabular-nums">
             {formatCurrency(Number(item.value))}
           </span>

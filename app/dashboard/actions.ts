@@ -6,8 +6,18 @@ import {
   RECOMMENDATIONS_LOOKBACK_MONTHS,
   type DashboardRecurringPatternRecommendation,
 } from "@/lib/recommendations/detect-recurring-patterns";
+import {
+  buildNetWorthHistory,
+  getBalanceHistoryStart,
+} from "@/lib/balance-history";
+import { getBalanceSnapshotsForAccounts } from "@/lib/balance-history-data";
 import { prisma } from "@/lib/prisma";
-import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import {
+  BalanceHistoryPoint,
+  DashboardStats,
+  ExpenseData,
+  MonthlyData,
+} from "@/lib/types";
 import type { BankAccount, Category } from "@prisma/client";
 
 export async function getDashboardStats(): Promise<DashboardStats> {
@@ -173,6 +183,25 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       change: savingsRateChange,
     },
   };
+}
+
+export async function getNetWorthHistory(): Promise<BalanceHistoryPoint[]> {
+  const session = await auth();
+  if (!session?.user) {
+    return [];
+  }
+
+  const accounts = await prisma.bankAccount.findMany({
+    where: { userId: session.user.id },
+    select: { id: true },
+  });
+  const historyStart = getBalanceHistoryStart();
+  const snapshots = await getBalanceSnapshotsForAccounts(
+    accounts.map((account) => account.id),
+    historyStart
+  );
+
+  return buildNetWorthHistory(snapshots, historyStart);
 }
 
 export async function getMonthlyData(): Promise<MonthlyData[]> {

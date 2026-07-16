@@ -29,6 +29,15 @@ export type BankAccountWithAliases = Prisma.BankAccountGetPayload<{
   include: { aliases: true };
 }>;
 
+export type BalanceHistoryPoint = {
+  date: string;
+  balance: number;
+};
+
+export type BankAccountWithAliasesAndHistory = BankAccountWithAliases & {
+  balanceHistory: BalanceHistoryPoint[];
+};
+
 export type DashboardStat = {
   value: number;
   change: number;
