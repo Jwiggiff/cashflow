@@ -3,16 +3,24 @@ import type { BalanceHistoryPoint } from "@/lib/types";
 export const BALANCE_HISTORY_MONTHS = 12;
 
 export type BalanceSnapshotRecord = {
+  id: number;
   accountId: number;
   balance: number;
   recordedAt: Date;
 };
 
 export function getBalanceHistoryStart(now = new Date()) {
+  const targetMonth = now.getMonth() - BALANCE_HISTORY_MONTHS;
+  const lastDayOfTargetMonth = new Date(
+    now.getFullYear(),
+    targetMonth + 1,
+    0
+  ).getDate();
+
   return new Date(
     now.getFullYear(),
-    now.getMonth() - BALANCE_HISTORY_MONTHS,
-    now.getDate()
+    targetMonth,
+    Math.min(now.getDate(), lastDayOfTargetMonth)
   );
 }
 
@@ -25,19 +33,24 @@ function toDateKey(date: Date) {
 }
 
 function sortSnapshots(snapshots: BalanceSnapshotRecord[]) {
-  return [...snapshots].sort(
-    (a, b) => a.recordedAt.getTime() - b.recordedAt.getTime()
-  );
+  return [...snapshots].sort((a, b) => {
+    const timeDifference = a.recordedAt.getTime() - b.recordedAt.getTime();
+    return timeDifference === 0 ? a.id - b.id : timeDifference;
+  });
 }
 
 export function buildAccountBalanceHistory(
   snapshots: BalanceSnapshotRecord[],
-  startDate: Date
+  startDate: Date,
+  endDate = new Date()
 ): BalanceHistoryPoint[] {
   const dailyBalances = new Map<string, number>();
   let openingBalance: number | undefined;
+  let latestBalance: number | undefined;
 
   for (const snapshot of sortSnapshots(snapshots)) {
+    latestBalance = snapshot.balance;
+
     if (snapshot.recordedAt < startDate) {
       openingBalance = snapshot.balance;
       continue;
@@ -53,6 +66,10 @@ export function buildAccountBalanceHistory(
     }
   }
 
+  if (latestBalance !== undefined) {
+    dailyBalances.set(toDateKey(endDate), latestBalance);
+  }
+
   return Array.from(dailyBalances, ([date, balance]) => ({ date, balance })).sort(
     (a, b) => a.date.localeCompare(b.date)
   );
@@ -60,7 +77,8 @@ export function buildAccountBalanceHistory(
 
 export function buildNetWorthHistory(
   snapshots: BalanceSnapshotRecord[],
-  startDate: Date
+  startDate: Date,
+  endDate = new Date()
 ): BalanceHistoryPoint[] {
   const balancesByAccount = new Map<number, number>();
   const recentSnapshotsByDate = new Map<string, BalanceSnapshotRecord[]>();
@@ -100,6 +118,19 @@ export function buildNetWorthHistory(
       history[history.length - 1] = point;
     } else {
       history.push(point);
+    }
+  }
+
+  if (balancesByAccount.size > 0) {
+    const endDatePoint = {
+      date: toDateKey(endDate),
+      balance: sumBalances(balancesByAccount),
+    };
+
+    if (history.at(-1)?.date === endDatePoint.date) {
+      history[history.length - 1] = endDatePoint;
+    } else {
+      history.push(endDatePoint);
     }
   }
 

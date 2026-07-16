@@ -106,7 +106,6 @@ model BankAccount {
   aliases                    AccountAlias[]
   type                       AccountType
   balance                    Float
-  balanceSnapshots           BalanceSnapshot[]
   user                       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId                     String
   createdAt                  DateTime               @default(now())
@@ -120,13 +119,14 @@ model BankAccount {
 }
 
 model BalanceSnapshot {
-  id         Int         @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   balance    Float
-  recordedAt DateTime    @default(now())
-  account    BankAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  recordedAt DateTime @default(now())
   accountId  Int
+  userId     String
 
   @@index([accountId, recordedAt])
+  @@index([userId, recordedAt])
 }
 
 model Category {

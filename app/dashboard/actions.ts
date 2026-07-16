@@ -10,7 +10,7 @@ import {
   buildNetWorthHistory,
   getBalanceHistoryStart,
 } from "@/lib/balance-history";
-import { getBalanceSnapshotsForAccounts } from "@/lib/balance-history-data";
+import { getBalanceSnapshotsForUser } from "@/lib/balance-history-data";
 import { prisma } from "@/lib/prisma";
 import {
   BalanceHistoryPoint,
@@ -191,13 +191,9 @@ export async function getNetWorthHistory(): Promise<BalanceHistoryPoint[]> {
     return [];
   }
 
-  const accounts = await prisma.bankAccount.findMany({
-    where: { userId: session.user.id },
-    select: { id: true },
-  });
   const historyStart = getBalanceHistoryStart();
-  const snapshots = await getBalanceSnapshotsForAccounts(
-    accounts.map((account) => account.id),
+  const snapshots = await getBalanceSnapshotsForUser(
+    session.user.id,
     historyStart
   );
 

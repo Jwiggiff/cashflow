@@ -22,14 +22,17 @@ type BalanceHistoryChartProps = {
   className?: string;
 };
 
-function formatHistoryDate(value: string, includeYear = false) {
+function historyDateToTimestamp(value: string) {
   const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, month - 1, day).getTime();
+}
 
+function formatHistoryTimestamp(value: number, includeYear = false) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     ...(includeYear ? { year: "numeric" } : {}),
-  }).format(new Date(year, month - 1, day));
+  }).format(new Date(value));
 }
 
 export function BalanceHistoryChart({
@@ -38,6 +41,10 @@ export function BalanceHistoryChart({
 }: BalanceHistoryChartProps) {
   const { formatCurrency } = useFormatters();
   const gradientId = `balance-fill-${useId().replace(/:/g, "")}`;
+  const chartData = data.map((point) => ({
+    ...point,
+    timestamp: historyDateToTimestamp(point.date),
+  }));
 
   if (data.length === 0) {
     return (
@@ -61,7 +68,7 @@ export function BalanceHistoryChart({
     >
       <AreaChart
         accessibilityLayer
-        data={data}
+        data={chartData}
         margin={{ top: 8, right: 12, bottom: 0, left: 4 }}
       >
         <defs>
@@ -80,12 +87,15 @@ export function BalanceHistoryChart({
         </defs>
         <CartesianGrid vertical={false} />
         <XAxis
-          dataKey="date"
+          dataKey="timestamp"
+          type="number"
+          scale="time"
+          domain={["dataMin", "dataMax"]}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
           minTickGap={32}
-          tickFormatter={(date) => formatHistoryDate(date)}
+          tickFormatter={(timestamp) => formatHistoryTimestamp(timestamp)}
         />
         <YAxis
           tickLine={false}
@@ -99,9 +109,12 @@ export function BalanceHistoryChart({
           cursor={false}
           content={
             <ChartTooltipContent
-              labelFormatter={(date) =>
-                formatHistoryDate(String(date), true)
-              }
+              labelFormatter={(_, payload) => {
+                const timestamp = payload[0]?.payload?.timestamp;
+                return timestamp
+                  ? formatHistoryTimestamp(Number(timestamp), true)
+                  : "";
+              }}
               formatter={(_, __, item) => (
                 <CurrencyTooltipFormatter item={item} />
               )}
@@ -110,7 +123,7 @@ export function BalanceHistoryChart({
         />
         <Area
           dataKey="balance"
-          type="monotone"
+          type="stepAfter"
           fill={`url(#${gradientId})`}
           stroke="var(--color-balance)"
           strokeWidth={2}

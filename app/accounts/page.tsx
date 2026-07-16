@@ -24,7 +24,8 @@ export default async function AccountsPage() {
   const historyStart = getBalanceHistoryStart();
   const snapshots = await getBalanceSnapshotsForAccounts(
     accounts.map((account) => account.id),
-    historyStart
+    historyStart,
+    user.id
   );
   const snapshotsByAccount = snapshots.reduce((byAccount, snapshot) => {
     const accountSnapshots = byAccount.get(snapshot.accountId) ?? [];
