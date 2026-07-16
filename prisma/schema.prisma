@@ -121,7 +121,7 @@ model BankAccount {
 model BalanceSnapshot {
   id         Int      @id @default(autoincrement())
   balance    Float
-  recordedAt DateTime @default(now())
+  recordedAt DateTime
   accountId  Int
   userId     String
 

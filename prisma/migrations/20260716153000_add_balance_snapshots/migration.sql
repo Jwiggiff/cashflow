@@ -2,7 +2,7 @@
 CREATE TABLE "BalanceSnapshot" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "balance" REAL NOT NULL,
-    "recordedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "recordedAt" DATETIME NOT NULL,
     "accountId" INTEGER NOT NULL,
     "userId" TEXT NOT NULL
 );
