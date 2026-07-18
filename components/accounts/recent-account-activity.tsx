@@ -68,10 +68,10 @@ export function RecentAccountActivity({
           </div>
         ) : (
           <>
-            <div className="divide-y border-t @3xl:hidden">
+            <ul className="divide-y border-t @3xl:hidden">
               {items.map((item) => {
                 return (
-                  <div
+                  <li
                     key={item.id}
                     className="flex items-center gap-3 px-4 py-3"
                   >
@@ -113,10 +113,10 @@ export function RecentAccountActivity({
                         (item.amount > 0 ? "+" : item.amount < 0 ? "−" : "")}
                       {formatCurrency(Math.abs(item.amount))}
                     </div>
-                  </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
 
             <div className="hidden @3xl:block">
               <Table>

@@ -27,21 +27,21 @@ export function AccountSummaryCards({
           This month · includes transfers
         </div>
         <div className="grid grid-cols-2">
-          <div className="p-4">
+          <div className="min-w-0 p-4">
             <div className="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
               <ArrowDownToLine className="size-3.5" />
               Inflow
             </div>
-            <div className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+            <div className="truncate text-sm font-semibold tracking-tight tabular-nums text-emerald-700 dark:text-emerald-400">
               {formatCurrency(inflow)}
             </div>
           </div>
-          <div className="border-l p-4 text-right">
+          <div className="min-w-0 border-l p-4 text-right">
             <div className="mb-1 flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
               Outflow
               <ArrowUpFromLine className="size-3.5" />
             </div>
-            <div className="font-semibold tabular-nums text-destructive">
+            <div className="truncate text-sm font-semibold tracking-tight tabular-nums text-destructive">
               {formatCurrency(outflow)}
             </div>
           </div>

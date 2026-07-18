@@ -93,6 +93,7 @@ export function AccountBalanceHistory({
           </div>
           <div
             className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1 @3xl:flex @3xl:bg-transparent @3xl:p-0"
+            role="group"
             aria-label="Balance history range"
           >
             {ranges.map((item) => (
