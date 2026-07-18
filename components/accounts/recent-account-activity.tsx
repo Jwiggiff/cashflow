@@ -17,40 +17,25 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useFormatters } from "@/hooks/use-formatters";
-import { formatDate } from "@/lib/formatter";
-import type { TransactionOrTransfer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-type RecentAccountActivityProps = {
-  accountId: number;
-  items: TransactionOrTransfer[];
+export type RecentAccountActivityItem = {
+  id: string;
+  date: string;
+  description: string;
+  detail: string;
+  amount: number;
 };
-
-function getActivityDetails(item: TransactionOrTransfer, accountId: number) {
-  if (item.type === "TRANSFER") {
-    const isOutgoing = item.fromAccountId === accountId;
-    return {
-      description: item.description || "Transfer",
-      detail: isOutgoing
-        ? `To ${item.toAccount.name}`
-        : `From ${item.fromAccount.name}`,
-      amount: isOutgoing ? -item.amount : item.amount,
-    };
-  }
-
-  return {
-    description: item.description,
-    detail: item.category?.name ?? "Uncategorized",
-    amount: item.amount,
-  };
-}
 
 export function RecentAccountActivity({
   accountId,
   items,
-}: RecentAccountActivityProps) {
+}: {
+  accountId: number;
+  items: RecentAccountActivityItem[];
+}) {
   const { formatCurrency } = useFormatters();
 
   return (
@@ -88,33 +73,31 @@ export function RecentAccountActivity({
             </TableHeader>
             <TableBody>
               {items.map((item) => {
-                const activity = getActivityDetails(item, accountId);
-
                 return (
-                  <TableRow key={`${item.type}-${item.id}`}>
+                  <TableRow key={item.id}>
                     <TableCell className="pl-6 text-muted-foreground">
-                      {formatDate(item.date, { dateStyle: "short" })}
+                      {item.date}
                     </TableCell>
                     <TableCell>
                       <div className="max-w-[180px] truncate font-medium sm:max-w-none">
-                        {activity.description}
+                        {item.description}
                       </div>
                       <div className="text-xs text-muted-foreground sm:hidden">
-                        {activity.detail}
+                        {item.detail}
                       </div>
                     </TableCell>
                     <TableCell className="hidden text-muted-foreground sm:table-cell">
-                      {activity.detail}
+                      {item.detail}
                     </TableCell>
                     <TableCell
                       className={cn(
                         "pr-6 text-right font-medium tabular-nums",
-                        activity.amount > 0 && "text-green-600",
-                        activity.amount < 0 && "text-red-600"
+                        item.amount > 0 && "text-green-600",
+                        item.amount < 0 && "text-red-600"
                       )}
                     >
-                      {activity.amount > 0 ? "+" : activity.amount < 0 ? "−" : ""}
-                      {formatCurrency(Math.abs(activity.amount))}
+                      {item.amount > 0 ? "+" : item.amount < 0 ? "−" : ""}
+                      {formatCurrency(Math.abs(item.amount))}
                     </TableCell>
                   </TableRow>
                 );

@@ -1,9 +1,13 @@
 import { AccountBalanceHistory } from "@/components/accounts/account-balance-history";
 import { AccountDetailHeader } from "@/components/accounts/account-detail-header";
 import { AccountSummaryCards } from "@/components/accounts/account-summary-cards";
-import { RecentAccountActivity } from "@/components/accounts/recent-account-activity";
+import {
+  RecentAccountActivity,
+  type RecentAccountActivityItem,
+} from "@/components/accounts/recent-account-activity";
 import { Separator } from "@/components/ui/separator";
 import { buildAccountBalanceHistory } from "@/lib/balance-history";
+import { formatDate } from "@/lib/formatter";
 import { requireUser } from "@/lib/require-auth";
 import { prisma } from "@/lib/prisma";
 import type { TransactionOrTransfer } from "@/lib/types";
@@ -70,7 +74,7 @@ export default async function AccountDetailPage({
         account: true,
         category: true,
       },
-      orderBy: { date: "desc" },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: RECENT_ACTIVITY_LIMIT,
     }),
     prisma.transfer.findMany({
@@ -83,7 +87,7 @@ export default async function AccountDetailPage({
         fromAccount: true,
         toAccount: true,
       },
-      orderBy: { date: "desc" },
+      orderBy: [{ date: "desc" }, { createdAt: "desc" }, { id: "desc" }],
       take: RECENT_ACTIVITY_LIMIT,
     }),
     prisma.transaction.aggregate({
@@ -131,11 +135,20 @@ export default async function AccountDetailPage({
       type: "TRANSFER" as const,
     })),
   ]
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .sort(
+      (a, b) =>
+        b.date.getTime() - a.date.getTime() ||
+        b.createdAt.getTime() - a.createdAt.getTime() ||
+        b.id - a.id ||
+        a.type.localeCompare(b.type)
+    )
     .slice(0, RECENT_ACTIVITY_LIMIT);
 
+  const monthOpeningSnapshot = snapshots
+    .filter((snapshot) => snapshot.recordedAt < startOfMonth)
+    .at(-1);
   const openingSnapshot =
-    snapshots.filter((snapshot) => snapshot.recordedAt < startOfMonth).at(-1) ??
+    monthOpeningSnapshot ??
     snapshots.find((snapshot) => snapshot.recordedAt >= startOfMonth);
   const inflow =
     (income._sum.amount ?? 0) + (incomingTransfers._sum.amount ?? 0);
@@ -151,27 +164,63 @@ export default async function AccountDetailPage({
   const trackingStartedAt = snapshots[0]?.recordedAt ?? account.createdAt;
   const lastBalanceChangeAt =
     snapshots.length > 1 ? snapshots[snapshots.length - 1].recordedAt : null;
+  const balanceActivityDate = lastBalanceChangeAt ?? trackingStartedAt;
+  const balanceActivityLabel = `${
+    lastBalanceChangeAt ? "Last balance change" : "Balance tracking started"
+  } ${formatDate(balanceActivityDate, { dateStyle: "medium" })}`;
+  const balanceChangeDescription = monthOpeningSnapshot
+    ? "Since the start of this month"
+    : openingSnapshot
+      ? `Since ${formatDate(openingSnapshot.recordedAt, {
+          month: "short",
+          day: "numeric",
+        })}`
+      : "No balance history yet";
+  const recentActivityItems: RecentAccountActivityItem[] = recentActivity.map(
+    (item) => {
+      if (item.type === "TRANSFER") {
+        const isOutgoing = item.fromAccountId === accountId;
+        return {
+          id: `transfer-${item.id}`,
+          date: formatDate(item.date, { dateStyle: "short" }),
+          description: item.description || "Transfer",
+          detail: isOutgoing
+            ? `To ${item.toAccount.name}`
+            : `From ${item.fromAccount.name}`,
+          amount: isOutgoing ? -item.amount : item.amount,
+        };
+      }
+
+      return {
+        id: `transaction-${item.id}`,
+        date: formatDate(item.date, { dateStyle: "short" }),
+        description: item.description,
+        detail: item.category?.name ?? "Uncategorized",
+        amount: item.amount,
+      };
+    }
+  );
 
   return (
     <div className="flex min-h-screen w-full flex-col">
       <AccountDetailHeader
         account={account}
-        lastBalanceChangeAt={lastBalanceChangeAt}
-        trackingStartedAt={trackingStartedAt}
+        balanceActivityLabel={balanceActivityLabel}
       />
 
       <Separator />
 
-      <main className="flex-1 space-y-6 p-8">
+      <main className="flex-1 space-y-6 p-4 sm:p-8">
         <AccountSummaryCards
           inflow={inflow}
           outflow={outflow}
           balanceChange={balanceChange}
+          balanceChangeDescription={balanceChangeDescription}
         />
         <AccountBalanceHistory data={balanceHistory} />
         <RecentAccountActivity
           accountId={account.id}
-          items={recentActivity}
+          items={recentActivityItems}
         />
       </main>
     </div>

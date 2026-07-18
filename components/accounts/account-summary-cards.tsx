@@ -8,12 +8,14 @@ type AccountSummaryCardsProps = {
   inflow: number;
   outflow: number;
   balanceChange: number;
+  balanceChangeDescription: string;
 };
 
 export function AccountSummaryCards({
   inflow,
   outflow,
   balanceChange,
+  balanceChangeDescription,
 }: AccountSummaryCardsProps) {
   const { formatCurrency } = useFormatters();
 
@@ -34,7 +36,7 @@ export function AccountSummaryCards({
       <StatCard
         title="Balance Change"
         value={formatCurrency(balanceChange)}
-        change="Since the start of this month"
+        change={balanceChangeDescription}
         icon={TrendingUp}
       />
     </div>

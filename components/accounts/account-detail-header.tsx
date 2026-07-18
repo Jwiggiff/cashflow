@@ -4,15 +4,13 @@ import { AccountDialog } from "@/components/accounts/account-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFormatters } from "@/hooks/use-formatters";
-import { formatDate } from "@/lib/formatter";
 import type { BankAccountWithAliases } from "@/lib/types";
 import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 
 type AccountDetailHeaderProps = {
   account: BankAccountWithAliases;
-  lastBalanceChangeAt: Date | null;
-  trackingStartedAt: Date;
+  balanceActivityLabel: string;
 };
 
 function formatAccountType(type: string) {
@@ -21,14 +19,12 @@ function formatAccountType(type: string) {
 
 export function AccountDetailHeader({
   account,
-  lastBalanceChangeAt,
-  trackingStartedAt,
+  balanceActivityLabel,
 }: AccountDetailHeaderProps) {
   const { formatCurrency } = useFormatters();
-  const activityDate = lastBalanceChangeAt ?? trackingStartedAt;
 
   return (
-    <div className="flex flex-col gap-6 p-8 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-6 p-4 sm:flex-row sm:items-end sm:justify-between sm:p-8">
       <div className="min-w-0">
         <Button asChild variant="ghost" size="sm" className="-ml-3 mb-2">
           <Link href="/accounts">
@@ -46,17 +42,14 @@ export function AccountDetailHeader({
           </p>
         )}
         <p className="mt-1 text-sm text-muted-foreground">
-          {lastBalanceChangeAt
-            ? "Last balance change"
-            : "Balance tracking started"}{" "}
-          {formatDate(activityDate, { dateStyle: "medium" })}
+          {balanceActivityLabel}
         </p>
       </div>
 
-      <div className="flex items-end justify-between gap-4 sm:flex-col sm:items-end">
+      <div className="flex flex-col items-start gap-4 sm:items-end">
         <div className="sm:text-right">
           <div className="text-sm text-muted-foreground">Current balance</div>
-          <div className="text-3xl font-bold tabular-nums">
+          <div className="text-2xl font-bold tabular-nums sm:text-3xl">
             {formatCurrency(account.balance)}
           </div>
         </div>
