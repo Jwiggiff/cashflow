@@ -32,6 +32,7 @@ import {
 } from "recharts";
 import { ChartCard } from "./chart-card";
 import { CurrencyTooltipFormatter } from "./currency-tooltip-formatter";
+import { MobileDashboard } from "./mobile-dashboard";
 import { StatCard } from "./stat-card";
 
 export interface DashboardProps {
@@ -64,9 +65,20 @@ export default function Dashboard({
   }, {} as Record<string, { label: string; color: string }>);
 
   return (
-    <div className="flex-1 p-8">
+    <>
+      <MobileDashboard
+        stats={stats}
+        monthlyData={monthlyData}
+        expenseData={expenseData}
+        netWorthHistory={netWorthHistory}
+        recommendations={recommendations}
+        accounts={accounts}
+        categories={categories}
+      />
+
+      <div className="hidden flex-1 p-8 @3xl:block">
       {/* Stats Grid */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-8">
+      <div className="mb-8 grid grid-cols-2 gap-4 @5xl:grid-cols-4">
         <StatCard
           title="Total Balance"
           value={formatCurrency(stats?.totalBalance.value || 0)}
@@ -97,17 +109,20 @@ export default function Dashboard({
       </div>
 
       {/* Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <ChartCard title="Net Worth Over Time" className="md:col-span-2 lg:col-span-7">
+      <div className="grid gap-4 @3xl:grid-cols-2 @5xl:grid-cols-7">
+        <ChartCard
+          title="Net Worth Over Time"
+          className="@3xl:col-span-2 @5xl:col-span-7"
+        >
           <BalanceHistoryChart
             data={netWorthHistory}
-            className="h-[240px] w-full md:h-[300px]"
+            className="h-[300px] w-full"
           />
         </ChartCard>
 
-        <ChartCard title="Monthly Overview" className="lg:col-span-4">
+        <ChartCard title="Monthly Overview" className="@5xl:col-span-4">
           <ChartContainer
-            className="aspect-auto h-full w-full min-h-[200px] md:min-h-[300px]"
+            className="aspect-auto h-full min-h-[300px] w-full"
             config={{
               income: {
                 label: "Income",
@@ -121,7 +136,7 @@ export default function Dashboard({
               },
             }}
           >
-            <AreaChart data={monthlyData}>
+            <AreaChart data={monthlyData.slice(-6)}>
               <defs>
                 <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -192,10 +207,10 @@ export default function Dashboard({
           </ChartContainer>
         </ChartCard>
 
-        <ChartCard title="Expense Breakdown" className="lg:col-span-3">
+        <ChartCard title="Expense Breakdown" className="@5xl:col-span-3">
           <ChartContainer
             config={expenseConfig}
-            className="aspect-square h-full w-full mx-auto max-h-[200px] md:max-h-[300px]"
+            className="mx-auto aspect-square h-full max-h-[300px] w-full"
           >
             <PieChart>
               <ChartTooltip
@@ -235,6 +250,7 @@ export default function Dashboard({
           categories={categories}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }

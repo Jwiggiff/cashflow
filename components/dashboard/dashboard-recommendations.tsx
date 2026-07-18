@@ -90,12 +90,12 @@ export function DashboardRecommendations({
 
   return (
     <>
-      <div className="mt-8 w-full">
-        <Card className="w-full">
-          <CardHeader>
+      <div className="mt-0 w-full @3xl:mt-8">
+        <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:w-full @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+          <CardHeader className="px-8 @3xl:px-6">
             <CardTitle>Recommendations</CardTitle>
           </CardHeader>
-          <CardContent className="divide-y">
+          <CardContent className="divide-y px-8 @3xl:px-6">
             {recommendations.map((rec) => (
               <div
                 key={rec.id}
