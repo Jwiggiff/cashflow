@@ -123,7 +123,7 @@ export function BalanceHistoryChart({
         />
         <Area
           dataKey="balance"
-          type="stepAfter"
+          type="monotone"
           fill={`url(#${gradientId})`}
           stroke="var(--color-balance)"
           strokeWidth={2}
