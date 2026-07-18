@@ -34,10 +34,6 @@ export type BalanceHistoryPoint = {
   balance: number;
 };
 
-export type BankAccountWithAliasesAndHistory = BankAccountWithAliases & {
-  balanceHistory: BalanceHistoryPoint[];
-};
-
 export type DashboardStat = {
   value: number;
   change: number;

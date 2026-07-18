@@ -7,14 +7,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { BalanceHistoryChart } from "@/components/balance-history-chart";
-import { BankAccountWithAliasesAndHistory } from "@/lib/types";
+import { BankAccountWithAliases } from "@/lib/types";
 import { AccountType } from "@prisma/client";
 import { AccountActionsCell } from "./account-actions-cell";
 import { useFormatters } from "@/hooks/use-formatters";
 
 interface AccountsListProps {
-  accounts: BankAccountWithAliasesAndHistory[];
+  accounts: BankAccountWithAliases[];
 }
 
 const getAccountTypeLabel = (type: AccountType) => {
@@ -42,7 +41,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
     }
     acc[account.type].push(account);
     return acc;
-  }, {} as Record<AccountType, BankAccountWithAliasesAndHistory[]>);
+  }, {} as Record<AccountType, BankAccountWithAliases[]>);
 
   // Calculate total balance for each account type
   const getTotalBalance = (accountType: AccountType) => {
@@ -125,41 +124,30 @@ export function AccountsList({ accounts }: AccountsListProps) {
               accountsByType[type].map((account) => (
                 <div
                   key={account.id}
-                  className="border-t"
+                  className="flex items-center justify-between gap-4 border-t p-3 transition-colors hover:bg-accent/50"
                 >
-                  <div className="flex items-center justify-between gap-4 p-3 transition-colors hover:bg-accent/50">
-                    <Link
-                      href={`/transactions?account=${account.id}`}
-                      className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-medium">{account.name}</div>
-                        {account.aliases.length > 0 && (
-                          <div className="text-sm text-muted-foreground">
-                            aka{" "}
-                            {account.aliases
-                              .map((alias) => alias.name)
-                              .join(", ")}
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0 text-right tabular-nums">
-                        <div className="font-semibold">
-                          {formatCurrency(account.balance)}
+                  <Link
+                    href={`/accounts/${account.id}`}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium">{account.name}</div>
+                      {account.aliases.length > 0 && (
+                        <div className="text-sm text-muted-foreground">
+                          aka{" "}
+                          {account.aliases
+                            .map((alias) => alias.name)
+                            .join(", ")}
                         </div>
-                      </div>
-                    </Link>
-                    <AccountActionsCell account={account} />
-                  </div>
-                  <div className="px-3 pb-4">
-                    <div className="mb-1 text-xs font-medium text-muted-foreground">
-                      Balance history · Last 12 months
+                      )}
                     </div>
-                    <BalanceHistoryChart
-                      data={account.balanceHistory}
-                      className="h-[180px] w-full"
-                    />
-                  </div>
+                    <div className="shrink-0 text-right tabular-nums">
+                      <div className="font-semibold">
+                        {formatCurrency(account.balance)}
+                      </div>
+                    </div>
+                  </Link>
+                  <AccountActionsCell account={account} />
                 </div>
               ))
             )}
