@@ -82,16 +82,19 @@ export function AccountBalanceHistory({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none md:mx-0 md:gap-6 md:rounded-xl md:border md:py-6 md:shadow-sm">
+      <CardHeader className="px-4 md:px-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <CardTitle>Balance History</CardTitle>
-            <CardDescription className="mt-1">
+            <CardDescription className="mt-1 hidden md:block">
               Closing balance after account activity and manual updates
             </CardDescription>
           </div>
-          <div className="flex gap-1" aria-label="Balance history range">
+          <div
+            className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1 md:flex md:bg-transparent md:p-0"
+            aria-label="Balance history range"
+          >
             {ranges.map((item) => (
               <Button
                 key={item.value}
@@ -100,6 +103,7 @@ export function AccountBalanceHistory({
                 variant={range === item.value ? "default" : "ghost"}
                 onClick={() => setRange(item.value)}
                 aria-pressed={range === item.value}
+                className="w-full md:w-auto"
               >
                 {item.label}
               </Button>
@@ -107,10 +111,10 @@ export function AccountBalanceHistory({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="px-2">
+      <CardContent className="px-0 md:px-2">
         <BalanceHistoryChart
           data={filteredData}
-          className="h-[260px] w-full md:h-[340px]"
+          className="h-[230px] w-full md:h-[340px]"
         />
       </CardContent>
     </Card>

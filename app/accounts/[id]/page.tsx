@@ -206,11 +206,13 @@ export default async function AccountDetailPage({
       <AccountDetailHeader
         account={account}
         balanceActivityLabel={balanceActivityLabel}
+        balanceChange={balanceChange}
+        balanceChangeDescription={balanceChangeDescription}
       />
 
-      <Separator />
+      <Separator className="hidden md:block" />
 
-      <main className="flex-1 space-y-6 p-4 sm:p-8">
+      <main className="flex-1 space-y-4 p-4 md:space-y-6 md:p-8">
         <AccountSummaryCards
           inflow={inflow}
           outflow={outflow}
