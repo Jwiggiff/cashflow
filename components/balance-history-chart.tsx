@@ -30,8 +30,7 @@ function historyDateToTimestamp(value: string) {
 function formatHistoryTimestamp(value: number, includeYear = false) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
-    day: "numeric",
-    ...(includeYear ? { year: "numeric" } : {}),
+    ...(includeYear ? { day: "numeric", year: "numeric" } : {}),
   }).format(new Date(value));
 }
 
@@ -39,7 +38,7 @@ export function BalanceHistoryChart({
   data,
   className = "h-[240px] w-full",
 }: BalanceHistoryChartProps) {
-  const { formatCurrency } = useFormatters();
+  const { formatCurrency, isPrivate } = useFormatters();
   const gradientId = `balance-fill-${useId().replace(/:/g, "")}`;
   const chartData = data.map((point) => ({
     ...point,
@@ -69,7 +68,7 @@ export function BalanceHistoryChart({
       <AreaChart
         accessibilityLayer
         data={chartData}
-        margin={{ top: 8, right: 12, bottom: 0, left: 4 }}
+        margin={{ top: 8, right: 24, bottom: 0, left: 8 }}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -101,9 +100,22 @@ export function BalanceHistoryChart({
           tickLine={false}
           axisLine={false}
           tickMargin={8}
-          width={72}
+          width={58}
           domain={["auto", "auto"]}
-          tickFormatter={(value) => formatCurrency(value)}
+          tickFormatter={(value) => {
+            if (isPrivate) {
+              return formatCurrency(value);
+            }
+
+            return new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "USD",
+              notation: Math.abs(value) >= 1000 ? "compact" : "standard",
+              maximumFractionDigits: Math.abs(value) >= 1000 ? 1 : 0,
+            })
+              .format(value)
+              .replace("K", "k");
+          }}
         />
         <ChartTooltip
           cursor={false}
