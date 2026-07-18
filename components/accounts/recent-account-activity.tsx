@@ -44,8 +44,8 @@ export function RecentAccountActivity({
   const { formatCurrency, isPrivate } = useFormatters();
 
   return (
-    <Card className="-mx-4 gap-0 rounded-none border-x-0 py-0 shadow-none @3xl:mx-0 @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
-      <CardHeader className="px-4 py-4 @3xl:px-6 @3xl:py-0">
+    <Card className="-mx-8 gap-0 rounded-none border-x-0 py-0 shadow-none @3xl:mx-0 @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+      <CardHeader className="px-8 py-4 @3xl:px-6 @3xl:py-0">
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>Recent Activity</CardTitle>
@@ -73,7 +73,7 @@ export function RecentAccountActivity({
                 return (
                   <li
                     key={item.id}
-                    className="flex items-center gap-3 px-4 py-3"
+                    className="flex items-center gap-3 px-8 py-3"
                   >
                     <div
                       className={cn(
