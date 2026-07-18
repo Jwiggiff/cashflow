@@ -18,7 +18,12 @@ import {
 } from "@/components/ui/table";
 import { useFormatters } from "@/hooks/use-formatters";
 import { cn } from "@/lib/utils";
-import { ArrowDownLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowRight,
+  ArrowUpRight,
+} from "lucide-react";
 import Link from "next/link";
 
 export type RecentAccountActivityItem = {
@@ -36,15 +41,15 @@ export function RecentAccountActivity({
   accountId: number;
   items: RecentAccountActivityItem[];
 }) {
-  const { formatCurrency } = useFormatters();
+  const { formatCurrency, isPrivate } = useFormatters();
 
   return (
-    <Card className="-mx-4 gap-0 rounded-none border-x-0 py-0 shadow-none md:mx-0 md:gap-6 md:rounded-xl md:border md:py-6 md:shadow-sm">
-      <CardHeader className="px-4 py-4 md:px-6 md:py-0">
+    <Card className="-mx-4 gap-0 rounded-none border-x-0 py-0 shadow-none @3xl:mx-0 @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+      <CardHeader className="px-4 py-4 @3xl:px-6 @3xl:py-0">
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>Recent Activity</CardTitle>
-            <CardDescription className="mt-1 hidden md:block">
+            <CardDescription className="mt-1 hidden @3xl:block">
               Latest transactions and transfers for this account
             </CardDescription>
           </div>
@@ -63,7 +68,7 @@ export function RecentAccountActivity({
           </div>
         ) : (
           <>
-            <div className="divide-y border-t md:hidden">
+            <div className="divide-y border-t @3xl:hidden">
               {items.map((item) => {
                 return (
                   <div
@@ -73,11 +78,15 @@ export function RecentAccountActivity({
                     <div
                       className={cn(
                         "flex size-9 shrink-0 items-center justify-center rounded-full bg-muted",
-                        item.amount > 0 && "text-green-600",
-                        item.amount < 0 && "text-red-600"
+                        !isPrivate &&
+                          item.amount > 0 &&
+                          "text-emerald-700 dark:text-emerald-400",
+                        !isPrivate && item.amount < 0 && "text-destructive"
                       )}
                     >
-                      {item.amount >= 0 ? (
+                      {isPrivate ? (
+                        <ArrowLeftRight className="size-4" />
+                      ) : item.amount >= 0 ? (
                         <ArrowDownLeft className="size-4" />
                       ) : (
                         <ArrowUpRight className="size-4" />
@@ -94,11 +103,14 @@ export function RecentAccountActivity({
                     <div
                       className={cn(
                         "shrink-0 text-right text-sm font-semibold tabular-nums",
-                        item.amount > 0 && "text-green-600",
-                        item.amount < 0 && "text-red-600"
+                        !isPrivate &&
+                          item.amount > 0 &&
+                          "text-emerald-700 dark:text-emerald-400",
+                        !isPrivate && item.amount < 0 && "text-destructive"
                       )}
                     >
-                      {item.amount > 0 ? "+" : item.amount < 0 ? "−" : ""}
+                      {!isPrivate &&
+                        (item.amount > 0 ? "+" : item.amount < 0 ? "−" : "")}
                       {formatCurrency(Math.abs(item.amount))}
                     </div>
                   </div>
@@ -106,7 +118,7 @@ export function RecentAccountActivity({
               })}
             </div>
 
-            <div className="hidden md:block">
+            <div className="hidden @3xl:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -132,15 +144,20 @@ export function RecentAccountActivity({
                         <TableCell
                           className={cn(
                             "pr-6 text-right font-medium tabular-nums",
-                            item.amount > 0 && "text-green-600",
-                            item.amount < 0 && "text-red-600"
+                            !isPrivate &&
+                              item.amount > 0 &&
+                              "text-emerald-700 dark:text-emerald-400",
+                            !isPrivate &&
+                              item.amount < 0 &&
+                              "text-destructive"
                           )}
                         >
-                          {item.amount > 0
-                            ? "+"
-                            : item.amount < 0
-                              ? "−"
-                              : ""}
+                          {!isPrivate &&
+                            (item.amount > 0
+                              ? "+"
+                              : item.amount < 0
+                                ? "−"
+                                : "")}
                           {formatCurrency(Math.abs(item.amount))}
                         </TableCell>
                       </TableRow>

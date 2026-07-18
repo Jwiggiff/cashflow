@@ -22,7 +22,7 @@ export function AccountSummaryCards({
 
   return (
     <>
-      <Card className="gap-0 py-0 md:hidden">
+      <Card className="gap-0 py-0 @3xl:hidden">
         <div className="border-b px-4 py-2 text-xs font-medium text-muted-foreground">
           This month · includes transfers
         </div>
@@ -32,7 +32,7 @@ export function AccountSummaryCards({
               <ArrowDownToLine className="size-3.5" />
               Inflow
             </div>
-            <div className="font-semibold tabular-nums text-green-600">
+            <div className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
               {formatCurrency(inflow)}
             </div>
           </div>
@@ -41,14 +41,14 @@ export function AccountSummaryCards({
               Outflow
               <ArrowUpFromLine className="size-3.5" />
             </div>
-            <div className="font-semibold tabular-nums text-red-600">
+            <div className="font-semibold tabular-nums text-destructive">
               {formatCurrency(outflow)}
             </div>
           </div>
         </div>
       </Card>
 
-      <div className="hidden gap-4 md:grid md:grid-cols-3">
+      <div className="hidden gap-4 @3xl:grid @3xl:grid-cols-3">
         <StatCard
           title="Inflow"
           value={formatCurrency(inflow)}

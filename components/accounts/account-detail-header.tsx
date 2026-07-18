@@ -26,11 +26,18 @@ export function AccountDetailHeader({
   balanceChange,
   balanceChangeDescription,
 }: AccountDetailHeaderProps) {
-  const { formatCurrency } = useFormatters();
+  const { formatCurrency, isPrivate } = useFormatters();
 
   return (
     <>
-      <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden">
+      <header
+        className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-3 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/80 @3xl:hidden"
+        style={{
+          paddingTop: "max(0.5rem, env(safe-area-inset-top))",
+          paddingLeft: "max(0.75rem, env(safe-area-inset-left))",
+          paddingRight: "max(0.75rem, env(safe-area-inset-right))",
+        }}
+      >
         <div className="flex h-9 items-center gap-2">
           <Button
             asChild
@@ -44,7 +51,7 @@ export function AccountDetailHeader({
             </Link>
           </Button>
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <span className="truncate font-semibold">{account.name}</span>
+            <h1 className="truncate font-semibold">{account.name}</h1>
             <Badge
               variant="secondary"
               className="h-5 px-1.5 text-[10px] uppercase"
@@ -80,11 +87,13 @@ export function AccountDetailHeader({
             <div
               className={cn(
                 "truncate text-sm font-semibold tabular-nums",
-                balanceChange > 0 && "text-green-600",
-                balanceChange < 0 && "text-red-600"
+                !isPrivate &&
+                  balanceChange > 0 &&
+                  "text-emerald-700 dark:text-emerald-400",
+                !isPrivate && balanceChange < 0 && "text-destructive"
               )}
             >
-              {balanceChange > 0 ? "+" : ""}
+              {!isPrivate && balanceChange > 0 ? "+" : ""}
               {formatCurrency(balanceChange)}
             </div>
             <div className="truncate text-[11px] text-muted-foreground">
@@ -94,7 +103,7 @@ export function AccountDetailHeader({
         </div>
       </header>
 
-      <div className="hidden gap-6 p-8 md:flex md:items-end md:justify-between">
+      <div className="hidden gap-6 p-8 @3xl:flex @3xl:items-end @3xl:justify-between">
         <div className="min-w-0">
           <Button asChild variant="ghost" size="sm" className="-ml-3 mb-2">
             <Link href="/accounts">

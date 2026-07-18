@@ -210,9 +210,9 @@ export default async function AccountDetailPage({
         balanceChangeDescription={balanceChangeDescription}
       />
 
-      <Separator className="hidden md:block" />
+      <Separator className="hidden @3xl:block" />
 
-      <main className="flex-1 space-y-4 p-4 md:space-y-6 md:p-8">
+      <main className="flex-1 space-y-4 p-4 @3xl:space-y-6 @3xl:p-8">
         <AccountSummaryCards
           inflow={inflow}
           outflow={outflow}
