@@ -9,12 +9,12 @@ import { Suspense } from "react";
 
 const Loading = () => {
   return (
-    <div className="flex-1 p-4 @3xl:p-8">
+    <div className="flex-1 @3xl:p-8">
       <div className="space-y-4 @3xl:hidden">
-        <div className="-mx-8 h-[310px] animate-pulse bg-muted" />
-        <div className="h-32 animate-pulse rounded-lg bg-muted" />
-        <div className="-mx-8 h-[290px] animate-pulse bg-muted" />
-        <div className="-mx-8 h-[260px] animate-pulse bg-muted" />
+        <div className="-mx-4 h-[310px] animate-pulse bg-muted" />
+        <div className="-mx-4 h-32 animate-pulse bg-muted" />
+        <div className="-mx-4 h-[290px] animate-pulse bg-muted" />
+        <div className="-mx-4 h-[260px] animate-pulse bg-muted" />
       </div>
 
       <div className="hidden @3xl:block">

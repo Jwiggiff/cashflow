@@ -85,8 +85,8 @@ function MobileCashFlowChart({
   const chartId = useId().replace(/:/g, "");
 
   return (
-    <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none">
-      <CardHeader className="gap-3 px-8">
+    <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none">
+      <CardHeader className="gap-3 px-4">
         <div className="flex items-center justify-between gap-3">
           <CardTitle>Cash Flow</CardTitle>
           <div
@@ -226,11 +226,11 @@ function MobileSpendingBreakdown({ data }: { data: ExpenseData[] }) {
   const largestExpense = expenses[0]?.value ?? 0;
 
   return (
-    <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none">
-      <CardHeader className="px-8">
+    <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none">
+      <CardHeader className="px-4">
         <CardTitle>Top Spending</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 px-8">
+      <CardContent className="space-y-4 px-4">
         {expenses.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             No expenses recorded this month.
@@ -277,9 +277,9 @@ export function MobileDashboard({
   const netWorthChange = getNetWorthChange(netWorthHistory);
 
   return (
-    <div className="flex-1 space-y-4 p-4 @3xl:hidden">
-      <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none">
-        <CardHeader className="px-8">
+    <div className="flex-1 space-y-4 @3xl:hidden">
+      <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none">
+        <CardHeader className="px-4">
           <div className="flex items-end justify-between gap-4">
             <div className="min-w-0">
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -318,7 +318,7 @@ export function MobileDashboard({
         </CardContent>
       </Card>
 
-      <Card className="gap-0 py-0">
+      <Card className="-mx-4 gap-0 rounded-none border-x-0 py-0 shadow-none">
         <div className="border-b px-4 py-2 text-xs font-medium text-muted-foreground">
           This month
         </div>

@@ -120,13 +120,13 @@ export function DashboardRecommendations({
   return (
     <>
       <div className="mt-0 w-full @3xl:mt-8">
-        <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:w-full @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
-          <CardHeader className="px-8 @3xl:px-6">
+        <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:w-full @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+          <CardHeader className="px-4 @3xl:px-6">
             <CardTitle>Recommendations</CardTitle>
           </CardHeader>
           <CardContent className="px-0">
             {recommendations.length === 0 ? (
-              <div className="px-8 py-6 text-center text-sm text-muted-foreground @3xl:px-6">
+              <div className="px-4 py-6 text-center text-sm text-muted-foreground @3xl:px-6">
                 No recommendations at the moment.
               </div>
             ) : (
@@ -135,7 +135,7 @@ export function DashboardRecommendations({
                   {visibleRecommendations.map((rec) => (
                     <li
                       key={rec.id}
-                      className="group flex items-center gap-3 px-8 py-3 @3xl:px-6"
+                      className="group flex items-center gap-3 px-4 py-3 @3xl:px-6"
                     >
                       <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                         <Repeat className="size-4" aria-hidden />
@@ -171,7 +171,7 @@ export function DashboardRecommendations({
                 </ul>
 
                 {hasMore && (
-                  <div className="border-t px-8 pt-3 @3xl:px-6">
+                  <div className="border-t px-4 pt-3 @3xl:px-6">
                     <Button
                       type="button"
                       variant="ghost"
