@@ -34,7 +34,7 @@ import {
 import { CurrencyTooltipFormatter } from "./currency-tooltip-formatter";
 import { DashboardRecommendations } from "./dashboard-recommendations";
 
-type MobileDashboardProps = {
+type CompactDashboardProps = {
   stats: DashboardStats;
   monthlyData: MonthlyData[];
   expenseData: ExpenseData[];
@@ -264,7 +264,8 @@ function MobileSpendingBreakdown({ data }: { data: ExpenseData[] }) {
   );
 }
 
-export function MobileDashboard({
+/** Full-bleed dashboard stack shown below the `@3xl` content breakpoint. */
+export function CompactDashboard({
   stats,
   monthlyData,
   expenseData,
@@ -272,7 +273,7 @@ export function MobileDashboard({
   recommendations,
   accounts,
   categories,
-}: MobileDashboardProps) {
+}: CompactDashboardProps) {
   const { formatCurrency, formatPercentage, isPrivate } = useFormatters();
   const netWorthChange = getNetWorthChange(netWorthHistory);
 

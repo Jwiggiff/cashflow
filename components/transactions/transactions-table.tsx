@@ -6,12 +6,11 @@ import { TransactionOrTransfer } from "@/lib/types";
 import { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { getColumns } from "./columns";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useFormatters } from "@/hooks/use-formatters";
 import { useState } from "react";
+import { getColumns } from "./columns";
 import { TransactionDialog } from "./transaction-dialog";
 import { TransferDialog } from "./transfer-dialog";
-import { useFormatters } from "@/hooks/use-formatters";
 
 interface TransactionsTableProps {
   items: TransactionOrTransfer[];
@@ -26,18 +25,15 @@ export function TransactionsTable({
   categories,
   initialAccountFilter,
 }: TransactionsTableProps) {
-  const { formatCurrency } = useFormatters();
-  const columns = getColumns(accounts, categories, formatCurrency);
+  const { formatCurrency, isPrivate } = useFormatters();
+  const columns = getColumns(accounts, categories, formatCurrency, isPrivate);
   const router = useRouter();
-  const isMobile = useIsMobile();
   const [editItem, setEditItem] = useState<TransactionOrTransfer | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const handleRowClick = (item: TransactionOrTransfer) => {
-    if (isMobile) {
-      setEditItem(item);
-      setEditDialogOpen(true);
-    }
+    setEditItem(item);
+    setEditDialogOpen(true);
   };
 
   const handleDeleteSelected = async (

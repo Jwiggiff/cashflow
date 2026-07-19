@@ -335,7 +335,7 @@ export function RecurringTransferDialog({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {mode === "edit" && (
             <Button
               type="button"
@@ -343,10 +343,10 @@ export function RecurringTransferDialog({
               onClick={handleDeleteTransfer}
               disabled={isSubmitting}
             >
-              Delete Transfer
+              Delete
             </Button>
           )}
-          <div className="flex gap-2 ml-auto">
+          <div className="ml-auto flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -361,8 +361,8 @@ export function RecurringTransferDialog({
                   ? "Updating..."
                   : "Adding..."
                 : mode === "edit"
-                ? "Update Recurring Transfer"
-                : "Add Recurring Transfer"}
+                  ? "Update"
+                  : "Add"}
             </Button>
           </div>
         </div>

@@ -1,37 +1,47 @@
-import * as React from "react"
+import * as React from "react";
 
-const MOBILE_BREAKPOINT = 768
-/** Use filter sheet (search + Filters button) instead of inline filters below this width (Tailwind xl) */
-const FILTER_SHEET_BREAKPOINT = 1536
+const MOBILE_BREAKPOINT = 768;
+/** Use compact filter chrome (search + Filters sheet) below this viewport width. */
+const COMPACT_FILTERS_BREAKPOINT = 1536;
 
+/** Viewport phone/tablet check — for sheet sides, dialogs, etc. */
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
+  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
+    undefined
+  );
 
   React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-    mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
-  }, [])
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+    mql.addEventListener("change", onChange);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
-  return !!isMobile
+  return !!isMobile;
 }
 
-export function useFilterSheet() {
-  const [useSheet, setUseSheet] = React.useState<boolean>(true)
+/**
+ * True when the viewport is too narrow for the full inline transactions
+ * filter toolbar (date + account + category + type). Independent of the
+ * `@3xl` content-width layout used for list vs table.
+ */
+export function useCompactFilters() {
+  const [useCompact, setUseCompact] = React.useState(true);
 
   React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${FILTER_SHEET_BREAKPOINT - 1}px)`)
+    const mql = window.matchMedia(
+      `(max-width: ${COMPACT_FILTERS_BREAKPOINT - 1}px)`
+    );
     const onChange = () => {
-      setUseSheet(window.innerWidth < FILTER_SHEET_BREAKPOINT)
-    }
-    mql.addEventListener("change", onChange)
-    setUseSheet(window.innerWidth < FILTER_SHEET_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
-  }, [])
+      setUseCompact(window.innerWidth < COMPACT_FILTERS_BREAKPOINT);
+    };
+    mql.addEventListener("change", onChange);
+    setUseCompact(window.innerWidth < COMPACT_FILTERS_BREAKPOINT);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
 
-  return useSheet
+  return useCompact;
 }

@@ -323,7 +323,7 @@ export function TransactionDialog({
           )}
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {mode === "edit" && (
             <Button
               type="button"
@@ -331,10 +331,10 @@ export function TransactionDialog({
               onClick={() => handleDeleteTransaction()}
               disabled={isSubmitting}
             >
-              Delete Transaction
+              Delete
             </Button>
           )}
-          <div className="flex justify-end space-x-2 ml-auto">
+          <div className="ml-auto flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -349,8 +349,8 @@ export function TransactionDialog({
                   ? "Updating..."
                   : "Adding..."
                 : mode === "edit"
-                ? "Update Transaction"
-                : "Add Transaction"}
+                  ? "Update"
+                  : "Add"}
             </Button>
           </div>
         </div>

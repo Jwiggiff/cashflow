@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountDialog } from "@/components/accounts/account-dialog";
+import { PrivacyToggle } from "@/components/privacy-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFormatters } from "@/hooks/use-formatters";
@@ -59,6 +60,7 @@ export function AccountDetailHeader({
               {formatAccountType(account.type)}
             </Badge>
           </div>
+          <PrivacyToggle />
           <AccountDialog
             mode="edit"
             account={account}
@@ -132,16 +134,19 @@ export function AccountDetailHeader({
               {formatCurrency(account.balance)}
             </div>
           </div>
-          <AccountDialog
-            mode="edit"
-            account={account}
-            trigger={
-              <Button variant="outline">
-                <Pencil />
-                Edit account
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-2">
+            <PrivacyToggle />
+            <AccountDialog
+              mode="edit"
+              account={account}
+              trigger={
+                <Button variant="outline">
+                  <Pencil />
+                  Edit account
+                </Button>
+              }
+            />
+          </div>
         </div>
       </div>
     </>

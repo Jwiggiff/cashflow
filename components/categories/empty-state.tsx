@@ -1,17 +1,21 @@
+"use client";
+
+import { CategoryDialog } from "@/components/categories/category-dialog";
+import { Button } from "@/components/ui/button";
 import { TagIcon } from "lucide-react";
 
 export function EmptyState() {
   return (
-    <div className="text-center py-12">
-      <TagIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-semibold mb-2">No categories yet</h3>
-      <p className="text-muted-foreground mb-4">
-        Click &quot;Add&quot; then choose &quot;Category&quot; to add your first
-        category.
+    <div className="py-12 text-center">
+      <TagIcon className="mx-auto mb-4 size-12 text-muted-foreground" />
+      <h3 className="mb-2 text-lg font-semibold">No categories yet</h3>
+      <p className="mx-auto mb-6 max-w-sm text-muted-foreground">
+        Create categories to organize expenses, or they can be added
+        automatically when you create transactions.
       </p>
-      <p className="text-muted-foreground mb-4">
-        Categories can also be automatically created when you add transactions.
-      </p>
+      <CategoryDialog
+        trigger={<Button>Add category</Button>}
+      />
     </div>
   );
 }

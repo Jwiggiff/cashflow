@@ -35,8 +35,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       const result = await updateProfile({ username, name, email });
 
       if (result.success) {
-        console.log("result.user", result.user);
-        const newSession = await update({
+        await update({
           user: {
             id: result.user?.id,
             username: result.user?.username,
@@ -44,7 +43,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             name: result.user?.name,
           },
         });
-        console.log("newSession", newSession);
         toast.success("Profile updated successfully");
       } else {
         toast.error(result.error || "Failed to update profile");
