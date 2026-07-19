@@ -212,7 +212,7 @@ export default async function AccountDetailPage({
 
       <Separator className="hidden @3xl:block" />
 
-      <main className="flex-1 space-y-4 p-4 @3xl:space-y-6 @3xl:p-8">
+      <main className="flex-1 space-y-4 @3xl:space-y-6 @3xl:p-8">
         <AccountSummaryCards
           inflow={inflow}
           outflow={outflow}

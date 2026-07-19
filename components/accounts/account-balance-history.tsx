@@ -82,8 +82,8 @@ export function AccountBalanceHistory({
   );
 
   return (
-    <Card className="-mx-8 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
-      <CardHeader className="px-8 @3xl:px-6">
+    <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+      <CardHeader className="px-4 @3xl:px-6">
         <div className="flex flex-col gap-3 @3xl:flex-row @3xl:items-start @3xl:justify-between">
           <div>
             <CardTitle>Balance History</CardTitle>
