@@ -127,7 +127,7 @@ export function AccountsList({ accounts }: AccountsListProps) {
                   className="flex items-center justify-between gap-4 border-t p-3 transition-colors hover:bg-accent/50"
                 >
                   <Link
-                    href={`/transactions?account=${account.id}`}
+                    href={`/accounts/${account.id}`}
                     className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md outline-offset-2 focus-visible:outline-2 focus-visible:outline-ring"
                   >
                     <div className="min-w-0 flex-1">
@@ -135,7 +135,9 @@ export function AccountsList({ accounts }: AccountsListProps) {
                       {account.aliases.length > 0 && (
                         <div className="text-sm text-muted-foreground">
                           aka{" "}
-                          {account.aliases.map((alias) => alias.name).join(", ")}
+                          {account.aliases
+                            .map((alias) => alias.name)
+                            .join(", ")}
                         </div>
                       )}
                     </div>

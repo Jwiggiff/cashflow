@@ -4,14 +4,22 @@ import {
   getDashboardStats,
   getExpenseBreakdown,
   getMonthlyData,
+  getNetWorthHistory,
 } from "@/app/dashboard/actions";
 import Dashboard from "./dashboard";
 
 export default async function DashboardWrapper() {
-  const [stats, monthlyData, expenseData, recommendations] = await Promise.all([
+  const [
+    stats,
+    monthlyData,
+    expenseData,
+    netWorthHistory,
+    recommendations,
+  ] = await Promise.all([
     getDashboardStats(),
     getMonthlyData(),
     getExpenseBreakdown(),
+    getNetWorthHistory(),
     getDashboardRecommendations(),
   ]);
 
@@ -25,6 +33,7 @@ export default async function DashboardWrapper() {
       stats={stats}
       monthlyData={monthlyData}
       expenseData={expenseData}
+      netWorthHistory={netWorthHistory}
       recommendations={recommendations}
       accounts={dialogData.accounts}
       categories={dialogData.categories}

@@ -118,6 +118,17 @@ model BankAccount {
   incomingRecurringTransfers RecurringTransfer[]    @relation("ToAccountRecurring")
 }
 
+model BalanceSnapshot {
+  id         Int      @id @default(autoincrement())
+  balance    Float
+  recordedAt DateTime
+  accountId  Int
+  userId     String
+
+  @@index([accountId, recordedAt])
+  @@index([userId, recordedAt])
+}
+
 model Category {
   id                    Int                    @id @default(autoincrement())
   name                  String                 @unique

@@ -4,7 +4,7 @@ import type { DashboardRecurringPatternRecommendation } from "@/lib/recommendati
 import type { BankAccount, Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Plus, Repeat } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useFormatters } from "@/hooks/use-formatters";
@@ -17,26 +17,48 @@ import {
   type RecurringTransferPrefill,
 } from "@/components/recurring/recurring-transfer-dialog";
 
+const INITIAL_VISIBLE = 2;
+
 type Props = {
   recommendations: DashboardRecurringPatternRecommendation[];
   accounts: BankAccount[];
   categories: Category[];
 };
 
-function recommendationSentence(
-  rec: DashboardRecurringPatternRecommendation,
-  formatCurrency: (n: number) => string,
-): string {
-  const freq =
-    rec.patternSummary.charAt(0).toLowerCase() + rec.patternSummary.slice(1);
-
+function recommendationTitle(rec: DashboardRecurringPatternRecommendation) {
   if (rec.kind === "transaction") {
-    const prep = rec.transactionType === "INCOME" ? "into" : "from";
-    return `Recurring ${rec.transactionType.toLowerCase()} "${rec.description}" ${freq} for ${formatCurrency(rec.displayAmount)} ${prep} ${rec.accountName}`;
+    return rec.description || "Recurring transaction";
   }
 
-  const base = `Recurring transfer from ${rec.fromAccountName} to ${rec.toAccountName} ${freq} for ${formatCurrency(rec.amount)}`;
-  return rec.description.trim().toLowerCase() !== "transfer" ? `${base} (${rec.description.trim()})` : base;
+  const description = rec.description.trim();
+  if (description && description.toLowerCase() !== "transfer") {
+    return description;
+  }
+
+  return `${rec.fromAccountName} → ${rec.toAccountName}`;
+}
+
+function recommendationDetail(
+  rec: DashboardRecurringPatternRecommendation,
+  formatCurrency: (n: number) => string
+) {
+  if (rec.kind === "transaction") {
+    return [
+      formatCurrency(rec.displayAmount),
+      rec.patternSummary,
+      rec.accountName,
+    ].join(" · ");
+  }
+
+  const description = rec.description.trim();
+  const route =
+    description && description.toLowerCase() !== "transfer"
+      ? `${rec.fromAccountName} → ${rec.toAccountName}`
+      : null;
+
+  return [formatCurrency(rec.amount), rec.patternSummary, route]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export function DashboardRecommendations({
@@ -46,22 +68,29 @@ export function DashboardRecommendations({
 }: Props) {
   const router = useRouter();
   const { formatCurrency } = useFormatters();
+  const [expanded, setExpanded] = useState(false);
 
   const [txOpen, setTxOpen] = useState(false);
   const [txPrefill, setTxPrefill] =
     useState<RecurringTransactionPrefill | null>(null);
   const [tfOpen, setTfOpen] = useState(false);
   const [tfPrefill, setTfPrefill] = useState<RecurringTransferPrefill | null>(
-    null,
+    null
   );
 
   const refresh = () => router.refresh();
+  const hasMore = recommendations.length > INITIAL_VISIBLE;
+  const visibleRecommendations =
+    expanded || !hasMore
+      ? recommendations
+      : recommendations.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = recommendations.length - INITIAL_VISIBLE;
 
   const openTransaction = (
     r: Extract<
       DashboardRecurringPatternRecommendation,
       { kind: "transaction" }
-    >,
+    >
   ) => {
     setTxPrefill({
       description: r.description,
@@ -75,7 +104,7 @@ export function DashboardRecommendations({
   };
 
   const openTransfer = (
-    r: Extract<DashboardRecurringPatternRecommendation, { kind: "transfer" }>,
+    r: Extract<DashboardRecurringPatternRecommendation, { kind: "transfer" }>
   ) => {
     setTfPrefill({
       amount: r.amount,
@@ -90,49 +119,82 @@ export function DashboardRecommendations({
 
   return (
     <>
-      <div className="mt-8 w-full">
-        <Card className="w-full">
-          <CardHeader>
+      <div className="mt-0 w-full @3xl:mt-8">
+        <Card className="-mx-4 gap-4 rounded-none border-x-0 py-4 shadow-none @3xl:mx-0 @3xl:w-full @3xl:gap-6 @3xl:rounded-xl @3xl:border @3xl:py-6 @3xl:shadow-sm">
+          <CardHeader className="px-4 @3xl:px-6">
             <CardTitle>Recommendations</CardTitle>
           </CardHeader>
-          <CardContent className="divide-y">
-            {recommendations.map((rec) => (
-              <div
-                key={rec.id}
-                className="group flex items-start gap-2 sm:items-center"
-              >
-                <Repeat
-                  className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:mt-0"
-                  aria-hidden
-                />
-                <p className="min-w-0 flex-1 text-sm leading-snug text-foreground">
-                  {recommendationSentence(rec, formatCurrency)}
-                </p>
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 shrink-0 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
-                  aria-label={
-                    rec.kind === "transaction"
-                      ? "Create recurring transaction"
-                      : "Create recurring transfer"
-                  }
-                  onClick={() =>
-                    rec.kind === "transaction"
-                      ? openTransaction(rec)
-                      : openTransfer(rec)
-                  }
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-
-            {recommendations.length === 0 && (
-              <div className="p-4 text-center text-sm text-muted-foreground">
+          <CardContent className="px-0">
+            {recommendations.length === 0 ? (
+              <div className="px-4 py-6 text-center text-sm text-muted-foreground @3xl:px-6">
                 No recommendations at the moment.
               </div>
+            ) : (
+              <>
+                <ul className="divide-y border-t">
+                  {visibleRecommendations.map((rec) => (
+                    <li
+                      key={rec.id}
+                      className="group flex items-center gap-3 px-4 py-3 @3xl:px-6"
+                    >
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        <Repeat className="size-4" aria-hidden />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">
+                          {recommendationTitle(rec)}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {recommendationDetail(rec, formatCurrency)}
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 shrink-0 opacity-100 transition-opacity @3xl:opacity-0 @3xl:group-hover:opacity-100 @3xl:group-focus-within:opacity-100"
+                        aria-label={
+                          rec.kind === "transaction"
+                            ? "Create recurring transaction"
+                            : "Create recurring transfer"
+                        }
+                        onClick={() =>
+                          rec.kind === "transaction"
+                            ? openTransaction(rec)
+                            : openTransfer(rec)
+                        }
+                      >
+                        <Plus className="size-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+
+                {hasMore && (
+                  <div className="border-t px-4 pt-3 @3xl:px-6">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-muted-foreground"
+                      onClick={() => setExpanded((value) => !value)}
+                      aria-expanded={expanded}
+                    >
+                      {expanded ? (
+                        <>
+                          Show less
+                          <ChevronUp />
+                        </>
+                      ) : (
+                        <>
+                          Show {hiddenCount} more
+                          <ChevronDown />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

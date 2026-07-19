@@ -18,13 +18,13 @@ export default async function AccountsPage() {
 
   return (
     <div className="flex flex-col min-h-screen w-full">
-      <div className="flex items-center justify-between p-8">
+      <div className="flex items-center justify-between py-2 @3xl:p-8">
         <h1 className="text-3xl font-bold">Accounts</h1>
       </div>
 
       <Separator />
 
-      <div className="flex-1 p-8">
+      <div className="flex-1 py-2 @3xl:p-8">
         <AccountsList accounts={accounts} />
       </div>
     </div>

@@ -6,9 +6,27 @@ import {
   RECOMMENDATIONS_LOOKBACK_MONTHS,
   type DashboardRecurringPatternRecommendation,
 } from "@/lib/recommendations/detect-recurring-patterns";
+import {
+  buildNetWorthHistory,
+  getBalanceHistoryStart,
+} from "@/lib/balance-history";
+import { getBalanceSnapshotsForUser } from "@/lib/balance-history-data";
 import { prisma } from "@/lib/prisma";
-import { DashboardStats, ExpenseData, MonthlyData } from "@/lib/types";
+import {
+  BalanceHistoryPoint,
+  DashboardStats,
+  ExpenseData,
+  MonthlyData,
+} from "@/lib/types";
 import type { BankAccount, Category } from "@prisma/client";
+
+function calculatePercentChange(current: number, previous: number) {
+  if (previous === 0) {
+    return 0;
+  }
+
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const session = await auth();
@@ -23,9 +41,8 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
   // Get total balance across all accounts
   const totalBalance =
@@ -40,26 +57,24 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       })
     )._sum.balance || 0;
 
-  // Get last month's total balance for comparison
-  const lastMonthBalance =
-    (
-      await prisma.transaction.aggregate({
-        where: {
-          account: {
-            userId: session.user.id,
-          },
-          date: {
-            lt: endOfLastMonth,
-          },
-        },
-        _sum: {
-          amount: true,
-        },
-      })
-    )._sum.amount || 0;
-
-  const balanceChange =
-    ((totalBalance - lastMonthBalance) / lastMonthBalance) * 100;
+  const balanceSnapshots = await getBalanceSnapshotsForUser(
+    session.user.id,
+    startOfMonth
+  );
+  const openingBalances = new Map<number, number>();
+  for (const snapshot of balanceSnapshots) {
+    if (snapshot.recordedAt < startOfMonth) {
+      openingBalances.set(snapshot.accountId, snapshot.balance);
+    }
+  }
+  const openingNetWorth =
+    openingBalances.size > 0
+      ? Array.from(openingBalances.values()).reduce(
+          (sum, balance) => sum + balance,
+          0
+        )
+      : totalBalance;
+  const balanceChange = calculatePercentChange(totalBalance, openingNetWorth);
 
   // Get monthly income (current month)
   const monthlyIncome =
@@ -72,7 +87,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           type: "INCOME",
           date: {
             gte: startOfMonth,
-            lte: endOfMonth,
+            lt: startOfNextMonth,
           },
         },
         _sum: {
@@ -92,7 +107,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           type: "INCOME",
           date: {
             gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            lt: startOfMonth,
           },
         },
         _sum: {
@@ -101,8 +116,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       })
     )._sum.amount || 0;
 
-  const incomeChange =
-    ((monthlyIncome - lastMonthIncome) / lastMonthIncome) * 100;
+  const incomeChange = calculatePercentChange(monthlyIncome, lastMonthIncome);
 
   // Get monthly expenses (current month)
   const monthlyExpenses =
@@ -115,7 +129,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           type: "EXPENSE",
           date: {
             gte: startOfMonth,
-            lte: endOfMonth,
+            lt: startOfNextMonth,
           },
         },
         _sum: {
@@ -135,7 +149,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
           type: "EXPENSE",
           date: {
             gte: startOfLastMonth,
-            lte: endOfLastMonth,
+            lt: startOfMonth,
           },
         },
         _sum: {
@@ -144,15 +158,22 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       })
     )._sum.amount || 0) * -1;
 
-  const expenseChange =
-    ((monthlyExpenses - lastMonthExpenses) / lastMonthExpenses) * 100;
+  const expenseChange = calculatePercentChange(
+    monthlyExpenses,
+    lastMonthExpenses
+  );
 
   // Calculate savings rate
-  const savingsRate = ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
+  const savingsRate =
+    monthlyIncome === 0
+      ? 0
+      : ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
 
   // Get last month's savings rate for comparison
   const lastSavingsRate =
-    ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome) * 100;
+    lastMonthIncome === 0
+      ? 0
+      : ((lastMonthIncome - lastMonthExpenses) / lastMonthIncome) * 100;
   const savingsRateChange = savingsRate - lastSavingsRate;
 
   return {
@@ -175,6 +196,21 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+export async function getNetWorthHistory(): Promise<BalanceHistoryPoint[]> {
+  const session = await auth();
+  if (!session?.user) {
+    return [];
+  }
+
+  const historyStart = getBalanceHistoryStart();
+  const snapshots = await getBalanceSnapshotsForUser(
+    session.user.id,
+    historyStart
+  );
+
+  return buildNetWorthHistory(snapshots, historyStart);
+}
+
 export async function getMonthlyData(): Promise<MonthlyData[]> {
   const session = await auth();
   if (!session?.user) {
@@ -182,60 +218,56 @@ export async function getMonthlyData(): Promise<MonthlyData[]> {
   }
 
   const now = new Date();
-  const months = [];
-
-  // Get data for the last 6 months
-  for (let i = 5; i >= 0; i--) {
-    const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
-    const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-
-    const income =
-      (
-        await prisma.transaction.aggregate({
-          where: {
-            account: {
-              userId: session.user.id,
-            },
-            type: "INCOME",
-            date: {
-              gte: startOfMonth,
-              lte: endOfMonth,
-            },
-          },
-          _sum: {
-            amount: true,
-          },
-        })
-      )._sum.amount || 0;
-
-    const expenses =
-      (
-        await prisma.transaction.aggregate({
-          where: {
-            account: {
-              userId: session.user.id,
-            },
-            type: "EXPENSE",
-            date: {
-              gte: startOfMonth,
-              lte: endOfMonth,
-            },
-          },
-          _sum: {
-            amount: true,
-          },
-        })
-      )._sum.amount || 0;
-
-    months.push({
+  const monthDates = Array.from({ length: 12 }, (_, index) => {
+    return new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+  });
+  const startDate = monthDates[0];
+  const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      account: { userId: session.user.id },
+      date: {
+        gte: startDate,
+        lt: endDate,
+      },
+    },
+    select: {
+      date: true,
+      amount: true,
+      type: true,
+    },
+  });
+  const monthlyData = monthDates.map((month) => {
+    return {
+      key: `${month.getFullYear()}-${month.getMonth()}`,
       month: month.toLocaleDateString("en-US", { month: "short" }),
-      income,
-      expenses: expenses * -1,
-    });
+      income: 0,
+      expenses: 0,
+    };
+  });
+  const dataByMonth = new Map(
+    monthlyData.map((month) => [month.key, month])
+  );
+
+  for (const transaction of transactions) {
+    const key = `${transaction.date.getFullYear()}-${transaction.date.getMonth()}`;
+    const month = dataByMonth.get(key);
+    if (!month) {
+      continue;
+    }
+
+    if (transaction.type === "INCOME") {
+      month.income += transaction.amount;
+    } else {
+      month.expenses += transaction.amount * -1;
+    }
   }
 
-  return months;
+  return monthlyData.map(({ month, income, expenses }) => ({
+    month,
+    income,
+    expenses,
+  }));
 }
 
 export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
@@ -246,9 +278,11 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-  const categories = await prisma.category.findMany();
+  const categories = await prisma.category.findMany({
+    where: { userId: session.user.id },
+  });
 
   const expenses = await prisma.transaction.groupBy({
     by: ["categoryId"],
@@ -259,7 +293,7 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
       type: "EXPENSE",
       date: {
         gte: startOfMonth,
-        lte: endOfMonth,
+        lt: startOfNextMonth,
       },
     },
     _sum: {
