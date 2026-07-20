@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
 import { Upload } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 interface CSVDropzoneProps {
   onFileDrop: (file: File) => void;
@@ -22,7 +22,6 @@ export function CSVDropzone({ onFileDrop }: CSVDropzoneProps) {
     e.preventDefault();
     e.stopPropagation();
 
-    // Only hide if we're leaving the window entirely
     if (
       e.clientX <= 0 ||
       e.clientY <= 0 ||
@@ -55,32 +54,31 @@ export function CSVDropzone({ onFileDrop }: CSVDropzoneProps) {
 
   useEffect(() => {
     document.addEventListener("dragover", handleDragOver);
+    return () => document.removeEventListener("dragover", handleDragOver);
   }, [handleDragOver]);
 
-  return (
-    <>
-      {isDragOver && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-200"
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <div className="relative rounded-lg p-8 shadow-lg">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="rounded-full bg-blue-100 p-3 dark:bg-blue-900/20">
-                <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-              </div>
+  if (!isDragOver) return null;
 
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Drop CSV file here</h3>
-                <p className="text-sm text-muted-foreground">
-                  Release to import your transactions
-                </p>
-              </div>
-            </div>
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all duration-200"
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="mx-4 rounded-xl border bg-card p-8 shadow-lg">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <div className="rounded-full bg-primary/10 p-3 text-primary">
+            <Upload className="size-8" />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Drop CSV file here</h3>
+            <p className="text-sm text-muted-foreground">
+              Release to import your transactions
+            </p>
           </div>
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

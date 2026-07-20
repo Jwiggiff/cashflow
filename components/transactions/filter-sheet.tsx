@@ -26,14 +26,13 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, FilterIcon, X } from "lucide-react";
 import { format } from "date-fns";
-// import { BankAccount, Category } from "@prisma/client";
 import { TransactionType } from "@prisma/client";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import { Table } from "@tanstack/react-table";
 import { TransactionOrTransfer } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-interface MobileFilterSheetProps {
+interface FilterSheetProps {
   accounts: { id: number; name: string }[];
   categories: { id: number; name: string; icon?: string | null }[];
   table: Table<TransactionOrTransfer>;
@@ -44,13 +43,14 @@ interface MobileFilterSheetProps {
   }) => void;
 }
 
-export function MobileFilterSheet({
+/** Filter controls in a sheet — used when the viewport is too narrow for inline filters. */
+export function FilterSheet({
   accounts,
   categories,
   table,
   dateRange,
   setDateRange,
-}: MobileFilterSheetProps) {
+}: FilterSheetProps) {
   const isMobile = useIsMobile();
   const [open, setOpen] = React.useState(false);
 
@@ -94,7 +94,7 @@ export function MobileFilterSheet({
           <FilterIcon className="h-4 w-4 mr-2" />
           Filters
           {hasActiveFilters && (
-            <div className="absolute -top-1 -right-1 h-2 w-2 bg-blue-500 rounded-full" />
+            <div className="absolute -top-1 -right-1 size-2 rounded-full bg-primary" />
           )}
         </Button>
       </SheetTrigger>
@@ -270,6 +270,7 @@ export function ActiveFiltersDisplay({
   dateRange,
   setDateRange,
   accounts,
+  categories = [],
 }: {
   table: Table<TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
@@ -278,6 +279,7 @@ export function ActiveFiltersDisplay({
     to: Date | undefined;
   }) => void;
   accounts: { id: number; name: string }[];
+  categories?: { id: number; name: string; icon?: string | null }[];
 }) {
   const activeFilters = [];
 
@@ -326,9 +328,12 @@ export function ActiveFiltersDisplay({
     .getColumn("category")
     ?.getFilterValue() as string;
   if (categoryFilter) {
+    const categoryName =
+      categories.find((category) => String(category.id) === String(categoryFilter))
+        ?.name ?? categoryFilter;
     activeFilters.push({
       key: "category",
-      label: `Category: ${categoryFilter}`,
+      label: `Category: ${categoryName}`,
       onRemove: () => table.getColumn("category")?.setFilterValue(""),
     });
   }
@@ -360,14 +365,14 @@ export function ActiveFiltersDisplay({
       {activeFilters.map((filter) => (
         <div
           key={filter.key}
-          className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md text-sm"
+          className="flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm text-secondary-foreground"
         >
-          <span className="truncate max-w-[120px]">{filter.label}</span>
+          <span className="max-w-[120px] truncate">{filter.label}</span>
           <Button
             variant="ghost"
             size="sm"
             onClick={filter.onRemove}
-            className="h-4 w-4 p-0 hover:bg-blue-100"
+            className="h-4 w-4 p-0 hover:bg-secondary"
           >
             <X className="h-3 w-3" />
           </Button>

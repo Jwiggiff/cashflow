@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBrand } from "@/components/auth/auth-brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,10 +27,21 @@ export default function SignUpPage() {
   const router = useRouter();
   const params = useSearchParams();
 
+  const passwordsMatch =
+    password.length > 0 &&
+    confirmPassword.length > 0 &&
+    password === confirmPassword;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    if (!passwordsMatch) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const { success, error } = await signUp({ username, password });
@@ -53,18 +65,19 @@ export default function SignUpPage() {
       }
     } catch (error) {
       console.error(error);
-      setError("An error occurred during sign in");
+      setError("An error occurred during sign up");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-full flex items-center justify-center bg-pattern py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex h-full items-center justify-center bg-pattern px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-6">
+        <AuthBrand />
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
+            <CardTitle className="text-center text-2xl font-bold">
               Create an account
             </CardTitle>
             <CardDescription className="text-center">
@@ -74,7 +87,10 @@ export default function SignUpPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                >
                   {error}
                 </div>
               )}
@@ -89,6 +105,7 @@ export default function SignUpPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
 
@@ -103,19 +120,24 @@ export default function SignUpPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    className="pr-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    size="icon"
+                    className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="size-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="size-4" />
                     )}
                   </Button>
                 </div>
@@ -132,23 +154,35 @@ export default function SignUpPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    autoComplete="new-password"
+                    className="pr-10"
                   />
-                  <div className="absolute right-0 top-0 h-full p-2 grid place-items-center">
+                  <div className="absolute top-0 right-0 grid h-full place-items-center p-2">
                     {password &&
                       confirmPassword &&
-                      (password === confirmPassword ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                      (passwordsMatch ? (
+                        <Check
+                          className="size-4 text-emerald-600 dark:text-emerald-400"
+                          aria-label="Passwords match"
+                        />
                       ) : (
-                        <X className="h-4 w-4 text-red-500" />
+                        <X
+                          className="size-4 text-destructive"
+                          aria-label="Passwords do not match"
+                        />
                       ))}
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !passwordsMatch}
+              >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="size-4 animate-spin" />
                     Creating account...
                   </>
                 ) : (

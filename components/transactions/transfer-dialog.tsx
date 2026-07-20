@@ -220,7 +220,7 @@ export function TransferDialog({
           />
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {mode === "edit" && (
             <Button
               type="button"
@@ -228,10 +228,10 @@ export function TransferDialog({
               onClick={() => handleDeleteTransfer()}
               disabled={isSubmitting}
             >
-              Delete Transfer
+              Delete
             </Button>
           )}
-          <div className="flex justify-end space-x-2 ml-auto">
+          <div className="ml-auto flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -246,8 +246,8 @@ export function TransferDialog({
                   ? "Updating..."
                   : "Adding..."
                 : mode === "edit"
-                ? "Update Transfer"
-                : "Add Transfer"}
+                  ? "Update"
+                  : "Add"}
             </Button>
           </div>
         </div>

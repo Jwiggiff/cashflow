@@ -1,16 +1,19 @@
 "use client";
 
-import Link from "next/link";
+import { AccountDialog } from "@/components/accounts/account-dialog";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
 import { BankAccountWithAliases } from "@/lib/types";
-import { AccountType } from "@prisma/client";
-import { AccountActionsCell } from "./account-actions-cell";
 import { useFormatters } from "@/hooks/use-formatters";
+import { AccountType } from "@prisma/client";
+import { LandmarkIcon } from "lucide-react";
+import Link from "next/link";
+import { AccountActionsCell } from "./account-actions-cell";
 
 interface AccountsListProps {
   accounts: BankAccountWithAliases[];
@@ -77,8 +80,14 @@ export function AccountsList({ accounts }: AccountsListProps) {
 
   if (accounts.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        No accounts found. Create your first account to get started.
+      <div className="py-12 text-center">
+        <LandmarkIcon className="mx-auto mb-4 size-12 text-muted-foreground" />
+        <h3 className="mb-2 text-lg font-semibold">No accounts yet</h3>
+        <p className="mx-auto mb-6 max-w-sm text-muted-foreground">
+          Add a checking, savings, investment, or credit account to start
+          tracking your balances.
+        </p>
+        <AccountDialog mode="add" trigger={<Button>Add account</Button>} />
       </div>
     );
   }

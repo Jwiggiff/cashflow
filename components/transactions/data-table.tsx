@@ -45,14 +45,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useFilterSheet, useIsMobile } from "@/hooks/use-mobile";
+import { useCompactFilters } from "@/hooks/use-mobile";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
 import { capitalize } from "@/lib/utils";
 import { TransactionType } from "@prisma/client";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { ActiveFiltersDisplay, MobileFilterSheet } from "./mobile-filter-sheet";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ActiveFiltersDisplay, FilterSheet } from "./filter-sheet";
+import { TransactionList } from "./transaction-list";
+import { TransactionsEmptyState } from "./transactions-empty-state";
 
 interface DataTableProps {
   columns: ColumnDef<TransactionOrTransfer>[];
@@ -79,8 +82,10 @@ export function DataTable({
   onConvertToTransfer,
   onRowClick,
 }: DataTableProps) {
-  const isMobile = useIsMobile();
-  const useFilterSheetLayout = useFilterSheet();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const useCompactFilterLayout = useCompactFilters();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     () =>
       initialAccountFilter
@@ -90,15 +95,15 @@ export function DataTable({
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({
       id: false,
-      select: false,
-      date: false,
-      source: false,
-      account: false,
+      select: true,
+      date: true,
+      source: true,
+      account: true,
       type: false,
-      category: false,
+      category: true,
       createdAt: false,
       updatedAt: false,
-      actions: false,
+      actions: true,
     });
   const [rowSelection, setRowSelection] = React.useState({});
   const [pagination, setPagination] = React.useState({
@@ -112,37 +117,6 @@ export function DataTable({
     from: undefined,
     to: undefined,
   });
-
-  // Update column visibility when mobile state changes
-  React.useEffect(() => {
-    if (isMobile) {
-      setColumnVisibility({
-        id: false,
-        select: false,
-        date: false,
-        source: false,
-        account: false,
-        type: false,
-        category: false,
-        createdAt: false,
-        updatedAt: false,
-        actions: false,
-      });
-    } else {
-      setColumnVisibility({
-        id: false,
-        select: true,
-        date: true,
-        source: true,
-        account: true,
-        type: false,
-        category: true,
-        createdAt: false,
-        updatedAt: false,
-        actions: true,
-      });
-    }
-  }, [isMobile]);
 
   // Add selection column
   const selectionColumn: ColumnDef<TransactionOrTransfer> = {
@@ -206,10 +180,48 @@ export function DataTable({
     }
   }, [dateRange, table]);
 
+  const accountFilter =
+    (columnFilters.find((filter) => filter.id === "account")?.value as
+      | string
+      | undefined) ?? "";
+
+  // Keep `?account=` in sync so Add transaction can default to the filtered account
+  React.useEffect(() => {
+    const current = searchParams.get("account") ?? "";
+    if (current === accountFilter) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (accountFilter) {
+      params.set("account", accountFilter);
+    } else {
+      params.delete("account");
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [accountFilter, pathname, router, searchParams]);
+
   const types = [...Object.values(TransactionType), "TRANSFER"];
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelectedRows = selectedRows.length > 0;
+
+  const clearAllFilters = () => {
+    table.getAllColumns().forEach((column) => {
+      if (column.getCanFilter()) {
+        column.setFilterValue("");
+      }
+    });
+    setDateRange({ from: undefined, to: undefined });
+  };
+
+  const emptyState = (
+    <TransactionsEmptyState
+      hasData={data.length > 0}
+      accounts={accounts}
+      categories={categories}
+      onClearFilters={clearAllFilters}
+    />
+  );
 
   const handleDeleteSelected = () => {
     if (onDeleteSelected && hasSelectedRows) {
@@ -222,16 +234,10 @@ export function DataTable({
     }
   };
 
-  // Prepare table data with date grouping for mobile
-  const tableData = React.useMemo(() => {
-    if (!isMobile) {
-      // For desktop, just return the table rows
-      return table
-        .getRowModel()
-        .rows.map((row) => ({ type: "row" as const, row }));
-    }
+  const pageRows = table.getRowModel().rows;
 
-    // For mobile, group by date and add headers
+  // Date-grouped rows for the compact (@3xl:hidden) list view
+  const listData = React.useMemo(() => {
     type RowData =
       | { type: "header"; date: string }
       | { type: "row"; row: Row<TransactionOrTransfer> };
@@ -239,8 +245,7 @@ export function DataTable({
     const groups: RowData[] = [];
     const dateGroups: { [key: string]: Row<TransactionOrTransfer>[] } = {};
 
-    // Group filtered table rows by date (use filtered rows so filtering works)
-    table.getRowModel().rows.forEach((row) => {
+    pageRows.forEach((row) => {
       const date = (row.original as { date?: Date }).date;
       if (date) {
         const dateKey = new Date(date).toDateString();
@@ -251,7 +256,6 @@ export function DataTable({
       }
     });
 
-    // Sort dates and create grouped structure
     const sortedDates = Object.keys(dateGroups).sort(
       (a, b) => new Date(b).getTime() - new Date(a).getTime(),
     );
@@ -264,13 +268,12 @@ export function DataTable({
     });
 
     return groups;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile, table, table.getRowModel().rows]);
+  }, [pageRows]);
 
   return (
     <div className="w-full">
       <div className="flex flex-col sm:flex-row items-center py-4 gap-2">
-        {useFilterSheetLayout ? (
+        {useCompactFilterLayout ? (
           <>
             <div className="flex items-center gap-2 w-full">
               <Input
@@ -287,7 +290,7 @@ export function DataTable({
                 }
                 className="flex-1 max-w-sm"
               />
-              <MobileFilterSheet
+              <FilterSheet
                 accounts={accounts}
                 categories={categories}
                 table={table}
@@ -295,8 +298,10 @@ export function DataTable({
                 setDateRange={setDateRange}
               />
             </div>
-            <div className="flex items-center space-x-2 ml-auto pl-4">
-              <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
+            <div className="ml-auto hidden items-center space-x-2 pl-4 @3xl:flex">
+              <p className="whitespace-nowrap text-sm font-medium">
+                Rows per page
+              </p>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
@@ -514,7 +519,7 @@ export function DataTable({
             Convert to Transfer
           </Button>
         )}
-        {!isMobile && (
+        <div className="hidden @3xl:block">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline">
@@ -541,152 +546,115 @@ export function DataTable({
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-        )}
+        </div>
       </div>
 
-      {/* Filter Sheet Active Filters Display */}
-      {useFilterSheetLayout && (
-        <div className="w-full mb-4">
+      {useCompactFilterLayout && (
+        <div className="mb-4 w-full">
           <ActiveFiltersDisplay
             table={table}
             dateRange={dateRange}
             setDateRange={setDateRange}
             accounts={accounts}
+            categories={categories}
           />
         </div>
       )}
 
-      <div className="rounded-md border overflow-x-hidden">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {tableData.length ? (
-              tableData.map((rowData) => {
-                // Handle mobile date headers
-                if (rowData.type === "header") {
-                  return (
-                    <TableRow
-                      key={`header-${rowData.date}`}
-                      className="bg-muted/50"
-                    >
-                      <TableCell
-                        colSpan={table.getAllColumns().length}
-                        className="font-semibold text-foreground"
-                      >
-                        {rowData.date &&
-                          new Date(rowData.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
+      {pageRows.length === 0 ? (
+        emptyState
+      ) : (
+        <>
+          <div className="@3xl:hidden">
+            <TransactionList items={listData} onRowClick={onRowClick} />
+          </div>
+          <div className="hidden overflow-x-hidden rounded-md border @3xl:block">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {pageRows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
                       </TableCell>
-                    </TableRow>
-                  );
-                }
-
-                // Handle all data rows (both mobile and desktop)
-                if (rowData.type === "row") {
-                  const row = rowData.row;
-                  return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="cursor-pointer md:cursor-default"
-                      onClick={
-                        isMobile && onRowClick
-                          ? () => onRowClick(row.original)
-                          : undefined
-                      }
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  );
-                }
-
-                return null;
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getAllColumns().length}
-                  className="h-24 text-center"
-                >
-                  No transactions found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-2 sm:space-y-0 py-4">
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-muted-foreground">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <div className="flex-1 text-sm text-muted-foreground hidden md:block">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
-          </div>
-          {hasSelectedRows && (
+        </>
+      )}
+      {pageRows.length > 0 && (
+        <div className="flex flex-col items-center justify-between space-y-2 py-4 sm:flex-row sm:space-y-0">
+          <div className="flex items-center space-x-4">
             <div className="text-sm text-muted-foreground">
-              Total:{" "}
-              {formatCurrency(
-                selectedRows.reduce((sum, row) => {
-                  const amount = row.original.amount;
-                  return sum + (amount || 0);
-                }, 0),
-              )}
+              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              {table.getPageCount()}
             </div>
-          )}
-          <div className="space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              Next
-            </Button>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="hidden flex-1 text-sm text-muted-foreground md:block">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
+            </div>
+            {hasSelectedRows && (
+              <div className="text-sm text-muted-foreground">
+                Total:{" "}
+                {formatCurrency(
+                  selectedRows.reduce((sum, row) => {
+                    const amount = row.original.amount;
+                    return sum + (amount || 0);
+                  }, 0)
+                )}
+              </div>
+            )}
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

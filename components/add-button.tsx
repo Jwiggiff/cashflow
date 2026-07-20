@@ -23,6 +23,7 @@ import { RecurringTransactionDialog } from "@/components/recurring/recurring-tra
 import { RecurringTransferDialog } from "@/components/recurring/recurring-transfer-dialog";
 import { useEffect, useState } from "react";
 import { BankAccount, Category } from "@prisma/client";
+import { useRouter } from "next/navigation";
 import { Kbd } from "@/components/ui/kbd";
 import { SidebarMenuButton } from "./ui/sidebar";
 
@@ -61,6 +62,7 @@ function isAnyModalOpen() {
 }
 
 export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
+  const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [transactionDialogOpen, setTransactionDialogOpen] = useState(false);
@@ -212,7 +214,7 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
         onOpenChange={setRecurringTransactionDialogOpen}
         onSuccess={() => {
           setRecurringTransactionDialogOpen(false);
-          window.location.reload();
+          router.refresh();
         }}
       />
 
@@ -222,7 +224,7 @@ export function AddButton({ accounts, categories }: FloatingActionButtonProps) {
         onOpenChange={setRecurringTransferDialogOpen}
         onSuccess={() => {
           setRecurringTransferDialogOpen(false);
-          window.location.reload();
+          router.refresh();
         }}
       />
     </>

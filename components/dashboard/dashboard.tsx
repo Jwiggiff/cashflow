@@ -32,7 +32,7 @@ import {
 } from "recharts";
 import { ChartCard } from "./chart-card";
 import { CurrencyTooltipFormatter } from "./currency-tooltip-formatter";
-import { MobileDashboard } from "./mobile-dashboard";
+import { CompactDashboard } from "./compact-dashboard";
 import { StatCard } from "./stat-card";
 
 export interface DashboardProps {
@@ -66,7 +66,7 @@ export default function Dashboard({
 
   return (
     <>
-      <MobileDashboard
+      <CompactDashboard
         stats={stats}
         monthlyData={monthlyData}
         expenseData={expenseData}

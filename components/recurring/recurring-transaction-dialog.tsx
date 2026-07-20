@@ -10,12 +10,6 @@ import { Combobox, ComboboxItem } from "@/components/combobox";
 import { CurrencyInput } from "@/components/currency-input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import {
   Select,
   SelectContent,
@@ -261,17 +256,17 @@ export function RecurringTransactionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing
-              ? "Edit Recurring Transaction"
-              : "Create Recurring Transaction"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        isEditing
+          ? "Edit Recurring Transaction"
+          : "Create Recurring Transaction"
+      }
+      className="max-w-md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
@@ -385,17 +380,17 @@ export function RecurringTransactionDialog({
             </div>
           </div>
 
-          <div className="flex justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             {isEditing && (
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleDeleteTransaction}
               >
-                Delete Transaction
+                Delete
               </Button>
             )}
-            <div className="flex gap-2 ml-auto">
+            <div className="ml-auto flex gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -407,7 +402,6 @@ export function RecurringTransactionDialog({
             </div>
           </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveDialog>
   );
 }

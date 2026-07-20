@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBrand } from "@/components/auth/auth-brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -75,11 +76,12 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="h-full flex items-center justify-center bg-pattern py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex h-full items-center justify-center bg-pattern px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-6">
+        <AuthBrand />
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">
+            <CardTitle className="text-center text-2xl font-bold">
               Sign in
             </CardTitle>
             <CardDescription className="text-center">
@@ -89,7 +91,10 @@ export default function SignInPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                <div
+                  role="alert"
+                  className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+                >
                   {error}
                 </div>
               )}
@@ -104,6 +109,7 @@ export default function SignInPage() {
                   onChange={(e) => setUsername(e.target.value)}
                   required
                   disabled={isLoading}
+                  autoComplete="username"
                 />
               </div>
 
@@ -118,19 +124,24 @@ export default function SignInPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     disabled={isLoading}
+                    autoComplete="current-password"
+                    className="pr-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    size="icon"
+                    className="absolute top-0 right-0 h-full px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoading}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
+                      <EyeOff className="size-4" />
                     ) : (
-                      <Eye className="h-4 w-4" />
+                      <Eye className="size-4" />
                     )}
                   </Button>
                 </div>
@@ -139,7 +150,7 @@ export default function SignInPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="size-4 animate-spin" />
                     Signing in...
                   </>
                 ) : (
@@ -148,11 +159,12 @@ export default function SignInPage() {
               </Button>
               <Button
                 type="button"
+                variant="outline"
                 className="w-full"
                 disabled={isLoading}
                 onClick={handleSignInWithPasskey}
               >
-                <Fingerprint className="mr-2 h-4 w-4" />
+                <Fingerprint className="size-4" />
                 Sign in with Passkey
               </Button>
             </form>
