@@ -22,7 +22,7 @@ import {
 import { DatePicker } from "@/components/ui/date-picker";
 import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { Category, TransactionType } from "@prisma/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ExternalLinkIcon } from "lucide-react";
@@ -40,6 +40,31 @@ interface TransactionDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
+  /** Prefill account in add mode (falls back to `?account=` on the transactions page). */
+  defaultAccountId?: number;
+}
+
+function resolveDefaultAccountId(
+  accounts: Account[],
+  defaultAccountId?: number,
+  accountParam?: string | null
+): number | "" {
+  if (
+    defaultAccountId != null &&
+    accounts.some((account) => account.id === defaultAccountId)
+  ) {
+    return defaultAccountId;
+  }
+
+  const fromParam = accountParam ? Number(accountParam) : NaN;
+  if (
+    Number.isFinite(fromParam) &&
+    accounts.some((account) => account.id === fromParam)
+  ) {
+    return fromParam;
+  }
+
+  return "";
 }
 
 export function TransactionDialog({
@@ -50,8 +75,10 @@ export function TransactionDialog({
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   trigger,
+  defaultAccountId,
 }: TransactionDialogProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [internalOpen, setInternalOpen] = useState(false);
   const [amount, setAmount] = useState(
     transaction?.amount ? Math.abs(transaction.amount).toString() : ""
@@ -67,7 +94,9 @@ export function TransactionDialog({
     transaction?.categoryId || null
   );
   const [accountId, setAccountId] = useState<number | "">(
-    transaction?.accountId || ""
+    transaction?.accountId ||
+      resolveDefaultAccountId(accounts, defaultAccountId) ||
+      ""
   );
   const [date, setDate] = useState<Date>(transaction?.date || new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,12 +116,27 @@ export function TransactionDialog({
       setSource(transaction?.source || "");
       setType(transaction?.type || TransactionType.EXPENSE);
       setCategoryId(transaction?.categoryId || null);
-      setAccountId(transaction?.accountId || "");
+      setAccountId(
+        mode === "edit" && transaction
+          ? transaction.accountId
+          : resolveDefaultAccountId(
+              accounts,
+              defaultAccountId,
+              searchParams.get("account")
+            )
+      );
       setDate(transaction?.date || new Date());
       setIsSubmitting(false);
       setErrors({});
     }
-  }, [transaction, open]);
+  }, [
+    accounts,
+    defaultAccountId,
+    mode,
+    open,
+    searchParams,
+    transaction,
+  ]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });

@@ -52,6 +52,7 @@ import { capitalize } from "@/lib/utils";
 import { TransactionType } from "@prisma/client";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ActiveFiltersDisplay, FilterSheet } from "./filter-sheet";
 import { TransactionList } from "./transaction-list";
 import { TransactionsEmptyState } from "./transactions-empty-state";
@@ -81,6 +82,9 @@ export function DataTable({
   onConvertToTransfer,
   onRowClick,
 }: DataTableProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const useCompactFilterLayout = useCompactFilters();
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     () =>
@@ -175,6 +179,26 @@ export function DataTable({
       }
     }
   }, [dateRange, table]);
+
+  const accountFilter =
+    (columnFilters.find((filter) => filter.id === "account")?.value as
+      | string
+      | undefined) ?? "";
+
+  // Keep `?account=` in sync so Add transaction can default to the filtered account
+  React.useEffect(() => {
+    const current = searchParams.get("account") ?? "";
+    if (current === accountFilter) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (accountFilter) {
+      params.set("account", accountFilter);
+    } else {
+      params.delete("account");
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [accountFilter, pathname, router, searchParams]);
 
   const types = [...Object.values(TransactionType), "TRANSFER"];
 
