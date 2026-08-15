@@ -34,7 +34,7 @@ import {
 } from "@prisma/client";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { RRule, Weekday } from "rrule";
 import { toast } from "sonner";
@@ -63,6 +63,22 @@ interface RecurringTransactionDialogProps {
   onSuccess: () => void;
 }
 
+/** Prefill account from `?account=` (kept in sync by the transactions page filter). */
+function resolveDefaultAccountId(
+  accounts: BankAccount[],
+  accountParam?: string | null
+): string {
+  const fromParam = accountParam ? Number(accountParam) : NaN;
+  if (
+    Number.isFinite(fromParam) &&
+    accounts.some((account) => account.id === fromParam)
+  ) {
+    return fromParam.toString();
+  }
+
+  return "";
+}
+
 export function RecurringTransactionDialog({
   open,
   onOpenChange,
@@ -74,6 +90,7 @@ export function RecurringTransactionDialog({
 }: RecurringTransactionDialogProps) {
   const isEditing = !!recurringTransaction;
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [description, setDescription] = useState(
     recurringTransaction?.description || ""
@@ -90,7 +107,8 @@ export function RecurringTransactionDialog({
     recurringTransaction?.categoryId?.toString() || ""
   );
   const [accountId, setAccountId] = useState<string>(
-    recurringTransaction?.accountId?.toString() || ""
+    recurringTransaction?.accountId?.toString() ||
+      resolveDefaultAccountId(accounts, searchParams.get("account"))
   );
   const [startDate, setStartDate] = useState<Date>(
     recurringTransaction?.startDate || new Date()
@@ -162,12 +180,12 @@ export function RecurringTransactionDialog({
         setAmount("0.00");
         setType(TransactionType.EXPENSE);
         setCategoryId("");
-        setAccountId("");
+        setAccountId(resolveDefaultAccountId(accounts, searchParams.get("account")));
         setStartDate(new Date());
         setRecurrenceType("");
       }
     }
-  }, [recurringTransaction, open, prefillForCreate]);
+  }, [recurringTransaction, open, prefillForCreate, accounts, searchParams]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });
