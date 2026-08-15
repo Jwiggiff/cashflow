@@ -246,7 +246,7 @@ export function RecurringTransferDialog({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label>Transfer Between Accounts</Label>
-          <div className="flex flex-row items-center gap-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
             <Select
               value={fromAccountId.toString()}
               onValueChange={(value) => setFromAccountId(parseInt(value))}
@@ -254,7 +254,7 @@ export function RecurringTransferDialog({
             >
               <SelectTrigger
                 className={cn(
-                  "flex-1",
+                  "w-full md:flex-1",
                   isSameAccount && "border-red-500 focus:border-red-500"
                 )}
               >
@@ -268,7 +268,7 @@ export function RecurringTransferDialog({
                 ))}
               </SelectContent>
             </Select>
-            <ArrowRightIcon className="h-5 w-5 text-muted-foreground" />
+            <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
             <Select
               value={toAccountId.toString()}
               onValueChange={(value) => setToAccountId(parseInt(value))}
@@ -276,7 +276,7 @@ export function RecurringTransferDialog({
             >
               <SelectTrigger
                 className={cn(
-                  "flex-1",
+                  "w-full md:flex-1",
                   isSameAccount && "border-red-500 focus:border-red-500"
                 )}
               >
