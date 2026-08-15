@@ -78,9 +78,11 @@ export function Combobox({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {value
-            ? items.find((item) => item.value === value)?.label
-            : placeholder ?? "Select..."}
+          <span className="truncate min-w-0">
+            {value
+              ? items.find((item) => item.value === value)?.label
+              : placeholder ?? "Select..."}
+          </span>
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
