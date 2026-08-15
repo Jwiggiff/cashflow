@@ -144,7 +144,7 @@ export function TransferDialog({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label>Transfer Between Accounts</Label>
-          <div className="flex flex-row items-center gap-3">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
             <Select
               value={fromAccountId.toString()}
               onValueChange={(value) => setFromAccountId(parseInt(value))}
@@ -152,7 +152,7 @@ export function TransferDialog({
             >
               <SelectTrigger
                 className={cn(
-                  "flex-1",
+                  "w-full md:flex-1",
                   isSameAccount && "border-red-500 focus:border-red-500"
                 )}
               >
@@ -166,7 +166,7 @@ export function TransferDialog({
                 ))}
               </SelectContent>
             </Select>
-            <ArrowRightIcon className="h-5 w-5 text-muted-foreground" />
+            <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
             <Select
               value={toAccountId.toString()}
               onValueChange={(value) => setToAccountId(parseInt(value))}
@@ -174,7 +174,7 @@ export function TransferDialog({
             >
               <SelectTrigger
                 className={cn(
-                  "flex-1",
+                  "w-full md:flex-1",
                   isSameAccount && "border-red-500 focus:border-red-500"
                 )}
               >
@@ -220,7 +220,7 @@ export function TransferDialog({
           />
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           {mode === "edit" && (
             <Button
               type="button"
@@ -228,10 +228,10 @@ export function TransferDialog({
               onClick={() => handleDeleteTransfer()}
               disabled={isSubmitting}
             >
-              Delete Transfer
+              Delete
             </Button>
           )}
-          <div className="flex justify-end space-x-2 ml-auto">
+          <div className="ml-auto flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -246,8 +246,8 @@ export function TransferDialog({
                   ? "Updating..."
                   : "Adding..."
                 : mode === "edit"
-                ? "Update Transfer"
-                : "Add Transfer"}
+                  ? "Update"
+                  : "Add"}
             </Button>
           </div>
         </div>

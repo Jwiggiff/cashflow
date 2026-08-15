@@ -1,5 +1,5 @@
+import { AppPageHeader } from "@/components/app-page-header";
 import { CategoriesList } from "@/components/categories/categories-list";
-import { Separator } from "@/components/ui/separator";
 import { prisma } from "@/lib/prisma";
 
 export default async function CategoriesPage() {
@@ -46,14 +46,10 @@ export default async function CategoriesPage() {
   }));
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      <div className="flex items-center justify-between p-8">
-        <h1 className="text-3xl font-bold">Categories</h1>
-      </div>
+    <div className="flex min-h-screen w-full flex-col">
+      <AppPageHeader title="Categories" />
 
-      <Separator />
-
-      <div className="flex-1 p-8">
+      <div className="flex-1 py-2 @3xl:p-8">
         <CategoriesList
           categories={categories}
           currentMonthData={currentMonthData}

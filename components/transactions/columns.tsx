@@ -45,7 +45,8 @@ const dateRangeFilter: FilterFn<TransactionOrTransfer> = (row, columnId, value) 
 export function getColumns(
   accounts: BankAccount[],
   categories: Category[],
-  formatCurrencyWithPrivacy: (amount: number) => string
+  formatCurrencyWithPrivacy: (amount: number) => string,
+  isPrivate = false
 ): ColumnDef<TransactionOrTransfer>[] {
   return [
     {
@@ -205,12 +206,17 @@ export function getColumns(
         return (
           <div
             className={cn(
-              "text-right font-medium min-w-[80px]",
-              amount > 0 ? "text-green-600" : "text-red-600",
-              isTransfer ? "text-muted-foreground" : ""
+              "min-w-[80px] text-right font-medium tabular-nums",
+              isTransfer && "text-muted-foreground",
+              !isPrivate &&
+                !isTransfer &&
+                amount > 0 &&
+                "text-emerald-700 dark:text-emerald-400",
+              !isPrivate && !isTransfer && amount < 0 && "text-destructive"
             )}
           >
-            {!isTransfer && amount > 0 ? "+" : ""}
+            {!isPrivate && !isTransfer && amount > 0 ? "+" : ""}
+            {!isPrivate && !isTransfer && amount < 0 ? "−" : ""}
             {formatted}
           </div>
         );

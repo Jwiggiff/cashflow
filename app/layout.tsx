@@ -3,11 +3,7 @@ import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { NotificationProvider } from "@/components/notification-provider";
 import { PrivacyProvider } from "@/components/privacy-provider";
 import { ThemeProvider } from "@/components/theme-provider";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -59,7 +55,7 @@ export default async function RootLayout({
       <head>
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <meta name="apple-mobile-web-app-title" content="CashFlow" />
       </head>
@@ -76,18 +72,22 @@ export default async function RootLayout({
             <SessionProvider>
               <PrivacyProvider>
                 <NotificationProvider>
-                  <SidebarProvider>
-                    <AppSidebar />
-                    <SidebarInset className="flex-1 p-4 !ml-0 @container">
-                      <SidebarTrigger />
-                      {children}
-                    </SidebarInset>
-                  </SidebarProvider>
-                  <Toaster position="top-right" />
                   <CSVDropzoneWrapper
                     accounts={accounts}
                     canAutoCategorize={canAutoCategorize}
-                  />
+                  >
+                    <SidebarProvider>
+                      <AppSidebar />
+                      <SidebarInset className="flex-1 p-4 !ml-0 @container">
+                        {children}
+                      </SidebarInset>
+                    </SidebarProvider>
+                    <Toaster
+                      position="top-center"
+                      offset="max(1rem, env(safe-area-inset-top))"
+                      mobileOffset="max(1rem, env(safe-area-inset-top))"
+                    />
+                  </CSVDropzoneWrapper>
                 </NotificationProvider>
               </PrivacyProvider>
             </SessionProvider>

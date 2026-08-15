@@ -1,11 +1,11 @@
 "use client";
 
+import { useFormatters } from "@/hooks/use-formatters";
 import { Category } from "@prisma/client";
-import React from "react";
+import { TagIcon } from "lucide-react";
+import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import { CategoryActionsCell } from "./category-actions-cell";
 import { EmptyState } from "./empty-state";
-import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
-import { useFormatters } from "@/hooks/use-formatters";
 
 interface CategoriesListProps {
   categories: Category[];
@@ -21,14 +21,14 @@ export function CategoriesList({
   currentMonthData,
 }: CategoriesListProps) {
   const { formatCurrency } = useFormatters();
-  
+
   if (categories.length === 0) {
     return <EmptyState />;
   }
 
   const categoriesWithData = categories.map((category) => {
     const data = currentMonthData.find(
-      (data) => data.categoryId === category.id
+      (entry) => entry.categoryId === category.id
     );
 
     return {
@@ -39,39 +39,70 @@ export function CategoriesList({
   });
 
   return (
-    <div className="w-full space-y-2">
+    <ul className="w-full space-y-3">
       {categoriesWithData.map((category) => {
+        const transactionLabel =
+          category.transactionCount === 1
+            ? "1 transaction"
+            : `${category.transactionCount} transactions`;
+
         return (
-          <div
-            key={category.name}
-            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+          <li
+            key={category.id}
+            className="rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50"
           >
-            <div className="flex-1">
-              <div className="font-medium text-lg flex items-center gap-2">
-                {category.icon && (
-                  <DynamicIcon
-                    name={category.icon as keyof typeof dynamicIconImports}
-                    className="h-4 w-4"
-                  />
-                )}
-                {category.name}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {category.transactionCount} transactions
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="font-semibold">
-                  {formatCurrency(Math.abs(category.currentMonthSpent))}
+            <div className="flex flex-col gap-3 @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                  {category.icon ? (
+                    <DynamicIcon
+                      name={
+                        category.icon as keyof typeof dynamicIconImports
+                      }
+                      className="size-4"
+                      aria-hidden
+                    />
+                  ) : (
+                    <TagIcon className="size-4" aria-hidden />
+                  )}
                 </div>
-                <div className="text-sm text-muted-foreground">This month</div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium @3xl:text-base">
+                    {category.name}
+                  </div>
+                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                    {transactionLabel}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right @3xl:hidden">
+                  <div className="text-sm font-semibold tabular-nums">
+                    {formatCurrency(Math.abs(category.currentMonthSpent))}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    This month
+                  </div>
+                </div>
               </div>
-              <CategoryActionsCell category={category} />
+
+              <div className="flex items-center gap-3 border-t pt-3 @3xl:border-t-0 @3xl:pt-0">
+                <div className="hidden text-right @3xl:block">
+                  <div className="font-semibold tabular-nums">
+                    {formatCurrency(Math.abs(category.currentMonthSpent))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">This month</div>
+                </div>
+
+                <div className="flex flex-1 items-center justify-between gap-2 @3xl:flex-initial @3xl:justify-end">
+                  <span className="text-sm text-muted-foreground @3xl:hidden">
+                    Actions
+                  </span>
+                  <CategoryActionsCell category={category} />
+                </div>
+              </div>
             </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }

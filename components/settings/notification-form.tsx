@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -88,6 +89,7 @@ export function NotificationForm() {
             id="enable-notifications"
             checked={preferences.enabled}
             onCheckedChange={() => handlePreferenceChange("enabled")}
+            aria-label="Enable push notifications"
           />
         </CardAction>
       </CardHeader>
@@ -125,23 +127,26 @@ export function NotificationForm() {
           <>
             <Separator />
             <div className="space-y-4">
-              <h4 className="font-medium">Test Notifications</h4>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter test message"
-                  value={testMessage}
-                  onChange={(e) => setTestMessage(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-input rounded-md text-sm"
-                  disabled={isSendingTest}
-                />
-                <Button
-                  onClick={handleSendTestNotification}
-                  disabled={!testMessage.trim() || isSendingTest}
-                  size="sm"
-                >
-                  {isSendingTest ? "Sending..." : "Send Test"}
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="test-notification">Test Notifications</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="test-notification"
+                    type="text"
+                    placeholder="Enter test message"
+                    value={testMessage}
+                    onChange={(e) => setTestMessage(e.target.value)}
+                    className="flex-1"
+                    disabled={isSendingTest}
+                  />
+                  <Button
+                    onClick={handleSendTestNotification}
+                    disabled={!testMessage.trim() || isSendingTest}
+                    size="sm"
+                  >
+                    {isSendingTest ? "Sending..." : "Send Test"}
+                  </Button>
+                </div>
               </div>
             </div>
           </>

@@ -21,6 +21,7 @@ import {
 import { AddButton } from "./add-button";
 import { SidebarLink } from "./sidebar-link";
 import Image from "next/image";
+import Link from "next/link";
 
 const sidebarItems = [
   {
@@ -44,7 +45,7 @@ const sidebarItems = [
     href: "/categories",
   },
   {
-    label: "Recurring Transactions",
+    label: "Recurring",
     icon: RepeatIcon,
     href: "/recurring",
   },
@@ -77,7 +78,7 @@ export async function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <a href="#" className="flex items-center justify-center">
+              <Link href="/" className="flex items-center justify-center">
                 <Image
                   src="/wordmark.svg"
                   alt="CashFlow"
@@ -92,7 +93,7 @@ export async function AppSidebar() {
                   height={24}
                   className="hidden group-data-[collapsible=icon]:block !size-6 object-contain"
                 />
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
