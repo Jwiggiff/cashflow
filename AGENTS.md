@@ -2,7 +2,7 @@
 
 ## Cursor Cloud specific instructions
 
-CashFlow is a single Next.js 15 (App Router) app — there is no separate backend or database server. It uses an embedded SQLite file (`data/cashflow.db`) via Prisma, and an in-process `node-cron` scheduler. Standard commands live in `package.json` (`dev`, `build`, `start`, `lint`); ORM/migrations are Prisma. See `README.md` for env var docs.
+CashFlow is a single Next.js 15 (App Router) app — there is no separate backend or database server. It uses an embedded SQLite file (`data/cashflow.db`) via Prisma, and an in-process `node-cron` scheduler. Standard commands live in `package.json` (`dev`, `build`, `start`, `lint`, `typecheck`, `test`); ORM/migrations are Prisma. See `README.md` for env var docs.
 
 The startup update script already runs `npm ci` and `npx prisma generate`. Before running the app, complete these one-time-per-VM steps (they are NOT in the update script):
 
