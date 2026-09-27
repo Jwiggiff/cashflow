@@ -1,17 +1,50 @@
 name: Release and Deploy
 
+# Runs when a version bump lands on main (see scripts/release.sh). Builds the
+# image, tags the merge commit, and publishes the version's CHANGELOG.md notes.
 on:
   push:
-    tags:
-      - 'v*'  # Trigger on version tags like v1.0.0
+    branches: [main]
+    paths: [package.json]
+  workflow_dispatch:
+
+concurrency:
+  group: release
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  version:
+    name: Check version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.check.outputs.tag }}
+      release: ${{ steps.check.outputs.release }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Check for an unreleased version
+        id: check
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ -n "$(git ls-remote --tags origin "refs/tags/$tag")" ]; then
+            echo "$tag is already released"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-push:
     name: Build and Push Container
+    needs: version
+    if: needs.version.outputs.release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,6 +71,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.tag }}
             type=sha,prefix=main-
 
       - name: Build and push Docker image
@@ -54,19 +88,34 @@ jobs:
 
   create-release:
     name: Create Release
-    needs: build-and-push
+    needs: [version, build-and-push]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+
+      - name: Extract release notes from CHANGELOG.md
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          awk -v tag="$TAG" '
+            $0 == "## " tag || index($0, "## " tag " ") == 1 { found = 1; next }
+            found && /^## v[0-9]/ { exit }
+            found { print }
+          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
+            echo "::error::No CHANGELOG.md entry for $TAG"
+            exit 1
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          tag_name: ${{ needs.version.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: ${{ runner.temp }}/notes.md
           draft: false
           prerelease: false

@@ -1,0 +1,12 @@
+# Groups the auto-generated release notes (used by scripts/release.sh)
+changelog:
+  exclude:
+    labels:
+      - release
+  categories:
+    - title: Dependencies
+      labels:
+        - dependencies
+    - title: Changes
+      labels:
+        - "*"
