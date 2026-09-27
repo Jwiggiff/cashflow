@@ -2,7 +2,7 @@
 
 ## Cursor Cloud specific instructions
 
-CashFlow is a single Next.js 15 (App Router) app — there is no separate backend or database server. It uses an embedded SQLite file (`data/cashflow.db`) via Prisma, and an in-process `node-cron` scheduler. Standard commands live in `package.json` (`dev`, `build`, `start`, `lint`, `typecheck`, `test`); ORM/migrations are Prisma. See `README.md` for env var docs.
+CashFlow is a single Next.js 15 (App Router) app — there is no separate backend or database server. It uses an embedded SQLite file (`data/cashflow.db`) via Prisma, and an in-process `node-cron` scheduler. Standard commands live in `package.json` (`dev`, `build`, `start`, `lint`, `typecheck`, `test`, `test:e2e`); ORM/migrations are Prisma. See `README.md` for env var docs.
 
 The startup update script already runs `npm ci` and `npx prisma generate`. Before running the app, complete these one-time-per-VM steps (they are NOT in the update script):
 
@@ -12,6 +12,11 @@ The startup update script already runs `npm ci` and `npx prisma generate`. Befor
   `npx prisma migrate deploy`
 
 Then run the app in dev with `npm run dev` (Turbopack, http://localhost:3000).
+
+Testing:
+- `npm test` runs Vitest: `lib/**` unit tests plus `tests/db/**`, which call server actions and API routes against a throwaway SQLite DB built from `prisma/migrations` (`scripts/create-test-db.mjs`). `@/lib/auth` is mocked; use `signedInUser()`/`setSessionUser()` from `tests/db/helpers.ts`.
+- `npm run test:e2e` runs Playwright (`e2e/`) against `next start` on port 3100 with its own DB in `e2e/.data/`. It needs a fresh `npm run build` first, and `npx playwright install chromium` once.
+- Tests never touch `data/cashflow.db`: `lib/prisma.ts` uses `DATABASE_URL` when it is set.
 
 Non-obvious notes:
 - The cron scheduler only starts when `NODE_ENV=production` AND `NEXT_RUNTIME=nodejs` (see `instrumentation.ts`); it does not run under `npm run dev`.

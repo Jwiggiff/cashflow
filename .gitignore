@@ -49,3 +49,7 @@ TODO.md
 
 docker-compose.yml
 certificates
+# Playwright
+/e2e/.data/
+/playwright-report/
+/test-results/

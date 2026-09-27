@@ -1,8 +1,11 @@
 import { AppPageHeader } from "@/components/app-page-header";
 import { CategoriesList } from "@/components/categories/categories-list";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/require-auth";
 
 export default async function CategoriesPage() {
+  const user = await requireUser();
+
   // Get current month spending for each category
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -10,10 +13,12 @@ export default async function CategoriesPage() {
 
   // Get all categories with their spending data
   const categories = await prisma.category.findMany({
+    where: { userId: user.id },
     include: {
       transactions: {
         where: {
           type: "EXPENSE",
+          account: { userId: user.id },
         },
       },
     },
@@ -27,6 +32,7 @@ export default async function CategoriesPage() {
       by: ["categoryId"],
       where: {
         type: "EXPENSE",
+        account: { userId: user.id },
         date: {
           gte: startOfMonth,
           lte: endOfMonth,

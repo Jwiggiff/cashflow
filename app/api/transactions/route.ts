@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
       });
       const categorization = await autoCategorizeTransaction(
         description,
-        categories
+        categories,
+        user.id
       );
       if (categorization.categoryId) {
         finalCategoryId = categorization.categoryId;

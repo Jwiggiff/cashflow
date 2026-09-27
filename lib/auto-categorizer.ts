@@ -6,9 +6,10 @@ export interface CategorizationResult {
   confidence: number;
 }
 
-// Search existing transactions for similar merchants
+// Search the user's existing transactions for similar merchants
 async function findSimilarTransaction(
-  description: string
+  description: string,
+  userId: string
 ): Promise<CategorizationResult | null> {
   const normalizedDescription = description.toLowerCase().trim();
 
@@ -16,6 +17,7 @@ async function findSimilarTransaction(
   const exactMatch = await prisma.transaction.findFirst({
     where: {
       description: { equals: description },
+      account: { userId },
       categoryId: {
         not: null,
       },
@@ -39,6 +41,7 @@ async function findSimilarTransaction(
   const partialMatches = await prisma.transaction.findMany({
     where: {
       description: { contains: normalizedDescription },
+      account: { userId },
       categoryId: {
         not: null,
       },
@@ -79,6 +82,7 @@ async function findSimilarTransaction(
   // Try fuzzy matching for similar merchant names
   const allTransactions = await prisma.transaction.findMany({
     where: {
+      account: { userId },
       categoryId: {
         not: null,
       },
@@ -161,10 +165,11 @@ function levenshteinDistance(str1: string, str2: string): number {
 // AI-based categorization using OpenAI
 export async function autoCategorize(
   description: string,
-  categories: Category[]
+  categories: Category[],
+  userId: string
 ): Promise<CategorizationResult> {
   // First, try to find similar existing transactions
-  const existingMatch = await findSimilarTransaction(description);
+  const existingMatch = await findSimilarTransaction(description, userId);
 
   if (existingMatch && existingMatch.confidence > 0.8) {
     return existingMatch;

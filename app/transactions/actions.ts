@@ -49,6 +49,24 @@ function parseCSVDate(dateString: string): Date | null {
   }
 }
 
+// Server actions take ids from the client, so every account and category
+// they touch must be checked against the signed-in user before writing.
+async function ownsAccounts(userId: string, accountIds: number[]) {
+  const ids = [...new Set(accountIds)];
+  const count = await prisma.bankAccount.count({
+    where: { id: { in: ids }, userId },
+  });
+  return count === ids.length;
+}
+
+async function ownsCategory(userId: string, categoryId: number | null) {
+  if (categoryId === null) return true;
+  const count = await prisma.category.count({
+    where: { id: categoryId, userId },
+  });
+  return count === 1;
+}
+
 export async function createTransaction(data: {
   description: string;
   source?: string | null;
@@ -64,29 +82,42 @@ export async function createTransaction(data: {
   }
 
   try {
+    const categoryId =
+      data.type === TransactionType.EXPENSE ? data.categoryId : null;
+
+    if (!(await ownsAccounts(session.user.id, [data.accountId]))) {
+      return { success: false, error: "Account not found" };
+    }
+    if (!(await ownsCategory(session.user.id, categoryId))) {
+      return { success: false, error: "Category not found" };
+    }
+
     // If it's an expense, ensure the amount is negative
     const finalAmount =
       data.type === TransactionType.EXPENSE
         ? Math.abs(data.amount) * -1
         : Math.abs(data.amount);
 
-    // Create the transaction
-    const transaction = await prisma.transaction.create({
-      data: {
-        description: data.description,
-        source: data.source,
-        type: data.type,
-        categoryId: data.type === TransactionType.EXPENSE ? data.categoryId : null,
-        amount: finalAmount,
-        accountId: data.accountId,
-        date: data.date || new Date(),
-      },
-    });
+    const transaction = await prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.create({
+        data: {
+          description: data.description,
+          source: data.source,
+          type: data.type,
+          categoryId,
+          amount: finalAmount,
+          accountId: data.accountId,
+          date: data.date || new Date(),
+        },
+      });
 
-    // Update the account balance
-    await prisma.bankAccount.update({
-      where: { id: data.accountId, userId: session.user.id },
-      data: { balance: { increment: finalAmount } },
+      // Update the account balance
+      await tx.bankAccount.update({
+        where: { id: data.accountId, userId: session.user.id },
+        data: { balance: { increment: finalAmount } },
+      });
+
+      return transaction;
     });
 
     return { success: true, data: transaction };
@@ -114,45 +145,57 @@ export async function updateTransaction(
   }
 
   try {
+    const categoryId =
+      data.type === TransactionType.EXPENSE ? data.categoryId : null;
+
+    // Get the original transaction to calculate balance adjustments
+    const originalTransaction = await prisma.transaction.findFirst({
+      where: { id, account: { userId: session.user.id } },
+    });
+
+    if (!originalTransaction) {
+      return { success: false, error: "Transaction not found" };
+    }
+    if (!(await ownsAccounts(session.user.id, [data.accountId]))) {
+      return { success: false, error: "Account not found" };
+    }
+    if (!(await ownsCategory(session.user.id, categoryId))) {
+      return { success: false, error: "Category not found" };
+    }
+
     // If it's an expense, ensure the amount is negative
     const finalAmount =
       data.type === TransactionType.EXPENSE
         ? Math.abs(data.amount) * -1
         : Math.abs(data.amount);
 
-    // Get the original transaction to calculate balance adjustments
-    const originalTransaction = await prisma.transaction.findUnique({
-      where: { id },
-    });
+    const transaction = await prisma.$transaction(async (tx) => {
+      const transaction = await tx.transaction.update({
+        where: { id },
+        data: {
+          description: data.description,
+          source: data.source,
+          type: data.type,
+          categoryId,
+          amount: finalAmount,
+          accountId: data.accountId,
+          date: data.date,
+        },
+      });
 
-    if (!originalTransaction) {
-      return { success: false, error: "Transaction not found" };
-    }
+      // Revert the original transaction balance
+      await tx.bankAccount.update({
+        where: { id: originalTransaction.accountId, userId: session.user.id },
+        data: { balance: { decrement: originalTransaction.amount } },
+      });
 
-    // Update the transaction
-    const transaction = await prisma.transaction.update({
-      where: { id },
-      data: {
-        description: data.description,
-        source: data.source,
-        type: data.type,
-        categoryId: data.type === TransactionType.EXPENSE ? data.categoryId : null,
-        amount: finalAmount,
-        accountId: data.accountId,
-        date: data.date,
-      },
-    });
+      // Update the account balance
+      await tx.bankAccount.update({
+        where: { id: data.accountId, userId: session.user.id },
+        data: { balance: { increment: finalAmount } },
+      });
 
-    // Revert the original transaction balance
-    await prisma.bankAccount.update({
-      where: { id: originalTransaction.accountId, userId: session.user.id },
-      data: { balance: { decrement: originalTransaction.amount } },
-    });
-
-    // Update the account balance
-    await prisma.bankAccount.update({
-      where: { id: data.accountId, userId: session.user.id },
-      data: { balance: { increment: finalAmount } },
+      return transaction;
     });
 
     return { success: true, data: transaction };
@@ -170,21 +213,22 @@ export async function deleteTransaction(id: number) {
 
   try {
     // Get the original transaction to calculate balance adjustments
-    const originalTransaction = await prisma.transaction.findUnique({
-      where: { id },
+    const originalTransaction = await prisma.transaction.findFirst({
+      where: { id, account: { userId: session.user.id } },
     });
 
     if (!originalTransaction) {
       return { success: false, error: "Transaction not found" };
     }
 
-    // Delete the transaction
-    await prisma.transaction.delete({ where: { id } });
+    await prisma.$transaction(async (tx) => {
+      await tx.transaction.delete({ where: { id } });
 
-    // Revert the account balance
-    await prisma.bankAccount.update({
-      where: { id: originalTransaction?.accountId, userId: session.user.id },
-      data: { balance: { decrement: originalTransaction?.amount } },
+      // Revert the account balance
+      await tx.bankAccount.update({
+        where: { id: originalTransaction.accountId, userId: session.user.id },
+        data: { balance: { decrement: originalTransaction.amount } },
+      });
     });
     return { success: true };
   } catch (error) {
@@ -207,25 +251,38 @@ export async function createTransfer(data: {
   }
 
   try {
-    const transfer = await prisma.transfer.create({
-      data: {
-        description: data.description || "Transfer",
-        amount: Math.abs(data.amount),
-        fromAccountId: data.fromAccountId,
-        toAccountId: data.toAccountId,
-        date: data.date || new Date(),
-      },
-    });
+    if (
+      !(await ownsAccounts(session.user.id, [
+        data.fromAccountId,
+        data.toAccountId,
+      ]))
+    ) {
+      return { success: false, error: "One or both accounts not found" };
+    }
 
-    // Update account balances
-    await prisma.bankAccount.update({
-      where: { id: data.fromAccountId },
-      data: { balance: { decrement: data.amount } },
-    });
+    const transfer = await prisma.$transaction(async (tx) => {
+      const transfer = await tx.transfer.create({
+        data: {
+          description: data.description || "Transfer",
+          amount: Math.abs(data.amount),
+          fromAccountId: data.fromAccountId,
+          toAccountId: data.toAccountId,
+          date: data.date || new Date(),
+        },
+      });
 
-    await prisma.bankAccount.update({
-      where: { id: data.toAccountId },
-      data: { balance: { increment: data.amount } },
+      // Update account balances
+      await tx.bankAccount.update({
+        where: { id: data.fromAccountId, userId: session.user.id },
+        data: { balance: { decrement: transfer.amount } },
+      });
+
+      await tx.bankAccount.update({
+        where: { id: data.toAccountId, userId: session.user.id },
+        data: { balance: { increment: transfer.amount } },
+      });
+
+      return transfer;
     });
 
     return { success: true, data: transfer };
@@ -252,45 +309,61 @@ export async function updateTransfer(
 
   try {
     // Get the original transfer to calculate balance adjustments
-    const originalTransfer = await prisma.transfer.findUnique({
-      where: { id },
+    const originalTransfer = await prisma.transfer.findFirst({
+      where: {
+        id,
+        fromAccount: { userId: session.user.id },
+        toAccount: { userId: session.user.id },
+      },
     });
 
     if (!originalTransfer) {
       return { success: false, error: "Transfer not found" };
     }
+    if (
+      !(await ownsAccounts(session.user.id, [
+        data.fromAccountId,
+        data.toAccountId,
+      ]))
+    ) {
+      return { success: false, error: "One or both accounts not found" };
+    }
 
-    const transfer = await prisma.transfer.update({
-      where: { id },
-      data: {
-        description: data.description || "Transfer",
-        amount: Math.abs(data.amount),
-        fromAccountId: data.fromAccountId,
-        toAccountId: data.toAccountId,
-        date: data.date,
-      },
-    });
+    const transfer = await prisma.$transaction(async (tx) => {
+      const transfer = await tx.transfer.update({
+        where: { id },
+        data: {
+          description: data.description || "Transfer",
+          amount: Math.abs(data.amount),
+          fromAccountId: data.fromAccountId,
+          toAccountId: data.toAccountId,
+          date: data.date,
+        },
+      });
 
-    // Revert original transfer balances
-    await prisma.bankAccount.update({
-      where: { id: originalTransfer.fromAccountId, userId: session.user.id },
-      data: { balance: { increment: originalTransfer.amount } },
-    });
+      // Revert original transfer balances
+      await tx.bankAccount.update({
+        where: { id: originalTransfer.fromAccountId, userId: session.user.id },
+        data: { balance: { increment: originalTransfer.amount } },
+      });
 
-    await prisma.bankAccount.update({
-      where: { id: originalTransfer.toAccountId, userId: session.user.id },
-      data: { balance: { decrement: originalTransfer.amount } },
-    });
+      await tx.bankAccount.update({
+        where: { id: originalTransfer.toAccountId, userId: session.user.id },
+        data: { balance: { decrement: originalTransfer.amount } },
+      });
 
-    // Apply new transfer balances
-    await prisma.bankAccount.update({
-      where: { id: data.fromAccountId, userId: session.user.id },
-      data: { balance: { decrement: data.amount } },
-    });
+      // Apply new transfer balances
+      await tx.bankAccount.update({
+        where: { id: data.fromAccountId, userId: session.user.id },
+        data: { balance: { decrement: transfer.amount } },
+      });
 
-    await prisma.bankAccount.update({
-      where: { id: data.toAccountId, userId: session.user.id },
-      data: { balance: { increment: data.amount } },
+      await tx.bankAccount.update({
+        where: { id: data.toAccountId, userId: session.user.id },
+        data: { balance: { increment: transfer.amount } },
+      });
+
+      return transfer;
     });
 
     return { success: true, data: transfer };
@@ -307,26 +380,32 @@ export async function deleteTransfer(id: number) {
   }
 
   try {
-    const transfer = await prisma.transfer.findUnique({
-      where: { id },
+    const transfer = await prisma.transfer.findFirst({
+      where: {
+        id,
+        fromAccount: { userId: session.user.id },
+        toAccount: { userId: session.user.id },
+      },
     });
 
     if (!transfer) {
       return { success: false, error: "Transfer not found" };
     }
 
-    // Revert account balances
-    await prisma.bankAccount.update({
-      where: { id: transfer.fromAccountId, userId: session.user.id },
-      data: { balance: { increment: transfer.amount } },
-    });
+    await prisma.$transaction(async (tx) => {
+      // Revert account balances
+      await tx.bankAccount.update({
+        where: { id: transfer.fromAccountId, userId: session.user.id },
+        data: { balance: { increment: transfer.amount } },
+      });
 
-    await prisma.bankAccount.update({
-      where: { id: transfer.toAccountId, userId: session.user.id },
-      data: { balance: { decrement: transfer.amount } },
-    });
+      await tx.bankAccount.update({
+        where: { id: transfer.toAccountId, userId: session.user.id },
+        data: { balance: { decrement: transfer.amount } },
+      });
 
-    await prisma.transfer.delete({ where: { id } });
+      await tx.transfer.delete({ where: { id } });
+    });
     return { success: true };
   } catch (error) {
     console.error("Failed to delete transfer:", error);
@@ -363,14 +442,17 @@ export async function bulkDeleteItems(
       // Delete transactions and revert account balances
       if (transactionIds.length > 0) {
         const transactions = await tx.transaction.findMany({
-          where: { id: { in: transactionIds } },
+          where: {
+            id: { in: transactionIds },
+            account: { userId: session.user.id },
+          },
         });
 
         // Delete transactions
-        await tx.transaction.deleteMany({
-          where: { id: { in: transactionIds } },
+        const deleted = await tx.transaction.deleteMany({
+          where: { id: { in: transactions.map((t) => t.id) } },
         });
-        deletedTransactions = transactionIds.length;
+        deletedTransactions = deleted.count;
 
         // Revert account balances for all transactions
         for (const transaction of transactions) {
@@ -384,7 +466,11 @@ export async function bulkDeleteItems(
       // Delete transfers and revert account balances
       if (transferIds.length > 0) {
         const transfers = await tx.transfer.findMany({
-          where: { id: { in: transferIds } },
+          where: {
+            id: { in: transferIds },
+            fromAccount: { userId: session.user.id },
+            toAccount: { userId: session.user.id },
+          },
         });
 
         // Revert account balances for all transfers
@@ -400,10 +486,10 @@ export async function bulkDeleteItems(
           });
         }
 
-        await tx.transfer.deleteMany({
-          where: { id: { in: transferIds } },
+        const deleted = await tx.transfer.deleteMany({
+          where: { id: { in: transfers.map((t) => t.id) } },
         });
-        deletedTransfers = transferIds.length;
+        deletedTransfers = deleted.count;
       }
 
       return { deletedTransactions, deletedTransfers };
@@ -431,8 +517,13 @@ export async function bulkImportTransactions(
   }
 
   try {
+    if (!(await ownsAccounts(session.user.id, [accountId]))) {
+      return { success: false, error: "Account not found" };
+    }
+
     // Get categories for auto-categorization
     const categories = await prisma.category.findMany({
+      where: { userId: session.user.id },
       orderBy: { name: "asc" },
     });
 
@@ -469,7 +560,8 @@ export async function bulkImportTransactions(
       if (enableAutoCategorize && type === TransactionType.EXPENSE) {
         const categorization = await autoCategorize(
           csvTransaction.merchant,
-          categories
+          categories,
+          session.user.id
         );
 
         if (categorization.categoryId) {
