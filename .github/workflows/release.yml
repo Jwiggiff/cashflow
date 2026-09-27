@@ -101,11 +101,7 @@ jobs:
         env:
           TAG: ${{ needs.version.outputs.tag }}
         run: |
-          awk -v tag="$TAG" '
-            $0 == "## " tag || index($0, "## " tag " ") == 1 { found = 1; next }
-            found && /^## v[0-9]/ { exit }
-            found { print }
-          ' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          scripts/changelog-entry.sh "$TAG" > "$RUNNER_TEMP/notes.md"
           if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md"; then
             echo "::error::No CHANGELOG.md entry for $TAG"
             exit 1

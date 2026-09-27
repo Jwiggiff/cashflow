@@ -20,6 +20,7 @@ Testing:
 
 Releasing:
 - `main` only accepts PRs. From an up-to-date `main`, run `npm run release patch` (or `minor`/`major`). It bumps the version, prepends GitHub's generated notes to `CHANGELOG.md`, and opens a "Release vX.Y.Z" PR labeled `release` (excluded from future notes via `.github/release.yml`).
+- If other PRs merge into main before the release PR, its "Release changelog" CI check fails; run `npm run release refresh` on the release branch to merge main and regenerate the entry (hand edits to it are lost).
 - Edit the `CHANGELOG.md` entry in that PR if needed. Merging it runs `release.yml`, which builds and pushes the image (`latest`, `vX.Y.Z`), tags the merge commit, and creates the GitHub release from that changelog entry. Don't push tags by hand.
 
 Non-obvious notes:
