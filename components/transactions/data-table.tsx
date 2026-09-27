@@ -106,6 +106,8 @@ export function DataTable({
       actions: true,
     });
   const [rowSelection, setRowSelection] = React.useState({});
+  // Anchor for shift-click range selection (row.index of the last clicked checkbox)
+  const lastClickedIndexRef = React.useRef<number | null>(null);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: 10,
@@ -128,17 +130,44 @@ export function DataTable({
             table.getIsAllPageRowsSelected() ||
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
-          onCheckedChange={(value: boolean | "indeterminate") =>
-            table.toggleAllPageRowsSelected(!!value)
-          }
+          onCheckedChange={(value: boolean | "indeterminate") => {
+            lastClickedIndexRef.current = null;
+            table.toggleAllPageRowsSelected(!!value);
+          }}
           aria-label="Select all"
         />
       </div>
     ),
-    cell: ({ row }) => (
+    cell: ({ row, table }) => (
       <div className="grid place-items-center">
         <Checkbox
           checked={row.getIsSelected()}
+          // Prevent the browser from highlighting text on shift-click
+          onMouseDown={(e) => e.shiftKey && e.preventDefault()}
+          onClick={(e) => {
+            const anchor = lastClickedIndexRef.current;
+            lastClickedIndexRef.current = row.index;
+            if (!e.shiftKey || anchor === null) return;
+
+            // Take over from Radix's single-row toggle and select the range.
+            // The table has no sorting, so row.index order matches display order.
+            e.preventDefault();
+            const target = !row.getIsSelected();
+            const lo = Math.min(anchor, row.index);
+            const hi = Math.max(anchor, row.index);
+            const rangeIds = table
+              .getFilteredRowModel()
+              .rows.filter((r) => r.index >= lo && r.index <= hi)
+              .map((r) => r.id);
+            table.setRowSelection((prev) => {
+              const next = { ...prev };
+              for (const id of rangeIds) {
+                if (target) next[id] = true;
+                else delete next[id];
+              }
+              return next;
+            });
+          }}
           onCheckedChange={(value: boolean | "indeterminate") =>
             row.toggleSelected(!!value)
           }
@@ -150,6 +179,8 @@ export function DataTable({
     enableHiding: false,
   };
 
+  // React Compiler isn't enabled; TanStack Table's non-memoizable API is expected here
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns: [selectionColumn, ...columns],
@@ -231,6 +262,7 @@ export function DataTable({
       onDeleteSelected(selectedData);
       // Clear selection after deletion
       table.toggleAllPageRowsSelected(false);
+      lastClickedIndexRef.current = null;
     }
   };
 

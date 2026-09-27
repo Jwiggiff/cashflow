@@ -49,7 +49,11 @@ function parseCSVLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
     
-    if (char === '"') {
+    if (char === '"' && inQuotes && line[i + 1] === '"') {
+      // Escaped quote ("") inside a quoted field
+      current += '"';
+      i++;
+    } else if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === ',' && !inQuotes) {
       columns.push(current);
@@ -60,7 +64,7 @@ function parseCSVLine(line: string): string[] {
   }
   
   columns.push(current);
-  return columns.map(col => col.replace(/^"|"$/g, '')); // Remove surrounding quotes
+  return columns;
 }
 
 function parseAmount(amountStr: string): number {
