@@ -84,4 +84,24 @@ describe("POST /api/transactions", () => {
 
     expect(res.status).toBe(404);
   });
+
+  it("auto-categorizes only from the user's own history", async () => {
+    const bob = await prisma.user.create({
+      data: { username: "bob", password: await bcrypt.hash("password123", 4) },
+    });
+    const bobAccount = await createAccountFor(bob, { name: "Bob Checking" });
+    const bobCategory = await prisma.category.create({ data: { name: "Coffee", userId: bob.id } });
+    await prisma.transaction.create({
+      data: { description: "Blue Bottle", type: "EXPENSE", amount: -5, accountId: bobAccount.id, categoryId: bobCategory.id, date: new Date() },
+    });
+    await createAccountFor(user);
+
+    const res = await post(
+      { description: "Blue Bottle", amount: 5, type: "EXPENSE", account: "Checking", autoCategorize: true },
+      basic("alice", "password123")
+    );
+
+    expect(res.status).toBe(201);
+    expect((await res.json()).data.categoryId).toBeNull();
+  });
 });
