@@ -10,7 +10,7 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PUBLIC_KEY!,
     process.env.VAPID_PRIVATE_KEY!
   );
-} else {
+} else if (process.env.NEXT_PHASE !== "phase-production-build") {
   console.warn("VAPID keys not set, push notifications will not work");
 }
 

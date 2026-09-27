@@ -150,6 +150,8 @@ export function DataTable({
     enableHiding: false,
   };
 
+  // React Compiler isn't enabled; TanStack Table's non-memoizable API is expected here
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns: [selectionColumn, ...columns],
