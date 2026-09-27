@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.1.24 (2026-09-27)
+
+### What's Changed
+#### Changes
+* Add CI workflow with lint, typecheck, tests, and builds by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/29
+* Add database and browser tests; fix cross-user data access by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/31
+* Add PR-based release flow with generated changelog by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/32
+
+**Full Changelog**: https://github.com/Jwiggiff/cashflow/compare/v0.1.23...v0.1.24
+
 ## v0.1.23 (2026-09-27)
 
 ### What's Changed
