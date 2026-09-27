@@ -42,7 +42,9 @@ notes="$(
     -f previous_tag_name="$previous" \
     --jq .body |
     tr -d '\r' |
-    sed 's/^#/##/'
+    sed -e '/^<!-- Release notes generated/d' -e 's/^#/##/' |
+    cat -s |
+    sed '/./,$!d'
 )"
 
 entry="$(mktemp)"
