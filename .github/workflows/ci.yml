@@ -115,3 +115,34 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             GIT_HASH=${{ github.sha }}
+
+  changelog:
+    name: Release changelog
+    # Release PRs only (from scripts/release.sh); skipped counts as passing
+    if: >-
+      github.event_name == 'pull_request' &&
+      startsWith(github.head_ref, 'release/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      # Required by the generate-notes API
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Check every merged PR is in the changelog entry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          expected="$(scripts/release-notes.sh "$tag" | grep -oE '/pull/[0-9]+' | sort -u || true)"
+          listed="$(scripts/changelog-entry.sh "$tag" | grep -oE '/pull/[0-9]+' | sort -u || true)"
+          missing="$(comm -23 <(echo "$expected") <(echo "$listed") | sed '/^$/d')"
+          if [ -n "$missing" ]; then
+            echo "::error::The $tag changelog entry is missing PRs merged to main since it was generated. Run 'npm run release refresh' on this branch."
+            echo "Missing:"
+            echo "$missing" | sed 's|^/pull/|  #|'
+            exit 1
+          fi
+          echo "$tag changelog entry lists every merged PR"

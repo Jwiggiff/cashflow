@@ -18,6 +18,11 @@ Testing:
 - `npm run test:e2e` runs Playwright (`e2e/`) against `next start` on port 3100 with its own DB in `e2e/.data/`. It needs a fresh `npm run build` first, and `npx playwright install chromium` once.
 - Tests never touch `data/cashflow.db`: `lib/prisma.ts` uses `DATABASE_URL` when it is set.
 
+Releasing:
+- `main` only accepts PRs. From an up-to-date `main`, run `npm run release patch` (or `minor`/`major`). It bumps the version, prepends GitHub's generated notes to `CHANGELOG.md`, and opens a "Release vX.Y.Z" PR labeled `release` (excluded from future notes via `.github/release.yml`).
+- If other PRs merge into main before the release PR, its "Release changelog" CI check fails; run `npm run release refresh` on the release branch to merge main and regenerate the entry (hand edits to it are lost).
+- Edit the `CHANGELOG.md` entry in that PR if needed. Merging it runs `release.yml`, which builds and pushes the image (`latest`, `vX.Y.Z`), tags the merge commit, and creates the GitHub release from that changelog entry. Don't push tags by hand.
+
 Non-obvious notes:
 - The cron scheduler only starts when `NODE_ENV=production` AND `NEXT_RUNTIME=nodejs` (see `instrumentation.ts`); it does not run under `npm run dev`.
 - There is no in-app "seed" — create the first user at `/auth/signup`, then sign in. Protected routes (`/dashboard`, `/accounts`, `/transactions`, etc.) redirect to `/auth/signin` when unauthenticated (see `middleware.ts`).
