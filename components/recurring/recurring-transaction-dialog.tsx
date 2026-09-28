@@ -218,10 +218,15 @@ export function RecurringTransactionDialog({
       const rrule_opts = RRule.parseString(recurrenceType);
       const rrule = new RRule(rrule_opts);
 
-      const nextDueDate =
-        startDate !== recurringTransaction?.startDate
+      // On create, don't schedule the first occurrence at the historical
+      // start date (e.g. when seeded from a dashboard suggestion) - that
+      // would fire a backdated transaction on the next cron run. Use the
+      // rule's next occurrence on/after today instead.
+      const nextDueDate = isEditing
+        ? startDate !== recurringTransaction?.startDate
           ? startDate
-          : recurringTransaction?.nextDueDate;
+          : recurringTransaction?.nextDueDate
+        : (rrule.after(new Date(), true) ?? startDate);
 
       const data = {
         description,

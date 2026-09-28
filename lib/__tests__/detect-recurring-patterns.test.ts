@@ -57,4 +57,26 @@ describe("detectRecurringPatternRecommendations", () => {
 
     expect(recs).toEqual([]);
   });
+
+  it("ignores a pattern that stopped recurring long ago", () => {
+    // Recurred monthly, but the most recent occurrence was ~10 months back -
+    // well past the 2x-median-gap staleness window for a monthly pattern.
+    const staleGym = [12, 11, 10].map((n) => ({
+      date: monthsAgo(n, 1),
+      description: "Gym Membership",
+      amount: -50,
+      type: "EXPENSE" as const,
+      accountId: 1,
+      accountName: "Checking",
+    }));
+
+    const recs = detectRecurringPatternRecommendations({
+      transactions: staleGym,
+      transfers: [],
+      existingRecurringTransactions: [],
+      existingRecurringTransfers: [],
+    });
+
+    expect(recs).toEqual([]);
+  });
 });

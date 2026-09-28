@@ -36,7 +36,13 @@ function roundMoney(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-function classifyIntervalPattern(sortedDates: Date[]): StandardRecurrenceKind | null {
+type ClassifiedPattern = {
+  kind: StandardRecurrenceKind;
+  /** Median gap (days) between consecutive occurrences, used to judge staleness. */
+  medianGapDays: number;
+};
+
+function classifyIntervalPattern(sortedDates: Date[]): ClassifiedPattern | null {
   if (sortedDates.length < MIN_OCCURRENCES) return null;
 
   const gaps: number[] = [];
@@ -63,17 +69,17 @@ function classifyIntervalPattern(sortedDates: Date[]): StandardRecurrenceKind | 
 
   // Same calendar day each month (e.g. the 15th)
   if (sameDom && gaps.every(monthlyGapOk) && med >= 26 && med <= 35) {
-    return "monthlyOnDay";
+    return { kind: "monthlyOnDay", medianGapDays: med };
   }
 
   // Same weekday + ~7d between consecutive
   if (sameWeekday && gaps.every(weeklyGapOk) && med >= 5 && med <= 9) {
-    return "weekly";
+    return { kind: "weekly", medianGapDays: med };
   }
 
   // Same weekday + ~14d
   if (sameWeekday && gaps.every(biweeklyGapOk) && med >= 12 && med <= 18) {
-    return "biweekly";
+    return { kind: "biweekly", medianGapDays: med };
   }
 
   // Nth weekday of month (per app helper), same weekday, ~monthly gaps
@@ -83,10 +89,23 @@ function classifyIntervalPattern(sortedDates: Date[]): StandardRecurrenceKind | 
     med >= 26 &&
     med <= 35
   ) {
-    return "monthlyOnNthWeekday";
+    return { kind: "monthlyOnNthWeekday", medianGapDays: med };
   }
 
   return null;
+}
+
+/**
+ * How many missed cycles we tolerate before treating a pattern as dead rather
+ * than "just hasn't come due yet". 2x the median gap (e.g. ~2 months for a
+ * monthly bill) is enough slack for a payment landing a few days late without
+ * still surfacing suggestions for things that clearly stopped recurring.
+ */
+const STALE_CYCLE_MULTIPLIER = 2;
+
+function isStale(anchor: Date, medianGapDays: number): boolean {
+  const daysSinceLastOccurrence = daysBetween(anchor, new Date());
+  return daysSinceLastOccurrence > medianGapDays * STALE_CYCLE_MULTIPLIER;
 }
 
 function recurringKeyTransaction(
@@ -249,12 +268,14 @@ export function detectRecurringPatternRecommendations(input: {
     if (rows.length < MIN_OCCURRENCES) continue;
     const sorted = [...rows].sort((a, b) => a.date.getTime() - b.date.getTime());
     const dates = sorted.map((r) => r.date);
-    const patternKind = classifyIntervalPattern(dates);
-    if (!patternKind) continue;
+    const classified = classifyIntervalPattern(dates);
+    if (!classified) continue;
 
     const anchor = sorted[sorted.length - 1]!.date;
+    if (isStale(anchor, classified.medianGapDays)) continue;
+
     const rrules = getStandardRecurrenceRRules(anchor);
-    const rrule = rrules[patternKind];
+    const rrule = rrules[classified.kind];
 
     const sample = sorted[0]!;
     const absAmount = Math.abs(sample.amount);
@@ -272,7 +293,7 @@ export function detectRecurringPatternRecommendations(input: {
     }
 
     const patternSummary = capitalizeRRuleText(rrule);
-    const id = `tx-${sample.accountId}-${sample.type}-${roundMoney(absAmount)}-${hashKey(normalizeDescription(sample.description))}-${patternKind}`;
+    const id = `tx-${sample.accountId}-${sample.type}-${roundMoney(absAmount)}-${hashKey(normalizeDescription(sample.description))}-${classified.kind}`;
 
     out.push({
       kind: "transaction",
@@ -293,12 +314,14 @@ export function detectRecurringPatternRecommendations(input: {
     if (rows.length < MIN_OCCURRENCES) continue;
     const sorted = [...rows].sort((a, b) => a.date.getTime() - b.date.getTime());
     const dates = sorted.map((r) => r.date);
-    const patternKind = classifyIntervalPattern(dates);
-    if (!patternKind) continue;
+    const classified = classifyIntervalPattern(dates);
+    if (!classified) continue;
 
     const anchor = sorted[sorted.length - 1]!.date;
+    if (isStale(anchor, classified.medianGapDays)) continue;
+
     const rrules = getStandardRecurrenceRRules(anchor);
-    const rrule = rrules[patternKind];
+    const rrule = rrules[classified.kind];
 
     const sample = sorted[0]!;
     if (
@@ -314,7 +337,7 @@ export function detectRecurringPatternRecommendations(input: {
     }
 
     const patternSummary = capitalizeRRuleText(rrule);
-    const id = `tf-${sample.fromAccountId}-${sample.toAccountId}-${roundMoney(sample.amount)}-${hashKey(normalizeDescription(sample.description ?? ""))}-${patternKind}`;
+    const id = `tf-${sample.fromAccountId}-${sample.toAccountId}-${roundMoney(sample.amount)}-${hashKey(normalizeDescription(sample.description ?? ""))}-${classified.kind}`;
 
     out.push({
       kind: "transfer",
