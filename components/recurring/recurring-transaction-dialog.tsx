@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { computeNextDueDateForCreate } from "@/lib/recurring-schedule";
 import { cn, getOccurenceInMonth } from "@/lib/utils";
 import {
   BankAccount,
@@ -142,6 +143,10 @@ export function RecurringTransactionDialog({
           }
         }
 
+        // Keep dtstart anchored to the current start date too, so biweekly
+        // interval parity doesn't drift once one gets persisted.
+        options.dtstart = startDate;
+
         // Create new rule with updated options
         setRecurrenceType(RRule.optionsToString(options));
       } catch (error) {
@@ -218,19 +223,11 @@ export function RecurringTransactionDialog({
       const rrule_opts = RRule.parseString(recurrenceType);
       const rrule = new RRule(rrule_opts);
 
-      // On create, don't schedule the first occurrence at a historical
-      // start date (e.g. when seeded from a dashboard suggestion) - that
-      // would fire a backdated transaction on the next cron run. Only
-      // override when startDate is actually in the past; a deliberately
-      // future manual start date is already a valid occurrence of the
-      // rule (recurrenceType is derived from it) and should be honored.
       const nextDueDate = isEditing
         ? startDate !== recurringTransaction?.startDate
           ? startDate
           : recurringTransaction?.nextDueDate
-        : startDate < new Date()
-          ? (rrule.after(new Date(), true) ?? startDate)
-          : startDate;
+        : computeNextDueDateForCreate(rrule, startDate);
 
       const data = {
         description,
