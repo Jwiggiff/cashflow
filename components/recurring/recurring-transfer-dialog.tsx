@@ -169,16 +169,20 @@ export function RecurringTransferDialog({
       const rrule_opts = RRule.parseString(recurrenceType);
       const rrule = new RRule(rrule_opts);
 
-      // On create, don't schedule the first occurrence at the historical
+      // On create, don't schedule the first occurrence at a historical
       // start date (e.g. when seeded from a dashboard suggestion) - that
-      // would fire a backdated transfer on the next cron run. Use the
-      // rule's next occurrence on/after today instead.
+      // would fire a backdated transfer on the next cron run. Only
+      // override when startDate is actually in the past; a deliberately
+      // future manual start date is already a valid occurrence of the
+      // rule (recurrenceType is derived from it) and should be honored.
       const nextDueDate =
         mode === "edit"
           ? startDate !== recurringTransfer?.startDate
             ? startDate
             : recurringTransfer?.nextDueDate
-          : (rrule.after(new Date(), true) ?? startDate);
+          : startDate < new Date()
+            ? (rrule.after(new Date(), true) ?? startDate)
+            : startDate;
 
       const data = {
         description: description || undefined,
