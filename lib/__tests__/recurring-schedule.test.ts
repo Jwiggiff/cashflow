@@ -31,6 +31,22 @@ describe("computeNextDueDateForCreate", () => {
     expect(result).toEqual(futureStart);
   });
 
+  it("fires today rather than skipping a full cycle when the anchor's time-of-day has already passed", () => {
+    // Anchor was recorded at 9am on some past Monday; "now" is a later
+    // Monday at 5pm - today still matches the pattern, just later in the day.
+    const anchor = new Date(2026, 0, 5, 9, 0, 0); // Jan 5, 2026, Monday, 9am
+    const now = new Date(2026, 5, 15, 17, 0, 0); // June 15, 2026, Monday, 5pm
+    const rrule = new RRule({
+      freq: RRule.WEEKLY,
+      byweekday: RRule.MO,
+      dtstart: anchor,
+    });
+
+    const result = computeNextDueDateForCreate(rrule, anchor, now);
+
+    expect(result.toDateString()).toBe(now.toDateString());
+  });
+
   it("honors today's date as-is rather than treating it as past", () => {
     const now = new Date(2026, 5, 15, 14, 30); // June 15, 2026, 2:30pm
     const today = new Date(2026, 5, 15); // same day, midnight

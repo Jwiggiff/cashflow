@@ -20,14 +20,20 @@ function startOfDay(date: Date): Date {
  * today; a today-or-future start date is honored exactly as chosen; it's
  * already guaranteed to be a valid occurrence of `rrule` by construction
  * (the recurrence pattern is derived from `startDate` itself).
+ *
+ * The forward search itself also uses start-of-day, not the exact current
+ * instant: occurrence times inherit the anchor's (arbitrary) time-of-day,
+ * so searching from "now" would skip a today-due occurrence entirely once
+ * that time-of-day has already passed today, pushing it a full cycle out.
  */
 export function computeNextDueDateForCreate(
   rrule: RRule,
   startDate: Date,
   now: Date = new Date()
 ): Date {
-  if (startDate < startOfDay(now)) {
-    return rrule.after(now, true) ?? startDate;
+  const today = startOfDay(now);
+  if (startDate < today) {
+    return rrule.after(today, true) ?? startDate;
   }
   return startDate;
 }
