@@ -25,7 +25,7 @@ Releasing:
 
 Non-obvious notes:
 - The cron scheduler only starts when `NODE_ENV=production` AND `NEXT_RUNTIME=nodejs` (see `instrumentation.ts`); it does not run under `npm run dev`.
-- There is no in-app "seed" — create the first user at `/auth/signup`, then sign in. Protected routes (`/dashboard`, `/accounts`, `/transactions`, etc.) redirect to `/auth/signin` when unauthenticated (see `proxy.ts`).
+- There is no in-app "seed" — create the first user at `/auth/signup`, then sign in. Protected routes (`/accounts`, `/transactions`, etc.) redirect to `/auth/signin` when unauthenticated (see `proxy.ts`); the dashboard is `/`.
 - Monetary values are visually masked (`$***`) in the UI by default; this is a privacy feature, not a bug.
 - REST API: `POST /api/transactions` uses HTTP Basic auth (the app username/password). A referenced `category` must already exist or the request fails with "Category not found"; omit `category` to succeed.
 - `OPENAI_API_KEY` (AI auto-categorization) and `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (web push) are optional; the app logs a warning and runs fine without them.

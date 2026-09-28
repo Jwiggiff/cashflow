@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
       { path: "**/lib/version.ts", title: /version\.json/ },
     ],
   },
+  async redirects() {
+    // The dashboard lives at "/"
+    return [{ source: "/dashboard", destination: "/", permanent: false }];
+  },
 };
 
 export default nextConfig;
