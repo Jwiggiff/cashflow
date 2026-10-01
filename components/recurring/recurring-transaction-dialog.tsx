@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { computeNextDueDateForCreate } from "@/lib/recurring-schedule";
 import { cn, getOccurenceInMonth } from "@/lib/utils";
 import {
   BankAccount,
@@ -142,6 +143,10 @@ export function RecurringTransactionDialog({
           }
         }
 
+        // Keep dtstart anchored to the current start date too, so biweekly
+        // interval parity doesn't drift once one gets persisted.
+        options.dtstart = startDate;
+
         // Create new rule with updated options
         setRecurrenceType(RRule.optionsToString(options));
       } catch (error) {
@@ -218,10 +223,11 @@ export function RecurringTransactionDialog({
       const rrule_opts = RRule.parseString(recurrenceType);
       const rrule = new RRule(rrule_opts);
 
-      const nextDueDate =
-        startDate !== recurringTransaction?.startDate
+      const nextDueDate = isEditing
+        ? startDate !== recurringTransaction?.startDate
           ? startDate
-          : recurringTransaction?.nextDueDate;
+          : recurringTransaction?.nextDueDate
+        : computeNextDueDateForCreate(rrule, startDate);
 
       const data = {
         description,
