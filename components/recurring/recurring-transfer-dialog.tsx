@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { computeNextDueDateForCreate } from "@/lib/recurring-schedule";
 import { cn, getOccurenceInMonth } from "@/lib/utils";
 import { BankAccount, RecurringTransfer } from "@prisma/client";
 import { ArrowRightIcon } from "lucide-react";
@@ -109,6 +110,10 @@ export function RecurringTransferDialog({
           }
         }
 
+        // Keep dtstart anchored to the current start date too, so biweekly
+        // interval parity doesn't drift once one gets persisted.
+        options.dtstart = startDate;
+
         // Create new rule with updated options
         setRecurrenceType(RRule.optionsToString(options));
       } catch (error) {
@@ -170,9 +175,11 @@ export function RecurringTransferDialog({
       const rrule = new RRule(rrule_opts);
 
       const nextDueDate =
-        startDate !== recurringTransfer?.startDate
-          ? startDate
-          : recurringTransfer?.nextDueDate;
+        mode === "edit"
+          ? startDate !== recurringTransfer?.startDate
+            ? startDate
+            : recurringTransfer?.nextDueDate
+          : computeNextDueDateForCreate(rrule, startDate);
 
       const data = {
         description: description || undefined,
