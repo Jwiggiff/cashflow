@@ -150,8 +150,13 @@ model Transaction {
   source      String?
   category    Category?       @relation(fields: [categoryId], references: [id])
   categoryId  Int?
-  account     BankAccount     @relation(fields: [accountId], references: [id])
-  accountId   Int
+  account     BankAccount?    @relation(fields: [accountId], references: [id])
+  accountId   Int?
+  // Only set when accountId is null (a transaction pending account
+  // assignment) - ownership otherwise flows through account.userId. Not a
+  // relation since it's just an ownership tag for the pending case, not a
+  // real association the rest of the app queries through.
+  userId      String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }

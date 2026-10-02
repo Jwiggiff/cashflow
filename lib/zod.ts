@@ -25,7 +25,10 @@ export const createTransactionSchema = object({
   amount: number().positive("Amount must be positive"),
   type: enum_(["INCOME", "EXPENSE"]),
   date: string().datetime({ offset: true }).optional(),
-  account: string().min(1, "Account name is required"),
+  // Omit entirely to create a pending transaction that needs an account
+  // picked from the app/notification - a value that's passed but doesn't
+  // match a real account is still a 404, not a silent fallback to pending.
+  account: string().min(1, "Account name is required").optional(),
   category: string().nullable().optional(),
   autoCategorize: boolean().optional(),
   source: string().optional(),

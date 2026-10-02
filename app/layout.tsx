@@ -1,8 +1,10 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { NotificationProvider } from "@/components/notification-provider";
+import { PendingTransactionsBanner } from "@/components/pending-transactions-banner";
 import { PrivacyProvider } from "@/components/privacy-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { getPendingTransactionCount } from "@/app/transactions/actions";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { auth } from "@/lib/auth";
@@ -39,6 +41,7 @@ export default async function RootLayout({
   const canAutoCategorize = process.env.OPENAI_API_KEY !== undefined;
 
   let accounts: BankAccount[] = [];
+  let pendingTransactionCount = 0;
   if (loggedIn) {
     accounts = await prisma.bankAccount.findMany({
       where: {
@@ -48,6 +51,7 @@ export default async function RootLayout({
         name: "asc",
       },
     });
+    pendingTransactionCount = await getPendingTransactionCount();
   }
 
   return (
@@ -76,12 +80,17 @@ export default async function RootLayout({
                     accounts={accounts}
                     canAutoCategorize={canAutoCategorize}
                   >
-                    <SidebarProvider>
-                      <AppSidebar />
-                      <SidebarInset className="flex-1 p-4 !ml-0 @container">
-                        {children}
-                      </SidebarInset>
-                    </SidebarProvider>
+                    <div className="flex h-full flex-col">
+                      <PendingTransactionsBanner
+                        count={pendingTransactionCount}
+                      />
+                      <SidebarProvider className="min-h-0 flex-1">
+                        <AppSidebar />
+                        <SidebarInset className="flex-1 p-4 !ml-0 @container">
+                          {children}
+                        </SidebarInset>
+                      </SidebarProvider>
+                    </div>
                     <Toaster
                       position="top-center"
                       offset="max(1rem, env(safe-area-inset-top))"

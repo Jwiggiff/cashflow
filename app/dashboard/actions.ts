@@ -369,8 +369,9 @@ export async function getDashboardRecommendations(): Promise<
       description: t.description,
       amount: t.amount,
       type: t.type,
-      accountId: t.accountId,
-      accountName: t.account.name,
+      // Guaranteed non-null - the query above filters on account: { userId }.
+      accountId: t.accountId!,
+      accountName: t.account!.name,
     })),
     transfers: transfers.map((t) => ({
       date: t.date,

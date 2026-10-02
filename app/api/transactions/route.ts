@@ -74,25 +74,32 @@ export async function POST(request: NextRequest) {
       source,
     } = validationResult.data;
 
-    // Verify the account belongs to the user (check both name and aliases)
-    const account = await prisma.bankAccount.findFirst({
-      where: {
-        OR: [
-          { name: accountName },
-          { aliases: { some: { name: accountName } } },
-        ],
-        userId: user.id,
-      },
-      include: {
-        aliases: true,
-      },
-    });
+    // No account name at all means "I don't know, ask Josh" - creates a
+    // pending transaction below. A name that IS passed but doesn't match a
+    // real account is still a hard error, not a silent fallback to
+    // pending - that's a bug in the caller (typo, stale alias) that should
+    // surface, not get quietly swallowed.
+    let account = null;
+    if (accountName) {
+      account = await prisma.bankAccount.findFirst({
+        where: {
+          OR: [
+            { name: accountName },
+            { aliases: { some: { name: accountName } } },
+          ],
+          userId: user.id,
+        },
+        include: {
+          aliases: true,
+        },
+      });
 
-    if (!account) {
-      return NextResponse.json(
-        { error: "Account not found or access denied" },
-        { status: 404 }
-      );
+      if (!account) {
+        return NextResponse.json(
+          { error: "Account not found or access denied" },
+          { status: 404 }
+        );
+      }
     }
 
     // Auto-categorize if enabled and no category provided
@@ -137,14 +144,16 @@ export async function POST(request: NextRequest) {
         ? Math.abs(amount) * -1
         : Math.abs(amount);
 
-    // Create the transaction
+    // Create the transaction - accountId/userId stay null+set (pending) when
+    // no account name was given at all.
     const transaction = await prisma.transaction.create({
       data: {
         description,
         type: type as TransactionType,
         categoryId: finalCategoryId,
         amount: finalAmount,
-        accountId: account.id,
+        accountId: account?.id ?? null,
+        userId: account ? null : user.id,
         date: date ? new Date(date) : new Date(),
         source: source || null,
       },
@@ -154,19 +163,28 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Update account balance
-    await prisma.bankAccount.update({
-      where: { id: account.id },
-      data: { balance: { increment: finalAmount } },
-    });
+    if (account) {
+      // Update account balance - deferred until an account is actually
+      // assigned for pending transactions, see assignTransactionAccount.
+      await prisma.bankAccount.update({
+        where: { id: account.id },
+        data: { balance: { increment: finalAmount } },
+      });
 
-    // Send push notification
-    await sendNotificationToUser(
-      type === TransactionType.EXPENSE ? "New Expense" : "New Income",
-      `${description} - ${formatCurrency(Math.abs(finalAmount))}`,
-      "/transactions",
-      user.id
-    );
+      await sendNotificationToUser(
+        type === TransactionType.EXPENSE ? "New Expense" : "New Income",
+        `${description} - ${formatCurrency(Math.abs(finalAmount))}`,
+        "/transactions",
+        user.id
+      );
+    } else {
+      await sendNotificationToUser(
+        "Needs an account",
+        `${description} - ${formatCurrency(Math.abs(finalAmount))}`,
+        `/transactions/needs-account/${transaction.id}`,
+        user.id
+      );
+    }
 
     return NextResponse.json(
       {
