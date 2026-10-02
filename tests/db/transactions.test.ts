@@ -355,6 +355,34 @@ describe("bulk actions", () => {
     expect(await balanceOf(account.id)).toBe(1095);
   });
 
+  it("keeps the CSV calendar date in timezones behind UTC", async () => {
+    const user = await signedInUser();
+    const account = await createAccountFor(user, { balance: 0 });
+    const originalTZ = process.env.TZ;
+    // The Docker image runs with TZ=America/New_York
+    process.env.TZ = "America/New_York";
+    try {
+      await bulkImportTransactions(
+        [
+          { date: "2025-01-02", merchant: "ISO date", expense: 5, income: 0, balance: 0 },
+          { date: "01/03/2025", merchant: "US date", expense: 5, income: 0, balance: 0 },
+        ],
+        account.id
+      );
+
+      const rows = await prisma.transaction.findMany({ orderBy: { date: "asc" } });
+      expect(
+        rows.map((r) => [r.description, r.date.getMonth() + 1, r.date.getDate()])
+      ).toEqual([
+        ["ISO date", 1, 2],
+        ["US date", 1, 3],
+      ]);
+    } finally {
+      if (originalTZ === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTZ;
+    }
+  });
+
   it("rolls back the whole import when the account is not the user's", async () => {
     const other = await createUser();
     const account = await createAccountFor(other, { balance: 100 });

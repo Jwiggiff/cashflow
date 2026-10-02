@@ -110,3 +110,43 @@ test("a second user sees none of the first user's data", async ({ page }) => {
     await expect(page.getByText("Secret Stash")).toHaveCount(0);
   }
 });
+
+test("registers a passkey and signs in with it", async ({ page, context }) => {
+  // A virtual authenticator stands in for Touch ID / a security key
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
+
+  await signIn(page);
+  await page.goto("/settings");
+  const addPasskey = page.getByRole("button", { name: "Add Passkey" });
+  // Passkeys require an email on the account
+  await expect(addPasskey).toBeDisabled();
+  await page.getByLabel("Email").fill("e2e@example.com");
+  await page.getByRole("button", { name: "Update Profile" }).click();
+  await expect(addPasskey).toBeEnabled();
+
+  await addPasskey.click();
+  await expect
+    .poll(async () => {
+      const { credentials } = await cdp.send("WebAuthn.getCredentials", { authenticatorId });
+      return credentials.length;
+    })
+    .toBe(1);
+
+  await context.clearCookies();
+  await page.goto("/transactions");
+  await expect(page).toHaveURL(/\/auth\/signin/);
+  await page.getByRole("button", { name: "Sign in with Passkey" }).click();
+  await expect(page).toHaveURL("/transactions");
+  await expect(page.getByRole("table").getByText("Grocery Store")).toBeVisible();
+});
