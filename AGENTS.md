@@ -25,8 +25,18 @@ Releasing:
 
 Non-obvious notes:
 - The cron scheduler only starts when `NODE_ENV=production` AND `NEXT_RUNTIME=nodejs` (see `instrumentation.ts`); it does not run under `npm run dev`.
-- There is no in-app "seed" — create the first user at `/auth/signup`, then sign in. Protected routes (`/dashboard`, `/accounts`, `/transactions`, etc.) redirect to `/auth/signin` when unauthenticated (see `middleware.ts`).
+- There is no in-app "seed" — create the first user at `/auth/signup`, then sign in. Protected routes (`/dashboard`, `/accounts`, `/transactions`, etc.) redirect to `/auth/signin` when unauthenticated (see `proxy.ts`).
 - Monetary values are visually masked (`$***`) in the UI by default; this is a privacy feature, not a bug.
 - REST API: `POST /api/transactions` uses HTTP Basic auth (the app username/password). A referenced `category` must already exist or the request fails with "Category not found"; omit `category` to succeed.
 - `OPENAI_API_KEY` (AI auto-categorization) and `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (web push) are optional; the app logs a warning and runs fine without them.
 - Husky/lint-staged run `eslint --fix` on staged JS/TS files on commit.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
