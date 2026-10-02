@@ -2,28 +2,35 @@ name: Claude PR review
 
 on:
   pull_request:
-    types: [opened, ready_for_review]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: "PR number to review"
-        required: true
-        type: number
+    types: [opened, ready_for_review, labeled]
+  issue_comment:
+    types: [created]
 
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number || inputs.pr_number }}
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
   cancel-in-progress: true
 
 jobs:
   review:
     name: Claude review
-    # Skip drafts and fork PRs (forks don't receive secrets) - only applies
-    # to the automatic pull_request trigger, not a manual workflow_dispatch
-    # run, which has no pull_request context to check.
+    # Four ways in here:
+    # - PR opened, or a draft becomes ready - normal first-pass review.
+    # - the `claude-review-requested` label gets added - manual re-request.
+    # - a PR comment containing /claude-review - manual re-request, no need
+    #   to leave the comment thread to do it.
+    # Drafts and fork PRs (forks don't receive secrets) are skipped for the
+    # pull_request-triggered cases; the label/comment paths are deliberately
+    # not gated on draft status, since manually asking for a review of a
+    # draft is a reasonable thing to want.
     if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.pull_request.draft == false &&
-       github.event.pull_request.head.repo.full_name == github.repository)
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository &&
+       (github.event.action == 'labeled'
+         && github.event.label.name == 'claude-review-requested'
+         || (github.event.action != 'labeled' && github.event.pull_request.draft == false))) ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '/claude-review'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -41,7 +48,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+            PR NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
 
             Review this pull request. Focus on:
             - Correctness bugs and edge cases
@@ -56,3 +63,11 @@ jobs:
             flagging, just leave a one-line summary comment.
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+
+      - name: Remove the trigger label
+        # So re-adding `claude-review-requested` later triggers another run
+        # instead of silently doing nothing because the label's still there.
+        if: github.event.action == 'labeled'
+        run: gh pr edit "${{ github.event.pull_request.number }}" --remove-label claude-review-requested
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
