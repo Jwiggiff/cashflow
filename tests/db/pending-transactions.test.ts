@@ -5,10 +5,7 @@ import {
   getPendingTransaction,
   getPendingTransactionCount,
 } from "@/app/transactions/actions";
-import {
-  deleteAccount,
-  getAccountDeletionImpact,
-} from "@/app/accounts/actions";
+import { deleteAccount } from "@/app/accounts/actions";
 import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
@@ -195,65 +192,19 @@ describe("pending transactions (no account on create)", () => {
   });
 });
 
-describe("account deletion cascade", () => {
-  it("reports the deletion impact before anything is deleted", async () => {
+describe("account deletion vs. pending transactions", () => {
+  it("refuses to delete an account that still has transactions (FK restrict, not a silent null-out)", async () => {
     const user = await signedInUser();
     const account = await createAccountFor(user, { balance: 100 });
-    const other = await createAccountFor(user, { name: "Other" });
-    await prisma.transaction.create({
-      data: { description: "x", amount: 10, type: "EXPENSE", accountId: account.id, date: new Date() },
-    });
-    await prisma.recurringTransaction.create({
-      data: {
-        description: "Rent",
-        amount: 1000,
-        type: "EXPENSE",
-        rrule: "FREQ=MONTHLY",
-        startDate: new Date(),
-        nextDueDate: new Date(),
-        accountId: account.id,
-      },
-    });
-    await prisma.transfer.create({
-      data: { date: new Date(), amount: 20, fromAccountId: account.id, toAccountId: other.id },
-    });
-
-    const impact = await getAccountDeletionImpact(account.id);
-
-    expect(impact).toMatchObject({
-      success: true,
-      data: { transactions: 1, recurringTransactions: 1, transfers: 1, recurringTransfers: 0 },
-    });
-  });
-
-  it("cascades the delete to transactions, recurring transactions, and transfers", async () => {
-    const user = await signedInUser();
-    const account = await createAccountFor(user, { balance: 100 });
-    const other = await createAccountFor(user, { name: "Other" });
     const transaction = await prisma.transaction.create({
       data: { description: "x", amount: 10, type: "EXPENSE", accountId: account.id, date: new Date() },
-    });
-    const recurring = await prisma.recurringTransaction.create({
-      data: {
-        description: "Rent",
-        amount: 1000,
-        type: "EXPENSE",
-        rrule: "FREQ=MONTHLY",
-        startDate: new Date(),
-        nextDueDate: new Date(),
-        accountId: account.id,
-      },
-    });
-    const transfer = await prisma.transfer.create({
-      data: { date: new Date(), amount: 20, fromAccountId: account.id, toAccountId: other.id },
     });
 
     const result = await deleteAccount(account.id);
 
-    expect(result.success).toBe(true);
-    expect(await prisma.transaction.findUnique({ where: { id: transaction.id } })).toBeNull();
-    expect(await prisma.recurringTransaction.findUnique({ where: { id: recurring.id } })).toBeNull();
-    expect(await prisma.transfer.findUnique({ where: { id: transfer.id } })).toBeNull();
+    expect(result.success).toBe(false);
+    const stillThere = await prisma.transaction.findUniqueOrThrow({ where: { id: transaction.id } });
+    expect(stillThere.accountId).toBe(account.id);
   });
 
   it("does not touch another user's pending transactions when deleting an account", async () => {
