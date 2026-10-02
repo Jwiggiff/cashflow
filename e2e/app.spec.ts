@@ -143,6 +143,13 @@ test("registers a passkey and signs in with it", async ({ page, context }) => {
     })
     .toBe(1);
 
+  // A successful "Add Passkey" triggers a refresh of this page's own data
+  // (the new passkey's details) - without waiting for that to settle first,
+  // it can still be in flight when clearCookies()+goto() below fire, and
+  // Playwright sees that as "navigation interrupted by another navigation"
+  // (observed flaky in CI, not reliably reproducible locally).
+  await page.waitForLoadState("networkidle");
+
   await context.clearCookies();
   await page.goto("/transactions");
   await expect(page).toHaveURL(/\/auth\/signin/);
