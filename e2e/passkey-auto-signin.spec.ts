@@ -29,6 +29,28 @@ async function mockStandaloneMode(page: Page) {
   });
 }
 
+// Spies on navigator.credentials.get so the negative test cases can assert
+// the passkey prompt was never actually invoked, rather than inferring it
+// from the URL after a fixed wait - a slow auto-prompt could still fire
+// after that wait elapses, well past when the test already decided nothing
+// happened.
+async function spyOnCredentialsGet(page: Page) {
+  await page.addInitScript(() => {
+    (window as unknown as { __credentialsGetCalls: number }).__credentialsGetCalls = 0;
+    const original = navigator.credentials.get.bind(navigator.credentials);
+    navigator.credentials.get = (...args: Parameters<typeof original>) => {
+      (window as unknown as { __credentialsGetCalls: number }).__credentialsGetCalls++;
+      return original(...args);
+    };
+  });
+}
+
+async function credentialsGetCallCount(page: Page) {
+  return page.evaluate(
+    () => (window as unknown as { __credentialsGetCalls: number }).__credentialsGetCalls
+  );
+}
+
 async function setUpUserWithPasskey(page: Page, context: import("@playwright/test").BrowserContext) {
   userCount++;
   const username = `pwaautouser${userCount}`;
@@ -64,6 +86,8 @@ async function setUpUserWithPasskey(page: Page, context: import("@playwright/tes
       return credentials.length;
     })
     .toBe(1);
+
+  return username;
 }
 
 test("does not auto-trigger the passkey prompt in a regular browser tab", async ({
@@ -72,10 +96,12 @@ test("does not auto-trigger the passkey prompt in a regular browser tab", async 
 }) => {
   await setUpUserWithPasskey(page, context);
   await context.clearCookies();
+  await spyOnCredentialsGet(page);
 
   await page.goto("/auth/signin");
   await page.waitForTimeout(1500);
   await expect(page).toHaveURL(/\/auth\/signin/);
+  expect(await credentialsGetCallCount(page)).toBe(0);
 });
 
 test("auto-triggers and signs in when launched in standalone/PWA mode", async ({
@@ -90,17 +116,24 @@ test("auto-triggers and signs in when launched in standalone/PWA mode", async ({
   await expect(page).toHaveURL("/", { timeout: 5000 });
 });
 
-test("does not auto-trigger right after an explicit sign-out, even in standalone mode", async ({
+test("does not auto-trigger right after clicking sign out, even in standalone mode", async ({
   page,
   context,
 }) => {
-  await setUpUserWithPasskey(page, context);
+  const username = await setUpUserWithPasskey(page, context);
   await mockStandaloneMode(page);
+  await spyOnCredentialsGet(page);
 
-  // Already signed in from setUpUserWithPasskey - simulate the sign-out
-  // redirect's `signedOut` flag directly rather than clicking through the
-  // UI, since the point here is the flag's effect on the signin page.
-  await page.goto("/auth/signin?signedOut=1");
+  // Still signed in from setUpUserWithPasskey - open the user menu and
+  // click the real "Sign out" item (components/user-section.tsx), so this
+  // actually exercises its redirectTo string too, not just the sign-in
+  // page's own handling of the flag.
+  await page.goto("/");
+  await page.getByRole("button", { name: new RegExp(username) }).click();
+  await page.getByRole("menuitem", { name: /sign out/i }).click();
+
+  await expect(page).toHaveURL(/\/auth\/signin\?signedOut=1/);
   await page.waitForTimeout(1500);
   await expect(page).toHaveURL(/\/auth\/signin\?signedOut=1/);
+  expect(await credentialsGetCallCount(page)).toBe(0);
 });
