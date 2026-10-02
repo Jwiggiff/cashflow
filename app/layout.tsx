@@ -80,17 +80,15 @@ export default async function RootLayout({
                     accounts={accounts}
                     canAutoCategorize={canAutoCategorize}
                   >
-                    <div className="flex h-full flex-col">
+                    <SidebarProvider>
+                      <AppSidebar />
                       <PendingTransactionsBanner
                         count={pendingTransactionCount}
                       />
-                      <SidebarProvider className="min-h-0 flex-1">
-                        <AppSidebar />
-                        <SidebarInset className="flex-1 p-4 !ml-0 @container">
-                          {children}
-                        </SidebarInset>
-                      </SidebarProvider>
-                    </div>
+                      <SidebarInset className="flex-1 p-4 !ml-0 @container">
+                        {children}
+                      </SidebarInset>
+                    </SidebarProvider>
                     <Toaster
                       position="top-center"
                       offset="max(1rem, env(safe-area-inset-top))"
