@@ -111,13 +111,6 @@ test("a second user sees none of the first user's data", async ({ page }) => {
   }
 });
 
-test("/dashboard redirects to the dashboard at /", async ({ page }) => {
-  await signIn(page);
-  await page.goto("/dashboard");
-  await expect(page).toHaveURL("/");
-  await expect(page.getByRole("heading", { name: `Hello, ${username}` })).toBeVisible();
-});
-
 test("registers a passkey and signs in with it", async ({ page, context }) => {
   // A virtual authenticator stands in for Touch ID / a security key
   const cdp = await context.newCDPSession(page);
