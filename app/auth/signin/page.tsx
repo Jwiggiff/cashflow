@@ -106,14 +106,18 @@ export default function SignInPage() {
   // would feel like an unexpected interruption rather than "the app opening."
   // Only attempted once per mount (autoAttempted ref) - a failed/dismissed
   // attempt falls back to the normal manual button instead of retrying in a
-  // loop.
+  // loop. Also skipped right after an explicit sign-out (see
+  // components/user-section.tsx's `signedOut` redirect param) - without
+  // this, signing out would immediately re-prompt Face ID and sign back in,
+  // making it impossible to actually log out or switch accounts.
   useEffect(() => {
     if (autoAttempted.current) return;
+    if (params.get("signedOut")) return;
     if (!isStandalonePwa()) return;
     if (typeof window.PublicKeyCredential === "undefined") return;
     autoAttempted.current = true;
     handleSignInWithPasskey({ silent: true });
-  }, [handleSignInWithPasskey]);
+  }, [handleSignInWithPasskey, params]);
 
   return (
     <div className="flex h-full items-center justify-center bg-pattern px-4 py-12 sm:px-6 lg:px-8">
