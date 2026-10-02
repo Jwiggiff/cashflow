@@ -378,7 +378,8 @@ describe("bulk actions", () => {
         ["US date", 1, 3],
       ]);
     } finally {
-      process.env.TZ = originalTZ;
+      if (originalTZ === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTZ;
     }
   });
 
