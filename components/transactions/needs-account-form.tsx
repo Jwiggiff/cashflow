@@ -1,6 +1,20 @@
 "use client";
 
-import { assignTransactionAccount } from "@/app/transactions/actions";
+import {
+  assignTransactionAccount,
+  deletePendingTransaction,
+} from "@/app/transactions/actions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -37,6 +51,7 @@ export function NeedsAccountForm({
   const router = useRouter();
   const [accountId, setAccountId] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSubmit = async () => {
     if (!accountId) {
@@ -55,6 +70,22 @@ export function NeedsAccountForm({
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDiscard = async () => {
+    setIsDeleting(true);
+    try {
+      const result = await deletePendingTransaction(transaction.id);
+      if (result.success) {
+        toast.success("Transaction discarded");
+        router.push("/transactions/needs-account");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Failed to discard transaction");
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -105,10 +136,39 @@ export function NeedsAccountForm({
       <Button
         className="w-full"
         onClick={handleSubmit}
-        disabled={isSubmitting || !accountId}
+        disabled={isSubmitting || isDeleting || !accountId}
       >
         {isSubmitting ? "Saving..." : "Assign Account"}
       </Button>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button
+            variant="ghost"
+            className="w-full text-destructive hover:text-destructive"
+            disabled={isSubmitting || isDeleting}
+          >
+            Discard this transaction
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard transaction?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes &quot;{transaction.description}&quot;
+              ({formatCurrency(Math.abs(transaction.amount))}). It was never
+              applied to any account balance, so nothing else is affected.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscard} disabled={isDeleting}>
+              {isDeleting ? "Discarding..." : "Discard"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

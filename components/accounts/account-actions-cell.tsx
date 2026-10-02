@@ -14,7 +14,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import * as React from "react";
-import { deleteAccount } from "@/app/accounts/actions";
+import { deleteAccount, getAccountDeletionImpact } from "@/app/accounts/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { AccountDialog } from "./account-dialog";
@@ -24,10 +24,29 @@ interface AccountActionsCellProps {
   account: BankAccountWithAliases;
 }
 
+type DeletionImpact = {
+  transactions: number;
+  recurringTransactions: number;
+  transfers: number;
+  recurringTransfers: number;
+};
+
 export function AccountActionsCell({ account }: AccountActionsCellProps) {
   const [open, setOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [impact, setImpact] = React.useState<DeletionImpact | null>(null);
   const router = useRouter();
+
+  async function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      setImpact(null);
+      const result = await getAccountDeletionImpact(account.id);
+      if (result.success) {
+        setImpact(result.data);
+      }
+    }
+  }
 
   async function handleDelete() {
     setLoading(true);
@@ -42,6 +61,15 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
     }
   }
 
+  const impactItems = impact
+    ? [
+        [impact.transactions, "transaction"],
+        [impact.recurringTransactions, "recurring transaction"],
+        [impact.transfers, "transfer"],
+        [impact.recurringTransfers, "recurring transfer"],
+      ].filter(([count]) => (count as number) > 0)
+    : [];
+
   return (
     <div className="flex gap-2 justify-end">
       <AccountDialog
@@ -53,7 +81,7 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
           </Button>
         }
       />
-      <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialog open={open} onOpenChange={handleOpenChange}>
         <AlertDialogTrigger asChild>
           <Button size="icon" variant="ghost" aria-label="Delete account">
             <Trash2Icon className="h-4 w-4" />
@@ -66,6 +94,24 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
               Are you sure you want to delete this account? This action cannot
               be undone.
             </AlertDialogDescription>
+            {impact === null ? (
+              <p className="text-sm text-muted-foreground">
+                Checking what else this would delete...
+              </p>
+            ) : (
+              impactItems.length > 0 && (
+                <div className="rounded border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  This will also permanently delete{" "}
+                  {impactItems
+                    .map(
+                      ([count, label]) =>
+                        `${count} ${label}${(count as number) === 1 ? "" : "s"}`
+                    )
+                    .join(", ")}
+                  .
+                </div>
+              )
+            )}
             <div className="mt-4 p-3 rounded bg-muted text-sm">
               <div>
                 <span className="font-semibold">Name:</span> {account.name}
@@ -86,7 +132,10 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={loading}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading || impact === null}
+            >
               {loading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

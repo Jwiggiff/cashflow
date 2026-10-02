@@ -150,7 +150,7 @@ model Transaction {
   source      String?
   category    Category?       @relation(fields: [categoryId], references: [id])
   categoryId  Int?
-  account     BankAccount?    @relation(fields: [accountId], references: [id])
+  account     BankAccount?    @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId   Int?
   // Only set when accountId is null (a transaction pending account
   // assignment) - ownership otherwise flows through account.userId. Not a
@@ -173,7 +173,7 @@ model RecurringTransaction {
   isActive          Boolean         @default(true)
   category          Category?       @relation(fields: [categoryId], references: [id])
   categoryId        Int?
-  account           BankAccount     @relation(fields: [accountId], references: [id])
+  account           BankAccount     @relation(fields: [accountId], references: [id], onDelete: Cascade)
   accountId         Int
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -188,9 +188,9 @@ model RecurringTransfer {
   lastProcessedDate DateTime?
   nextDueDate       DateTime
   isActive          Boolean     @default(true)
-  fromAccount       BankAccount @relation("FromAccountRecurring", fields: [fromAccountId], references: [id])
+  fromAccount       BankAccount @relation("FromAccountRecurring", fields: [fromAccountId], references: [id], onDelete: Cascade)
   fromAccountId     Int
-  toAccount         BankAccount @relation("ToAccountRecurring", fields: [toAccountId], references: [id])
+  toAccount         BankAccount @relation("ToAccountRecurring", fields: [toAccountId], references: [id], onDelete: Cascade)
   toAccountId       Int
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -201,9 +201,9 @@ model Transfer {
   date          DateTime
   description   String?
   amount        Float
-  fromAccount   BankAccount @relation("FromAccount", fields: [fromAccountId], references: [id])
+  fromAccount   BankAccount @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: Cascade)
   fromAccountId Int
-  toAccount     BankAccount @relation("ToAccount", fields: [toAccountId], references: [id])
+  toAccount     BankAccount @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: Cascade)
   toAccountId   Int
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

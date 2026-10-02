@@ -285,6 +285,28 @@ export async function getPendingTransaction(id: number) {
   });
 }
 
+export async function deletePendingTransaction(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    // No balance to revert - a pending transaction never had its amount
+    // applied to any account yet, unlike deleteTransaction above.
+    const deleted = await prisma.transaction.deleteMany({
+      where: { id, accountId: null, userId: session.user.id },
+    });
+    if (deleted.count !== 1) {
+      return { success: false, error: "Pending transaction not found" };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete pending transaction:", error);
+    return { success: false, error: "Failed to delete pending transaction" };
+  }
+}
+
 export async function assignTransactionAccount(
   transactionId: number,
   accountId: number
@@ -295,26 +317,30 @@ export async function assignTransactionAccount(
   }
 
   try {
-    const pending = await prisma.transaction.findFirst({
-      where: {
-        id: transactionId,
-        accountId: null,
-        userId: session.user.id,
-      },
-    });
-
-    if (!pending) {
-      return { success: false, error: "Pending transaction not found" };
-    }
     if (!(await ownsAccounts(session.user.id, [accountId]))) {
       return { success: false, error: "Account not found" };
     }
 
     const transaction = await prisma.$transaction(async (tx) => {
-      const updated = await tx.transaction.update({
-        where: { id: transactionId },
+      // Load the amount and atomically claim the row in the same step -
+      // updateMany's `where` re-checks accountId: null at the moment of the
+      // write, inside this transaction, so two concurrent calls (double
+      // click, two devices) can't both pass a separate findFirst check and
+      // then both increment the balance. Only one update can ever match.
+      const pending = await tx.transaction.findFirst({
+        where: { id: transactionId, accountId: null, userId: session.user.id },
+      });
+      if (!pending) {
+        throw new Error("Pending transaction not found");
+      }
+
+      const claimed = await tx.transaction.updateMany({
+        where: { id: transactionId, accountId: null, userId: session.user.id },
         data: { accountId, userId: null },
       });
+      if (claimed.count !== 1) {
+        throw new Error("Pending transaction not found");
+      }
 
       // No previous account to revert - the balance was never applied
       // when this transaction was created pending.
@@ -323,11 +349,16 @@ export async function assignTransactionAccount(
         data: { balance: { increment: pending.amount } },
       });
 
-      return updated;
+      return tx.transaction.findUniqueOrThrow({ where: { id: transactionId } });
     });
 
     return { success: true, data: transaction };
   } catch (error) {
+    if (error instanceof Error && error.message === "Pending transaction not found") {
+      // Already assigned (e.g. a losing concurrent request, or a stale
+      // deep link to an already-resolved transaction) - not a real failure.
+      return { success: false, error: "Pending transaction not found" };
+    }
     console.error("Failed to assign transaction account:", error);
     return { success: false, error: "Failed to assign account" };
   }

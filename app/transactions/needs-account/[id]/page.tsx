@@ -17,6 +17,12 @@ export default async function NeedsAccountPage({
   const user = await requireUser();
   const transactionId = Number(id);
 
+  if (!Number.isInteger(transactionId)) {
+    // Non-numeric id (e.g. a typo'd/stale link) - bounce to the index
+    // instead of letting Prisma throw on a NaN query.
+    redirect("/transactions/needs-account");
+  }
+
   const [transaction, accounts, remainingCount] = await Promise.all([
     getPendingTransaction(transactionId),
     prisma.bankAccount.findMany({
