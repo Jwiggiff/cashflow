@@ -69,8 +69,11 @@ export function TransactionList({
             ? `${transaction.fromAccount.name} → ${transaction.toAccount.name}`
             : [
                 transaction.account.name,
-                transaction.category?.name ?? "Uncategorized",
-              ].join(" · ");
+                transaction.category?.name ??
+                  (transaction.type === "INCOME" ? null : "Uncategorized"),
+              ]
+                .filter(Boolean)
+                .join(" · ");
 
           return (
             <li key={item.row.id} className="border-b last:border-b-0">
