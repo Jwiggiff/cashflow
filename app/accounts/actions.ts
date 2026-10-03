@@ -106,6 +106,42 @@ export async function updateAccount(
   }
 }
 
+// Counts what deleting this account would take with it, so the confirmation
+// dialog can show real numbers before the user commits - the delete itself
+// relies on the schema's ON DELETE CASCADE (transactions, recurring
+// transactions, transfers, recurring transfers all cascade from BankAccount)
+// rather than manually deleting each in order.
+export async function getAccountDeletionImpact(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" } as const;
+  }
+
+  const account = await prisma.bankAccount.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  if (!account) {
+    return { success: false, error: "Account not found" } as const;
+  }
+
+  const [transactions, recurringTransactions, transfers, recurringTransfers] =
+    await Promise.all([
+      prisma.transaction.count({ where: { accountId: id } }),
+      prisma.recurringTransaction.count({ where: { accountId: id } }),
+      prisma.transfer.count({
+        where: { OR: [{ fromAccountId: id }, { toAccountId: id }] },
+      }),
+      prisma.recurringTransfer.count({
+        where: { OR: [{ fromAccountId: id }, { toAccountId: id }] },
+      }),
+    ]);
+
+  return {
+    success: true,
+    data: { transactions, recurringTransactions, transfers, recurringTransfers },
+  } as const;
+}
+
 export async function deleteAccount(id: number) {
   const session = await auth();
   if (!session?.user) {
@@ -113,6 +149,10 @@ export async function deleteAccount(id: number) {
   }
 
   try {
+    // Cascades to transactions, recurring transactions, transfers, and
+    // recurring transfers at the DB level (see the schema's onDelete:
+    // Cascade on each of those relations) - getAccountDeletionImpact above
+    // is what shows the user what that includes before they confirm.
     await prisma.bankAccount.delete({ where: { id, userId: session.user.id } });
     return { success: true };
   } catch (error) {
