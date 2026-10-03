@@ -25,7 +25,8 @@ export const createTransactionSchema = object({
   amount: number().positive("Amount must be positive"),
   type: enum_(["INCOME", "EXPENSE"]),
   date: string().datetime({ offset: true }).optional(),
-  account: string().min(1, "Account name is required"),
+  // Omit to create a pending transaction
+  account: string().min(1, "Account name is required").optional(),
   category: string().nullable().optional(),
   autoCategorize: boolean().optional(),
   source: string().optional(),

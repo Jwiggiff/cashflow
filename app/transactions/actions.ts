@@ -188,7 +188,10 @@ export async function updateTransaction(
 
       // Revert the original transaction balance
       await tx.bankAccount.update({
-        where: { id: originalTransaction.accountId, userId: session.user.id },
+        where: {
+          id: originalTransaction.accountId!,
+          userId: session.user.id,
+        },
         data: { balance: { decrement: originalTransaction.amount } },
       });
 
@@ -229,7 +232,10 @@ export async function deleteTransaction(id: number) {
 
       // Revert the account balance
       await tx.bankAccount.update({
-        where: { id: originalTransaction.accountId, userId: session.user.id },
+        where: {
+          id: originalTransaction.accountId!,
+          userId: session.user.id,
+        },
         data: { balance: { decrement: originalTransaction.amount } },
       });
     });
@@ -237,6 +243,111 @@ export async function deleteTransaction(id: number) {
   } catch (error) {
     console.error("Failed to delete transaction:", error);
     return { success: false, error: "Failed to delete transaction" };
+  }
+}
+
+// Pending transactions have no account yet, so ownership is checked via userId.
+
+export async function getPendingTransactionCount() {
+  const session = await auth();
+  if (!session?.user) {
+    return 0;
+  }
+  return prisma.transaction.count({
+    where: { accountId: null, userId: session.user.id },
+  });
+}
+
+export async function getFirstPendingTransactionId() {
+  const session = await auth();
+  if (!session?.user) {
+    return null;
+  }
+  const transaction = await prisma.transaction.findFirst({
+    where: { accountId: null, userId: session.user.id },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+  return transaction?.id ?? null;
+}
+
+export async function getPendingTransaction(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return null;
+  }
+  return prisma.transaction.findFirst({
+    where: { id, accountId: null, userId: session.user.id },
+  });
+}
+
+export async function deletePendingTransaction(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    // Pending transactions were never applied to a balance
+    const deleted = await prisma.transaction.deleteMany({
+      where: { id, accountId: null, userId: session.user.id },
+    });
+    if (deleted.count !== 1) {
+      return { success: false, error: "Pending transaction not found" };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete pending transaction:", error);
+    return { success: false, error: "Failed to delete pending transaction" };
+  }
+}
+
+export async function assignTransactionAccount(
+  transactionId: number,
+  accountId: number
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  try {
+    if (!(await ownsAccounts(session.user.id, [accountId]))) {
+      return { success: false, error: "Account not found" };
+    }
+
+    const transaction = await prisma.$transaction(async (tx) => {
+      const pending = await tx.transaction.findFirst({
+        where: { id: transactionId, accountId: null, userId: session.user.id },
+      });
+      if (!pending) {
+        throw new Error("Pending transaction not found");
+      }
+
+      const claimed = await tx.transaction.updateMany({
+        where: { id: transactionId, accountId: null, userId: session.user.id },
+        data: { accountId, userId: null },
+      });
+      // Re-check accountId at write time so concurrent assigns can't both apply the balance
+      if (claimed.count !== 1) {
+        throw new Error("Pending transaction not found");
+      }
+
+      await tx.bankAccount.update({
+        where: { id: accountId, userId: session.user.id },
+        data: { balance: { increment: pending.amount } },
+      });
+
+      return tx.transaction.findUniqueOrThrow({ where: { id: transactionId } });
+    });
+
+    return { success: true, data: transaction };
+  } catch (error) {
+    if (error instanceof Error && error.message === "Pending transaction not found") {
+      return { success: false, error: "Pending transaction not found" };
+    }
+    console.error("Failed to assign transaction account:", error);
+    return { success: false, error: "Failed to assign account" };
   }
 }
 
@@ -460,7 +571,7 @@ export async function bulkDeleteItems(
         // Revert account balances for all transactions
         for (const transaction of transactions) {
           await tx.bankAccount.update({
-            where: { id: transaction.accountId, userId: session.user.id },
+            where: { id: transaction.accountId!, userId: session.user.id },
             data: { balance: { decrement: transaction.amount } },
           });
         }
@@ -721,10 +832,10 @@ export async function convertTransactionsToTransfer(transactionIds: number[]) {
       // Create the transfer
       const transfer = await tx.transfer.create({
         data: {
-          description: `Transfer from ${fromTransaction.account.name} to ${toTransaction.account.name}`,
+          description: `Transfer from ${fromTransaction.account!.name} to ${toTransaction.account!.name}`,
           amount: Math.abs(fromTransaction.amount),
-          fromAccountId: fromTransaction.accountId,
-          toAccountId: toTransaction.accountId,
+          fromAccountId: fromTransaction.accountId!,
+          toAccountId: toTransaction.accountId!,
           date: new Date(
             Math.max(
               new Date(fromTransaction.date).getTime(),
@@ -741,23 +852,23 @@ export async function convertTransactionsToTransfer(transactionIds: number[]) {
 
       // Revert the balance changes from the original transactions
       await tx.bankAccount.update({
-        where: { id: fromTransaction.accountId },
+        where: { id: fromTransaction.accountId! },
         data: { balance: { decrement: fromTransaction.amount } },
       });
 
       await tx.bankAccount.update({
-        where: { id: toTransaction.accountId },
+        where: { id: toTransaction.accountId! },
         data: { balance: { decrement: toTransaction.amount } },
       });
 
       // Apply the transfer balance changes
       await tx.bankAccount.update({
-        where: { id: fromTransaction.accountId },
+        where: { id: fromTransaction.accountId! },
         data: { balance: { decrement: transfer.amount } },
       });
 
       await tx.bankAccount.update({
-        where: { id: toTransaction.accountId },
+        where: { id: toTransaction.accountId! },
         data: { balance: { increment: transfer.amount } },
       });
 

@@ -32,6 +32,10 @@ export function TransactionsTable({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const handleRowClick = (item: TransactionOrTransfer) => {
+    if (item.type !== "TRANSFER" && !item.accountId) {
+      router.push(`/transactions/needs-account/${item.id}`);
+      return;
+    }
     setEditItem(item);
     setEditDialogOpen(true);
   };

@@ -152,6 +152,13 @@ export function getColumns(
             </div>
           );
         }
+        if ("account" in item) {
+          return (
+            <div className="truncate max-w-[150px] text-amber-600 dark:text-amber-400">
+              ⚠ Needs account
+            </div>
+          );
+        }
         return <div>-</div>;
       },
     },

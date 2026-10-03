@@ -33,9 +33,10 @@ export default async function TransactionsPage({
 
   const transactions = await prisma.transaction.findMany({
     where: {
-      account: {
-        userId: user.id,
-      },
+      OR: [
+        { account: { userId: user.id } },
+        { accountId: null, userId: user.id },
+      ],
     },
     orderBy: {
       createdAt: "desc",

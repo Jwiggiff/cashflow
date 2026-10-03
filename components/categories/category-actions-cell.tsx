@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import {
   AlertDialog,
@@ -81,7 +81,11 @@ export function CategoryActionsCell({ category }: CategoryActionsCellProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={loading}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading}
+              className={buttonVariants({ variant: "destructive" })}
+            >
               {loading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
