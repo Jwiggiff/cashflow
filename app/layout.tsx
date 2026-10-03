@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { NotificationProvider } from "@/components/notification-provider";
+import { PendingTransactionsBanner } from "@/components/pending-transactions-banner";
 import { PrivacyProvider } from "@/components/privacy-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -78,6 +79,7 @@ export default async function RootLayout({
                   >
                     <SidebarProvider>
                       <AppSidebar />
+                      <PendingTransactionsBanner />
                       <SidebarInset className="flex-1 p-4 !ml-0 @container">
                         {children}
                       </SidebarInset>

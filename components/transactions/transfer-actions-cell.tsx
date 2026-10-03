@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { TransferWithAccounts } from "@/lib/types";
 import { BankAccount } from "@prisma/client";
 import { PencilIcon, Trash2Icon } from "lucide-react";
@@ -98,7 +98,11 @@ export function TransferActionsCell({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={loading}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading}
+              className={buttonVariants({ variant: "destructive" })}
+            >
               {loading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

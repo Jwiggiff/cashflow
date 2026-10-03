@@ -68,7 +68,7 @@ export function TransactionList({
           const detail = isTransfer
             ? `${transaction.fromAccount.name} → ${transaction.toAccount.name}`
             : [
-                transaction.account.name,
+                transaction.account?.name ?? "⚠ Needs account",
                 transaction.category?.name ??
                   (transaction.type === "INCOME" ? null : "Uncategorized"),
               ]

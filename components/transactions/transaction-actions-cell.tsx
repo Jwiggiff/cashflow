@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Trash2Icon, PencilIcon } from "lucide-react";
 import {
   AlertDialog,
@@ -74,14 +74,18 @@ export function TransactionActionsCell({ transaction, accounts, categories }: Tr
               <div><span className="font-semibold">Description:</span> {transaction.description}</div>
               <div><span className="font-semibold">Amount:</span> ${Math.abs(transaction.amount).toFixed(2)} {transaction.amount < 0 ? '(Expense)' : ''}</div>
               <div><span className="font-semibold">Date:</span> {new Date(transaction.date).toLocaleDateString()}</div>
-              <div><span className="font-semibold">Account:</span> {transaction.account.name}</div>
+              <div><span className="font-semibold">Account:</span> {transaction.account?.name ?? "Needs account"}</div>
               <div><span className="font-semibold">Category:</span> {transaction.category?.name || '-'}</div>
               <div><span className="font-semibold">Type:</span> {transaction.type.charAt(0) + transaction.type.slice(1).toLowerCase()}</div>
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={loading}>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={loading}
+              className={buttonVariants({ variant: "destructive" })}
+            >
               {loading ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

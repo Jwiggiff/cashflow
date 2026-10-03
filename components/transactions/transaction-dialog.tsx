@@ -118,7 +118,7 @@ export function TransactionDialog({
       setCategoryId(transaction?.categoryId || null);
       setAccountId(
         mode === "edit" && transaction
-          ? transaction.accountId
+          ? transaction.accountId ?? ""
           : resolveDefaultAccountId(
               accounts,
               defaultAccountId,

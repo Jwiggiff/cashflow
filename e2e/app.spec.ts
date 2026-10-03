@@ -85,6 +85,33 @@ test("adds an expense and updates the account balance", async ({ page }) => {
   await expect(page.getByText("$957.50").first()).toBeVisible();
 });
 
+test("assigns an account to a transaction created without one", async ({ page }) => {
+  const res = await page.request.post("/api/transactions", {
+    headers: {
+      authorization: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
+    },
+    data: { description: "Coffee Shop", amount: 7.5, type: "EXPENSE" },
+  });
+  expect(res.status()).toBe(201);
+
+  await signIn(page);
+  const banner = page.getByRole("link", { name: /1 transaction needs an account/ });
+  await banner.click();
+
+  await expect(page).toHaveURL(/\/transactions\/needs-account\/\d+$/);
+  await expect(page.getByText("Coffee Shop")).toBeVisible();
+  await page.getByLabel("Which account is this for?").click();
+  await page.getByRole("option", { name: "Main Checking" }).click();
+  await page.getByRole("button", { name: "Assign Account" }).click();
+
+  await expect(page.getByText(/all caught up/)).toBeVisible();
+  await expect(banner).toBeHidden();
+
+  await page.goto("/accounts");
+  await page.getByRole("button", { name: "Show balances" }).first().click();
+  await expect(page.getByText("$950.00").first()).toBeVisible();
+});
+
 test("adds a category", async ({ page }) => {
   await signIn(page);
   await page.goto("/categories");
