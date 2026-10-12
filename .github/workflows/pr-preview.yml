@@ -1,0 +1,76 @@
+name: PR Preview
+
+# Ephemeral per-PR preview deploy to Fly.io. Every push to an open PR
+# rebuilds and redeploys that PR's own app (fresh seed data each time,
+# since the seed script wipes and recreates the dev user); closing the PR
+# tears the app down. Requires a FLY_API_TOKEN repo secret - see fly.toml
+# for the app-level config this reuses.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Ensure app exists
+        run: flyctl apps create "$APP_NAME" --org personal || true
+
+      # The seed script's own safety check refuses to run under
+      # NODE_ENV=production or CI=true (it's meant to stop someone wiping
+      # real data) - overridden here for this one exec since the whole
+      # point of this environment is throwaway seed data.
+      - name: Set preview auth secret
+        run: |
+          flyctl secrets set \
+            AUTH_SECRET="$(openssl rand -base64 32)" \
+            --app "$APP_NAME"
+
+      - name: Deploy
+        run: |
+          flyctl deploy \
+            --app "$APP_NAME" \
+            --config fly.toml \
+            --build-arg GIT_HASH=${{ github.sha }} \
+            --strategy immediate
+
+      - name: Seed preview data
+        run: |
+          flyctl ssh console --app "$APP_NAME" -C \
+            "env NODE_ENV=development SEED_USERNAME=dev SEED_PASSWORD=preview-dev-pass npm run db:seed"
+
+      - name: Comment preview URL
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            Preview deployed: https://${{ env.APP_NAME }}.fly.dev
+
+            Login: `dev` / `preview-dev-pass`
+
+            Fresh seed data on every push - torn down automatically when this PR closes.
+
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl apps destroy "$APP_NAME" -y || true

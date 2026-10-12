@@ -1,0 +1,19 @@
+# Used only for ephemeral PR preview deploys (see
+# .github/workflows/pr-preview.yml) - not a production config. `app` below
+# is a placeholder; the workflow always overrides it with
+# `--app cashflow-pr-<PR number>` so every PR gets its own isolated app.
+app = "cashflow-preview"
+primary_region = "yyz"
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
