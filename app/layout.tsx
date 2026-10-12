@@ -2,6 +2,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CSVDropzoneWrapper } from "@/components/csv-dropzone-wrapper";
 import { NotificationProvider } from "@/components/notification-provider";
 import { PrivacyProvider } from "@/components/privacy-provider";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
@@ -79,7 +80,7 @@ export default async function RootLayout({
                     <SidebarProvider>
                       <AppSidebar />
                       <SidebarInset className="flex-1 p-4 !ml-0 @container">
-                        {children}
+                        <PullToRefresh>{children}</PullToRefresh>
                       </SidebarInset>
                     </SidebarProvider>
                     <Toaster
