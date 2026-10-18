@@ -70,6 +70,7 @@ jobs:
             --config fly.toml \
             --build-arg GIT_HASH=${{ github.sha }} \
             --build-arg PREVIEW_LABEL=PR-${{ github.event.pull_request.number }} \
+            --env BASE_URL=https://${{ env.APP_NAME }}.fly.dev \
             --strategy immediate
 
       - name: Comment preview URL
