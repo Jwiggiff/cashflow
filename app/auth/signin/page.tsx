@@ -89,9 +89,9 @@ export default function SignInPage() {
   );
 
   // Auto-trigger the passkey prompt on launch, but only when installed as a
-  // PWA (see isStandalonePwa above) - not in a regular browser tab on phone
-  // or desktop, where popping a biometric prompt the instant the page loads
-  // would feel like an unexpected interruption rather than "the app opening."
+  // PWA - not in a regular browser tab on phone or desktop, where popping a
+  // biometric prompt the instant the page loads would feel like an
+  // unexpected interruption rather than "the app opening."
   // Only attempted once per mount (autoAttempted ref) - a failed/dismissed
   // attempt falls back to the normal manual button instead of retrying in a
   // loop. Also skipped right after an explicit sign-out (see

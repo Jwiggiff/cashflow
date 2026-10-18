@@ -6,13 +6,10 @@ import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// Installed PWAs (launched from the home-screen icon) lose Safari's native
-// pull-to-refresh entirely - it's a browser-chrome gesture, not available in
-// a standalone window. Only active in that mode: a regular browser tab
-// already has the native gesture, and layering this on top of it would
-// just double-trigger a refresh on the same pull.
-const PULL_THRESHOLD = 70; // px of drag before a release triggers a refresh
-const MAX_PULL = 110; // px - caps how far the indicator can be dragged
+// Installed PWAs lose Safari's native pull-to-refresh, so this reimplements
+// it there. Browser tabs keep the native one.
+const PULL_THRESHOLD = 70;
+const MAX_PULL = 110;
 
 export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -21,9 +18,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const startY = useRef<number | null>(null);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    // Only start a pull when nothing under the finger is scrolled - the page
-    // itself (this reaches <html>) or any scroll area it's inside (popover
-    // list, sidebar, etc.). Otherwise scrolling back up in one would pull.
+    // Skip if the page or any scroll area under the finger is scrolled.
     for (let el = e.target as Element | null; el; el = el.parentElement) {
       if (el.scrollTop > 0) return;
     }
@@ -34,12 +29,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     (e: TouchEvent) => {
       if (startY.current === null || refreshing) return;
       const delta = e.touches[0].clientY - startY.current;
-      if (delta <= 0) {
-        setPullDistance(0);
-        return;
-      }
-      // Resistance curve so it doesn't feel 1:1 with the finger.
-      setPullDistance(Math.min(MAX_PULL, delta * 0.5));
+      setPullDistance(delta > 0 ? Math.min(MAX_PULL, delta * 0.5) : 0);
     },
     [refreshing]
   );
@@ -50,10 +40,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     if (pullDistance >= PULL_THRESHOLD && !refreshing) {
       setRefreshing(true);
       router.refresh();
-      // router.refresh() doesn't expose a promise tied to the actual
-      // server round-trip, so this just gives the spinner a moment to be
-      // visible rather than tracking real completion - matches the quick,
-      // approximate feedback native pull-to-refresh gives anyway.
+      // router.refresh() can't be awaited; just show the spinner briefly.
       setTimeout(() => {
         setRefreshing(false);
         setPullDistance(0);
@@ -63,20 +50,14 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     }
   }, [pullDistance, refreshing, router]);
 
-  // Checked here rather than during render: the server can't know the
-  // display mode, so rendering differently per mode would break hydration.
-  // The render below is identical either way - the indicator is 0px tall
-  // until a pull, which only these listeners can start.
+  // Checked here, not in render, so server and client render the same tree.
   useEffect(() => {
     if (!isStandalonePwa()) return;
-    document.addEventListener("touchstart", handleTouchStart, {
-      passive: true,
-    });
-    document.addEventListener("touchmove", handleTouchMove, {
-      passive: true,
-    });
-    document.addEventListener("touchend", handleTouchEnd, { passive: true });
-    document.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+    const opts = { passive: true };
+    document.addEventListener("touchstart", handleTouchStart, opts);
+    document.addEventListener("touchmove", handleTouchMove, opts);
+    document.addEventListener("touchend", handleTouchEnd, opts);
+    document.addEventListener("touchcancel", handleTouchEnd, opts);
     return () => {
       document.removeEventListener("touchstart", handleTouchStart);
       document.removeEventListener("touchmove", handleTouchMove);
@@ -98,13 +79,9 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
             refreshing && "animate-spin"
           )}
           style={
-            !refreshing
-              ? {
-                  transform: `rotate(${
-                    (pullDistance / PULL_THRESHOLD) * 360
-                  }deg)`,
-                }
-              : undefined
+            refreshing
+              ? undefined
+              : { transform: `rotate(${(pullDistance / PULL_THRESHOLD) * 360}deg)` }
           }
         />
       </div>

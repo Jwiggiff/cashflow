@@ -1,7 +1,5 @@
-// True only when launched from the home-screen icon (installed PWA), not a
-// regular browser tab on phone or desktop - `display-mode: standalone` is
-// the standard way to detect this; `navigator.standalone` is Safari's older,
-// non-standard equivalent, still needed for some iOS versions.
+// True when launched from the home-screen icon. `navigator.standalone` is
+// the older iOS Safari equivalent of `display-mode: standalone`.
 export function isStandalonePwa() {
   if (typeof window === "undefined") return false;
   return (
