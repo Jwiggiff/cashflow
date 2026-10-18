@@ -84,7 +84,11 @@ COPY --from=deps /app/node_modules/bcryptjs ./node_modules/bcryptjs
 COPY --from=deps /app/node_modules/rrule ./node_modules/rrule
 COPY --from=deps /app/node_modules/tslib ./node_modules/tslib
 
-RUN npm install -g prisma@6.13.0
+# Install the Prisma CLI for `migrate deploy` in entrypoint.sh, at the exact
+# version the lockfile resolved (the standalone output doesn't include it).
+COPY --from=deps /app/node_modules/prisma/package.json /tmp/prisma-package.json
+RUN npm install -g prisma@$(node -p "require('/tmp/prisma-package.json').version") \
+    && rm /tmp/prisma-package.json
 
 EXPOSE 3000
 
