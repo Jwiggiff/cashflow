@@ -35,6 +35,10 @@ React state conventions (enforced by `react-hooks/set-state-in-effect`):
 - Don't sync props into state with a `useEffect`. Dialog forms live in an inner `*Form` component rendered inside `ResponsiveDialog`; Radix unmounts dialog content on close, so the form mounts fresh on each open and takes its initial values straight from `useState(...)`. Use a `key` to reset state without unmounting.
 - Update state that reacts to user input (e.g. a field derived from another field) in the event handler, not in an effect. Compute anything derivable during render instead of storing it.
 
+Comments (code, config, workflows, scripts):
+- Only comment on what the code can't tell a reader: why something is done, or a gotcha. Never restate what the code, a step name, or a config key already says.
+- Keep them short and simple, usually one line, in plain language rather than technical detail. No history or "previously this did X"; that goes in the commit message.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

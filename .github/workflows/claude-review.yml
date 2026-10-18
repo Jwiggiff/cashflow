@@ -6,8 +6,15 @@ on:
   issue_comment:
     types: [created]
 
+# Unrelated comments (including the review's own summary) and labels get a
+# throwaway group so their skipped runs can't cancel a review in progress.
 concurrency:
-  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  group: >-
+    claude-review-${{ github.event.pull_request.number || github.event.issue.number }}${{
+      ((github.event_name == 'issue_comment' && !contains(github.event.comment.body, '/claude-review')) ||
+       (github.event.action == 'labeled' && github.event.label.name != 'claude-review-requested')) &&
+      format('-ignored-{0}', github.run_id) || ''
+    }}
   cancel-in-progress: true
 
 jobs:
