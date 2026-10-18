@@ -68,7 +68,11 @@ export function UserSection() {
   const user = session.user;
 
   const handleSignOut = () => {
-    signOut({ redirectTo: "/" });
+    // The `signedOut` flag tells the sign-in page to skip its
+    // auto-passkey-prompt-on-load (PWA mode) - without it, signing out just
+    // immediately re-prompts Face ID and signs back in, making it impossible
+    // to actually log out or switch accounts.
+    signOut({ redirectTo: "/auth/signin?signedOut=1" });
   };
 
   return (
