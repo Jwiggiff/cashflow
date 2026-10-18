@@ -35,5 +35,12 @@ fi
 # Run migrations as the new user
 gosu $PUID:$PGID npx prisma migrate deploy
 
+# PR previews only: their DB lives on an ephemeral rootfs that is reset
+# whenever the machine restarts, so re-seed demo data on every boot. The
+# seed script refuses to run under NODE_ENV=production, hence the override.
+if [ "$SEED_ON_START" = "true" ]; then
+    gosu $PUID:$PGID env NODE_ENV=development node prisma/seed.mjs
+fi
+
 # Execute the original command as the new user
 exec gosu $PUID:$PGID "$@"

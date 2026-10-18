@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { appName } from "@/lib/app-name";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "CashFlow",
-    short_name: "CashFlow",
+    name: appName,
+    short_name: appName,
     description: "CashFlow is a simple and easy to use money tracker.",
     start_url: "/",
     theme_color: "#222222",
