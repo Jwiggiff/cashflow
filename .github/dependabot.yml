@@ -16,6 +16,13 @@ updates:
       # once @auth/core supports a newer major.
       - dependency-name: "@simplewebauthn/*"
         update-types: ["version-update:semver-major"]
+      # Prisma 7 requires driver adapters (better-sqlite3), moves the datasource
+      # URL into prisma.config.ts, and changes CLI flags we use in CI and tests.
+      # Drop this when doing that migration as its own change.
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/"
