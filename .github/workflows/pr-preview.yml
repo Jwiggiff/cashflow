@@ -73,16 +73,22 @@ jobs:
             --env BASE_URL=https://${{ env.APP_NAME }}.fly.dev \
             --strategy immediate
 
+      # GitHub can't attach a generated image to a comment, so the QR code
+      # is rendered by api.qrserver.com from the (already public) preview URL.
       - name: Comment preview URL
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: pr-preview
           message: |
-            Preview deployed: https://${{ env.APP_NAME }}.fly.dev
+            ## 🚀 Preview deployed
 
-            Login: `dev` / `preview-dev-pass`
+            ### [${{ env.APP_NAME }}.fly.dev](https://${{ env.APP_NAME }}.fly.dev)
 
-            Demo data is re-seeded whenever the machine boots (after each push or after idling), so anything you create there doesn't stick. Torn down automatically when this PR closes.
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=12&data=https%3A%2F%2F${{ env.APP_NAME }}.fly.dev" width="180" alt="QR code for the preview URL">
+
+            **Login:** `dev` / `preview-dev-pass` · **Commit:** ${{ github.event.pull_request.head.sha }}
+
+            <sub>Demo data is re-seeded whenever the machine boots (after each push or after idling), so anything you create there doesn't stick. Remove the `preview` label or close the PR to tear it down.</sub>
 
   cleanup:
     if: >-
@@ -111,4 +117,6 @@ jobs:
         with:
           header: pr-preview
           message: |
-            Preview torn down. Add the `preview` label again to redeploy.
+            ## 🧹 Preview torn down
+
+            Add the `preview` label again to redeploy.
