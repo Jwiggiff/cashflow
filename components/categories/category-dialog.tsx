@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
 import { Category } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface CategoryDialogProps {
@@ -23,28 +23,37 @@ export function CategoryDialog({
   onOpenChange: controlledOnOpenChange,
   trigger,
 }: CategoryDialogProps) {
-  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [icon, setIcon] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const isEdit = !!category;
 
   // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
-  // Initialize form with category data when editing, reset when adding
-  useEffect(() => {
-    if (isEdit && category) {
-      setName(category.name);
-      setIcon(category.icon);
-    } else {
-      setName("");
-      setIcon(null);
-    }
-  }, [category, isEdit, open]);
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={category ? "Edit Category" : "Add Category"}
+    >
+      <CategoryForm category={category} onClose={() => onOpenChange(false)} />
+    </ResponsiveDialog>
+  );
+}
+
+interface CategoryFormProps {
+  category?: Category;
+  onClose: () => void;
+}
+
+// Mounted fresh each time the dialog opens, so initial state comes from props.
+function CategoryForm({ category, onClose }: CategoryFormProps) {
+  const router = useRouter();
+  const [name, setName] = useState(category?.name ?? "");
+  const [icon, setIcon] = useState<string | null>(category?.icon ?? null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isEdit = !!category;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +69,7 @@ export function CategoryDialog({
         toast.success(
           isEdit ? "Category updated successfully" : "Category created successfully"
         );
-        onOpenChange(false);
+        onClose();
         router.refresh();
       } else {
         toast.error(result.error || `Failed to ${isEdit ? "update" : "create"} category`);
@@ -74,49 +83,42 @@ export function CategoryDialog({
   };
 
   return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={trigger}
-      title={isEdit ? "Edit Category" : "Add Category"}
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex items-center gap-2">
-          <IconPicker
-            className="w-9 h-9"
-            value={icon}
-            onChange={setIcon}
-            allowNone={true}
-          />
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g., Food & Dining"
-            required
-          />
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center gap-2">
+        <IconPicker
+          className="w-9 h-9"
+          value={icon}
+          onChange={setIcon}
+          allowNone={true}
+        />
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g., Food & Dining"
+          required
+        />
+      </div>
 
-        <div className="flex justify-end space-x-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting
-              ? isEdit
-                ? "Updating..."
-                : "Creating..."
-              : isEdit
-                ? "Update Category"
-                : "Create Category"}
-          </Button>
-        </div>
-      </form>
-    </ResponsiveDialog>
+      <div className="flex justify-end space-x-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting
+            ? isEdit
+              ? "Updating..."
+              : "Creating..."
+            : isEdit
+              ? "Update Category"
+              : "Create Category"}
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -89,34 +89,79 @@ export function RecurringTransactionDialog({
   categories,
   onSuccess,
 }: RecurringTransactionDialogProps) {
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        recurringTransaction
+          ? "Edit Recurring Transaction"
+          : "Create Recurring Transaction"
+      }
+      className="max-w-md"
+    >
+      <RecurringTransactionForm
+        recurringTransaction={recurringTransaction}
+        prefillForCreate={prefillForCreate}
+        accounts={accounts}
+        categories={categories}
+        onSuccess={onSuccess}
+        onClose={() => onOpenChange(false)}
+      />
+    </ResponsiveDialog>
+  );
+}
+
+interface RecurringTransactionFormProps
+  extends Omit<RecurringTransactionDialogProps, "open" | "onOpenChange"> {
+  onClose: () => void;
+}
+
+// Mounted fresh each time the dialog opens, so initial state comes from props.
+function RecurringTransactionForm({
+  recurringTransaction,
+  prefillForCreate = null,
+  accounts,
+  categories,
+  onSuccess,
+  onClose,
+}: RecurringTransactionFormProps) {
   const isEditing = !!recurringTransaction;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const prefill = recurringTransaction ? null : prefillForCreate;
 
   const [description, setDescription] = useState(
-    recurringTransaction?.description || ""
+    recurringTransaction?.description ?? prefill?.description ?? ""
   );
   const [amount, setAmount] = useState(
-    recurringTransaction?.amount
-      ? Math.abs(recurringTransaction.amount).toString()
-      : "0.00"
+    recurringTransaction
+      ? recurringTransaction.amount
+        ? Math.abs(recurringTransaction.amount).toString()
+        : "0.00"
+      : prefill
+        ? Math.abs(prefill.amount).toFixed(2)
+        : "0.00"
   );
   const [type, setType] = useState<TransactionType>(
-    recurringTransaction?.type || "EXPENSE"
+    recurringTransaction?.type ?? prefill?.type ?? TransactionType.EXPENSE
   );
   const [categoryId, setCategoryId] = useState<string>(
     recurringTransaction?.categoryId?.toString() || ""
   );
-  const [accountId, setAccountId] = useState<string>(
-    recurringTransaction?.accountId?.toString() ||
-      resolveDefaultAccountId(accounts, searchParams.get("account"))
+  const [accountId, setAccountId] = useState<string>(() =>
+    recurringTransaction
+      ? recurringTransaction.accountId?.toString() || ""
+      : prefill
+        ? prefill.accountId.toString()
+        : resolveDefaultAccountId(accounts, searchParams.get("account"))
   );
   const [startDate, setStartDate] = useState<Date>(
-    recurringTransaction?.startDate || new Date()
+    recurringTransaction?.startDate ?? prefill?.startDate ?? new Date()
   );
 
   const [recurrenceType, setRecurrenceType] = useState(
-    recurringTransaction?.rrule || ""
+    recurringTransaction?.rrule ?? prefill?.rrule ?? ""
   );
 
   // Update recurrenceType when startDate changes to maintain the same pattern
@@ -156,41 +201,6 @@ export function RecurringTransactionDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate]);
-
-  // Reset the form state when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (recurringTransaction) {
-        setDescription(recurringTransaction.description || "");
-        setAmount(
-          recurringTransaction.amount
-            ? Math.abs(recurringTransaction.amount).toString()
-            : "0.00"
-        );
-        setType(recurringTransaction.type || TransactionType.EXPENSE);
-        setCategoryId(recurringTransaction.categoryId?.toString() || "");
-        setAccountId(recurringTransaction.accountId?.toString() || "");
-        setStartDate(recurringTransaction.startDate || new Date());
-        setRecurrenceType(recurringTransaction.rrule || "");
-      } else if (prefillForCreate) {
-        setDescription(prefillForCreate.description);
-        setAmount(Math.abs(prefillForCreate.amount).toFixed(2));
-        setType(prefillForCreate.type);
-        setCategoryId("");
-        setAccountId(prefillForCreate.accountId.toString());
-        setStartDate(prefillForCreate.startDate);
-        setRecurrenceType(prefillForCreate.rrule);
-      } else {
-        setDescription("");
-        setAmount("0.00");
-        setType(TransactionType.EXPENSE);
-        setCategoryId("");
-        setAccountId(resolveDefaultAccountId(accounts, searchParams.get("account")));
-        setStartDate(new Date());
-        setRecurrenceType("");
-      }
-    }
-  }, [recurringTransaction, open, prefillForCreate, accounts, searchParams]);
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });
@@ -250,7 +260,7 @@ export function RecurringTransactionDialog({
             ? "Recurring transaction updated successfully"
             : "Recurring transaction created successfully"
         );
-        onOpenChange(false);
+        onClose();
         onSuccess();
       } else {
         toast.error(result.error || "Failed to save recurring transaction");
@@ -269,7 +279,7 @@ export function RecurringTransactionDialog({
       if (result.success) {
         toast.success("Recurring transaction deleted");
         onSuccess();
-        onOpenChange(false);
+        onClose();
       } else {
         toast.error(result.error || "Failed to delete recurring transaction");
       }
@@ -280,152 +290,141 @@ export function RecurringTransactionDialog({
   };
 
   return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      title={
-        isEditing
-          ? "Edit Recurring Transaction"
-          : "Create Recurring Transaction"
-      }
-      className="max-w-md"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Rent payment"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <CurrencyInput
-                value={amount}
-                onChange={(value) => setAmount(value)}
-                required
-              />
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="e.g., Rent payment"
+              required
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => date && setStartDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="account">Account</Label>
-              <Select value={accountId} onValueChange={setAccountId} required>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id.toString()}>
-                      {account.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount</Label>
+            <CurrencyInput
+              value={amount}
+              onChange={(value) => setAmount(value)}
+              required
+            />
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type">Transaction Type</Label>
-              <Select
-                value={type}
-                onValueChange={(value: TransactionType) => setType(value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select transaction type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EXPENSE">Expense</SelectItem>
-                  <SelectItem value="INCOME">Income</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {type === "EXPENSE" && (
-              <div className="space-y-2">
-                <Label htmlFor="category">Category (Optional)</Label>
-                <Combobox
-                  items={categoryItems}
-                  value={categoryId}
-                  onChange={(value) => setCategoryId(value || "")}
-                  placeholder="Select or create category..."
-                  searchPlaceholder="Search categories..."
-                  onCreateItem={handleCreateCategory}
-                  createLabel="Create category"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Start Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !startDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "PPP") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={(date) => date && setStartDate(date)}
+                  initialFocus
                 />
-              </div>
-            )}
+              </PopoverContent>
+            </Popover>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="account">Account</Label>
+            <Select value={accountId} onValueChange={setAccountId} required>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id.toString()}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-          <div className="space-y-4 border-t pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="type">Transaction Type</Label>
+            <Select
+              value={type}
+              onValueChange={(value: TransactionType) => setType(value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select transaction type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="EXPENSE">Expense</SelectItem>
+                <SelectItem value="INCOME">Income</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {type === "EXPENSE" && (
             <div className="space-y-2">
-              <Label>Repeats</Label>
-              <Select
-                value={recurrenceType}
-                onValueChange={(value: string) => setRecurrenceType(value)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <RecurrenceTypeSelectItems startDate={startDate} />
-                </SelectContent>
-              </Select>
+              <Label htmlFor="category">Category (Optional)</Label>
+              <Combobox
+                items={categoryItems}
+                value={categoryId}
+                onChange={(value) => setCategoryId(value || "")}
+                placeholder="Select or create category..."
+                searchPlaceholder="Search categories..."
+                onCreateItem={handleCreateCategory}
+                createLabel="Create category"
+              />
             </div>
-          </div>
+          )}
+        </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {isEditing && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDeleteTransaction}
-              >
-                Delete
-              </Button>
-            )}
-            <div className="ml-auto flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit">{isEditing ? "Update" : "Create"}</Button>
-            </div>
+        <div className="space-y-4 border-t pt-4">
+          <div className="space-y-2">
+            <Label>Repeats</Label>
+            <Select
+              value={recurrenceType}
+              onValueChange={(value: string) => setRecurrenceType(value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <RecurrenceTypeSelectItems startDate={startDate} />
+              </SelectContent>
+            </Select>
           </div>
-        </form>
-    </ResponsiveDialog>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {isEditing && (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteTransaction}
+            >
+              Delete
+            </Button>
+          )}
+          <div className="ml-auto flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">{isEditing ? "Update" : "Create"}</Button>
+          </div>
+        </div>
+      </form>
   );
 }

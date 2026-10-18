@@ -64,26 +64,76 @@ export function RecurringTransferDialog({
   trigger,
   onSuccess,
 }: RecurringTransferDialogProps) {
-  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
+
+  // Use controlled or uncontrolled state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const onOpenChange = controlledOnOpenChange || setInternalOpen;
+
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={
+        mode === "edit" ? "Edit Recurring Transfer" : "Add Recurring Transfer"
+      }
+    >
+      <RecurringTransferForm
+        accounts={accounts}
+        mode={mode}
+        recurringTransfer={recurringTransfer}
+        prefillForCreate={prefillForCreate}
+        onSuccess={onSuccess}
+        onClose={() => onOpenChange(false)}
+      />
+    </ResponsiveDialog>
+  );
+}
+
+interface RecurringTransferFormProps {
+  accounts: BankAccount[];
+  mode: "add" | "edit";
+  recurringTransfer?: RecurringTransferWithAccounts;
+  prefillForCreate: RecurringTransferPrefill | null;
+  onSuccess?: () => void;
+  onClose: () => void;
+}
+
+// Mounted fresh each time the dialog opens, so initial state comes from props.
+function RecurringTransferForm({
+  accounts,
+  mode,
+  recurringTransfer,
+  prefillForCreate,
+  onSuccess,
+  onClose,
+}: RecurringTransferFormProps) {
+  const router = useRouter();
+  const prefill =
+    !recurringTransfer && mode === "add" ? prefillForCreate : null;
   const [amount, setAmount] = useState(
-    recurringTransfer?.amount.toString() || "0.00"
+    recurringTransfer
+      ? recurringTransfer.amount.toString() || "0.00"
+      : prefill
+        ? prefill.amount.toFixed(2)
+        : "0.00"
   );
   const [description, setDescription] = useState(
-    recurringTransfer?.description || ""
+    recurringTransfer?.description ?? prefill?.description ?? ""
   );
   const [fromAccountId, setFromAccountId] = useState<number | "">(
-    recurringTransfer?.fromAccountId || ""
+    recurringTransfer?.fromAccountId ?? prefill?.fromAccountId ?? ""
   );
   const [toAccountId, setToAccountId] = useState<number | "">(
-    recurringTransfer?.toAccountId || ""
+    recurringTransfer?.toAccountId ?? prefill?.toAccountId ?? ""
   );
   const [startDate, setStartDate] = useState<Date>(
-    recurringTransfer?.startDate || new Date()
+    recurringTransfer?.startDate ?? prefill?.startDate ?? new Date()
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [recurrenceType, setRecurrenceType] = useState(
-    recurringTransfer?.rrule || ""
+    recurringTransfer?.rrule ?? prefill?.rrule ?? ""
   );
 
   // Update recurrenceType when startDate changes to maintain the same pattern
@@ -124,41 +174,9 @@ export function RecurringTransferDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [startDate]);
 
-  // Use controlled or uncontrolled state
-  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const onOpenChange = controlledOnOpenChange || setInternalOpen;
-
   // Check if accounts are the same for validation
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
-
-  // Reset the form state when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (recurringTransfer) {
-        setAmount(recurringTransfer.amount.toString() || "0.00");
-        setDescription(recurringTransfer.description || "");
-        setFromAccountId(recurringTransfer.fromAccountId || "");
-        setToAccountId(recurringTransfer.toAccountId || "");
-        setStartDate(recurringTransfer.startDate || new Date());
-        setRecurrenceType(recurringTransfer.rrule || "");
-      } else if (prefillForCreate && mode === "add") {
-        setAmount(prefillForCreate.amount.toFixed(2));
-        setDescription(prefillForCreate.description);
-        setFromAccountId(prefillForCreate.fromAccountId);
-        setToAccountId(prefillForCreate.toAccountId);
-        setStartDate(prefillForCreate.startDate);
-        setRecurrenceType(prefillForCreate.rrule);
-      } else {
-        setAmount("0.00");
-        setDescription("");
-        setFromAccountId("");
-        setToAccountId("");
-        setStartDate(new Date());
-        setRecurrenceType("");
-      }
-    }
-  }, [recurringTransfer, open, prefillForCreate, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +220,7 @@ export function RecurringTransferDialog({
             ? "Recurring transfer updated successfully"
             : "Recurring transfer created successfully"
         );
-        onOpenChange(false);
+        onClose();
         if (onSuccess) {
           onSuccess();
         } else {
@@ -226,7 +244,7 @@ export function RecurringTransferDialog({
       const result = await deleteRecurringTransfer(recurringTransfer.id);
       if (result.success) {
         toast.success("Recurring transfer deleted");
-        onOpenChange(false);
+        onClose();
         if (onSuccess) {
           onSuccess();
         } else {
@@ -242,138 +260,129 @@ export function RecurringTransferDialog({
   };
 
   return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={trigger}
-      title={
-        mode === "edit" ? "Edit Recurring Transfer" : "Add Recurring Transfer"
-      }
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Transfer Between Accounts</Label>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            <Select
-              value={fromAccountId.toString()}
-              onValueChange={(value) => setFromAccountId(parseInt(value))}
-              required
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select source account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
-            <Select
-              value={toAccountId.toString()}
-              onValueChange={(value) => setToAccountId(parseInt(value))}
-              required
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select destination account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {isSameAccount && (
-            <div className="text-sm text-red-500">
-              From and To accounts must be different
-            </div>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
-          <CurrencyInput
-            value={amount}
-            onChange={(value) => setAmount(value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description (Optional)</Label>
-          <Input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Monthly savings transfer"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Start Date</Label>
-          <DatePicker
-            date={startDate}
-            onDateChange={(newDate) => setStartDate(newDate || new Date())}
-            placeholder="Select start date"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Repeats</Label>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Transfer Between Accounts</Label>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           <Select
-            value={recurrenceType}
-            onValueChange={(value) => setRecurrenceType(value)}
+            value={fromAccountId.toString()}
+            onValueChange={(value) => setFromAccountId(parseInt(value))}
+            required
           >
-            <SelectTrigger className="w-full">
-              <SelectValue />
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
+            >
+              <SelectValue placeholder="Select source account" />
             </SelectTrigger>
             <SelectContent>
-              <RecurrenceTypeSelectItems startDate={startDate} />
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
+          <Select
+            value={toAccountId.toString()}
+            onValueChange={(value) => setToAccountId(parseInt(value))}
+            required
+          >
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
+            >
+              <SelectValue placeholder="Select destination account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {mode === "edit" && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDeleteTransfer}
-              disabled={isSubmitting}
-            >
-              Delete
-            </Button>
-          )}
-          <div className="ml-auto flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isSameAccount}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                  ? "Update"
-                  : "Add"}
-            </Button>
+        {isSameAccount && (
+          <div className="text-sm text-red-500">
+            From and To accounts must be different
           </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount</Label>
+        <CurrencyInput
+          value={amount}
+          onChange={(value) => setAmount(value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Input
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g., Monthly savings transfer"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="date">Start Date</Label>
+        <DatePicker
+          date={startDate}
+          onDateChange={(newDate) => setStartDate(newDate || new Date())}
+          placeholder="Select start date"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Repeats</Label>
+        <Select
+          value={recurrenceType}
+          onValueChange={(value) => setRecurrenceType(value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <RecurrenceTypeSelectItems startDate={startDate} />
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {mode === "edit" && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDeleteTransfer}
+            disabled={isSubmitting}
+          >
+            Delete
+          </Button>
+        )}
+        <div className="ml-auto flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting || isSameAccount}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+                ? "Update"
+                : "Add"}
+          </Button>
         </div>
-      </form>
-    </ResponsiveDialog>
+      </div>
+    </form>
   );
 }

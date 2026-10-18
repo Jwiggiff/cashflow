@@ -31,6 +31,10 @@ Non-obvious notes:
 - `OPENAI_API_KEY` (AI auto-categorization) and `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` (web push) are optional; the app logs a warning and runs fine without them.
 - Husky/lint-staged run `eslint --fix` on staged JS/TS files on commit.
 
+React state conventions (enforced by `react-hooks/set-state-in-effect`):
+- Don't sync props into state with a `useEffect`. Dialog forms live in an inner `*Form` component rendered inside `ResponsiveDialog`; Radix unmounts dialog content on close, so the form mounts fresh on each open and takes its initial values straight from `useState(...)`. Use a `key` to reset state without unmounting.
+- Update state that reacts to user input (e.g. a field derived from another field) in the event handler, not in an effect. Compute anything derivable during render instead of storing it.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
