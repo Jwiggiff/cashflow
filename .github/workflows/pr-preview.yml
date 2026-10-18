@@ -1,10 +1,15 @@
 name: PR Preview
 
 # Ephemeral per-PR preview deploy to Fly.io. Every push to an open PR
-# rebuilds and redeploys that PR's own app (fresh seed data each time,
-# since the seed script wipes and recreates the dev user); closing the PR
-# tears the app down. Requires a FLY_API_TOKEN repo secret - see fly.toml
-# for the app-level config this reuses.
+# rebuilds and redeploys that PR's own app; the app seeds demo data on boot
+# (see SEED_ON_START in fly.toml); closing the PR tears the app down.
+# Requires a FLY_API_TOKEN repo secret: an org token (`fly tokens create
+# org`), since a deploy token is scoped to one app and can't create the
+# per-PR apps.
+#
+# Only runs for same-repo, non-Dependabot PRs: fork and Dependabot PRs don't
+# get repo secrets. Note that whatever a same-repo PR changes (Dockerfile,
+# build scripts) runs with FLY_API_TOKEN available.
 
 on:
   pull_request:
@@ -16,7 +21,10 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.action != 'closed'
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -26,18 +34,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@dfdfedc86b296f5e5384f755a18bf400409a15d0 # v1.4
 
+      # Creating fails on every push after the first; that's only OK if the
+      # app is really there, so a bad token/org/quota still fails here.
       - name: Ensure app exists
-        run: flyctl apps create "$APP_NAME" --org personal || true
+        run: |
+          flyctl apps create "$APP_NAME" --org personal \
+            || flyctl status --app "$APP_NAME" > /dev/null
 
-      # The seed script's own safety check refuses to run under
-      # NODE_ENV=production or CI=true (it's meant to stop someone wiping
-      # real data) - overridden here for this one exec since the whole
-      # point of this environment is throwaway seed data.
+      # Fresh secret per deploy, staged so it lands with the deploy below
+      # instead of triggering its own restart. Signs out preview sessions on
+      # every push, which is fine since the data is re-seeded anyway.
       - name: Set preview auth secret
         run: |
-          flyctl secrets set \
+          flyctl secrets set --stage \
             AUTH_SECRET="$(openssl rand -base64 32)" \
             --app "$APP_NAME"
 
@@ -47,12 +58,8 @@ jobs:
             --app "$APP_NAME" \
             --config fly.toml \
             --build-arg GIT_HASH=${{ github.sha }} \
+            --build-arg PREVIEW_LABEL=PR-${{ github.event.pull_request.number }} \
             --strategy immediate
-
-      - name: Seed preview data
-        run: |
-          flyctl ssh console --app "$APP_NAME" -C \
-            "env NODE_ENV=development SEED_USERNAME=dev SEED_PASSWORD=preview-dev-pass npm run db:seed"
 
       - name: Comment preview URL
         uses: marocchino/sticky-pull-request-comment@v2
@@ -63,14 +70,21 @@ jobs:
 
             Login: `dev` / `preview-dev-pass`
 
-            Fresh seed data on every push - torn down automatically when this PR closes.
+            Demo data is re-seeded whenever the machine boots (after each push or after idling), so anything you create there doesn't stick. Torn down automatically when this PR closes.
 
   cleanup:
-    if: github.event.action == 'closed'
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
     steps:
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl apps destroy "$APP_NAME" -y || true
+      - uses: superfly/flyctl-actions/setup-flyctl@dfdfedc86b296f5e5384f755a18bf400409a15d0 # v1.4
+      # Nothing to do if the app was never created; otherwise a failed
+      # destroy should be loud, since a leftover app keeps billing.
+      - run: |
+          flyctl status --app "$APP_NAME" > /dev/null 2>&1 || exit 0
+          flyctl apps destroy "$APP_NAME" -y

@@ -2,10 +2,19 @@
 # .github/workflows/pr-preview.yml) - not a production config. `app` below
 # is a placeholder; the workflow always overrides it with
 # `--app cashflow-pr-<PR number>` so every PR gets its own isolated app.
+#
+# No volume on purpose: the SQLite DB is on the ephemeral rootfs and is
+# re-seeded on every boot (SEED_ON_START), so anything created in a preview
+# is lost once the machine idles and stops.
 app = "cashflow-preview"
 primary_region = "yyz"
 
 [build]
+
+[env]
+  SEED_ON_START = "true"
+  SEED_USERNAME = "dev"
+  SEED_PASSWORD = "preview-dev-pass"
 
 [http_service]
   internal_port = 3000
@@ -16,4 +25,4 @@ primary_region = "yyz"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"
