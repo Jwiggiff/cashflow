@@ -1,8 +1,9 @@
 name: PR Preview
 
-# Ephemeral per-PR preview deploy to Fly.io. Every push to an open PR
-# rebuilds and redeploys that PR's own app; the app seeds demo data on boot
-# (see SEED_ON_START in fly.toml); closing the PR tears the app down.
+# Ephemeral per-PR preview deploy to Fly.io, opt-in via the `preview` label.
+# Adding the label deploys the PR's own app, and every push while it's
+# labeled redeploys it; the app seeds demo data on boot (see SEED_ON_START
+# in fly.toml). Removing the label or closing the PR tears the app down.
 # Requires a FLY_API_TOKEN repo secret: an org token (`fly tokens create
 # org`), since a deploy token is scoped to one app and can't create the
 # per-PR apps.
@@ -13,16 +14,26 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened, closed, labeled, unlabeled]
 
+# One preview run per PR at a time, newest wins (so removing the label
+# cancels an in-flight deploy). Changes to other labels get their own
+# throwaway group so they can't cancel a real deploy.
 concurrency:
-  group: pr-preview-${{ github.event.pull_request.number }}
+  group: >-
+    pr-preview-${{ github.event.pull_request.number }}${{
+      contains(fromJSON('["labeled","unlabeled"]'), github.event.action) &&
+      github.event.label.name != 'preview' &&
+      format('-ignored-{0}', github.run_id) || ''
+    }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     if: >-
-      github.event.action != 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview') &&
+      github.event.action != 'unlabeled' && github.event.action != 'closed' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
@@ -74,10 +85,14 @@ jobs:
 
   cleanup:
     if: >-
-      github.event.action == 'closed' &&
+      ((github.event.action == 'closed' &&
+        contains(github.event.pull_request.labels.*.name, 'preview')) ||
+       (github.event.action == 'unlabeled' && github.event.label.name == 'preview')) &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
@@ -88,3 +103,11 @@ jobs:
       - run: |
           flyctl status --app "$APP_NAME" > /dev/null 2>&1 || exit 0
           flyctl apps destroy "$APP_NAME" -y
+
+      - name: Update preview comment
+        if: github.event.action == 'unlabeled'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            Preview torn down. Add the `preview` label again to redeploy.
