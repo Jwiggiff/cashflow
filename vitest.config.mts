@@ -2,7 +2,7 @@ import os from "node:os";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-const alias = { "@": path.resolve(__dirname) };
+const alias = { "@": import.meta.dirname };
 const testDbPath = path.join(os.tmpdir(), `cashflow-vitest-${process.pid}.db`);
 
 export default defineConfig({
