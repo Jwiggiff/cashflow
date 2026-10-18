@@ -43,7 +43,7 @@ jobs:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
       APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: superfly/flyctl-actions/setup-flyctl@dfdfedc86b296f5e5384f755a18bf400409a15d0 # v1.4
 
@@ -76,7 +76,7 @@ jobs:
       # GitHub can't attach a generated image to a comment, so the QR code
       # is rendered by api.qrserver.com from the (already public) preview URL.
       - name: Comment preview URL
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: pr-preview
           message: |
@@ -113,7 +113,7 @@ jobs:
 
       - name: Update preview comment
         if: github.event.action == 'unlabeled'
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: pr-preview
           message: |
