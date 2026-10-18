@@ -189,7 +189,7 @@ async function processRecurringTransfers(now: Date) {
           `${recurring.description || "Transfer"} - ${formatCurrency(
             recurring.amount
           )}`,
-          "/transfers",
+          "/transactions",
           recurring.fromAccount.userId
         );
       });
