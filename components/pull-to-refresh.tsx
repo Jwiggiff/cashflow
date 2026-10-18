@@ -16,7 +16,6 @@ const MAX_PULL = 110; // px - caps how far the indicator can be dragged
 
 export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [enabled] = useState(() => isStandalonePwa());
   const [pullDistance, setPullDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const startY = useRef<number | null>(null);
@@ -61,8 +60,12 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     }
   }, [pullDistance, refreshing, router]);
 
+  // Checked here rather than during render: the server can't know the
+  // display mode, so rendering differently per mode would break hydration.
+  // The render below is identical either way - the indicator is 0px tall
+  // until a pull, which only these listeners can start.
   useEffect(() => {
-    if (!enabled) return;
+    if (!isStandalonePwa()) return;
     document.addEventListener("touchstart", handleTouchStart, {
       passive: true,
     });
@@ -75,12 +78,10 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
       document.removeEventListener("touchmove", handleTouchMove);
       document.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [enabled, handleTouchStart, handleTouchMove, handleTouchEnd]);
-
-  if (!enabled) return children;
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   return (
-    <div style={{ overscrollBehaviorY: "contain" }}>
+    <>
       <div
         className="flex items-center justify-center overflow-hidden transition-[height] duration-200 ease-out"
         style={{ height: pullDistance }}
@@ -103,6 +104,6 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
         />
       </div>
       {children}
-    </div>
+    </>
   );
 }
