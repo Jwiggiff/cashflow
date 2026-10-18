@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { toast } from "sonner";
 import {
   subscribeUser,
@@ -9,18 +15,23 @@ import {
 } from "@/lib/notifications";
 import { urlBase64ToUint8Array } from "@/lib/utils";
 import { getVapidPublicKey } from "@/lib/config";
+import {
+  getNotificationPreferences,
+  getServerNotificationPreferences,
+  setNotificationPreferences,
+  subscribeToNotificationPreferences,
+  type StoredNotificationPreferences,
+} from "@/lib/notification-preferences";
 
-interface NotificationPreferences {
+interface NotificationPreferences extends StoredNotificationPreferences {
   enabled: boolean;
-  newTransactions: boolean;
 }
 
 interface NotificationContextType {
   preferences: NotificationPreferences;
   subscription: PushSubscription | null;
   isSupported: boolean;
-  isLoading: boolean;
-  updatePreferences: (updates: Partial<NotificationPreferences>) => void;
+  updatePreferences: (updates: Partial<StoredNotificationPreferences>) => void;
   toggleNotifications: () => Promise<void>;
   sendTestNotification: (message: string) => Promise<void>;
 }
@@ -43,89 +54,52 @@ interface NotificationProviderProps {
   children: React.ReactNode;
 }
 
+// Browser support never changes after load, so there is nothing to subscribe to.
+const subscribeToNothing = () => () => {};
+
 export function NotificationProvider({ children }: NotificationProviderProps) {
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    enabled: false,
-    newTransactions: true,
-  });
+  const isSupported = useSyncExternalStore(
+    subscribeToNothing,
+    () => "serviceWorker" in navigator && "PushManager" in window,
+    () => false
+  );
+  const storedPreferences = useSyncExternalStore(
+    subscribeToNotificationPreferences,
+    getNotificationPreferences,
+    getServerNotificationPreferences
+  );
   const [subscription, setSubscription] = useState<PushSubscription | null>(
     null
   );
-  const [isSupported, setIsSupported] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
 
-  // Check browser support and register service worker
+  const preferences: NotificationPreferences = {
+    ...storedPreferences,
+    enabled: !!subscription,
+  };
+
+  // Register the service worker and pick up any existing push subscription
   useEffect(() => {
-    if ("serviceWorker" in navigator && "PushManager" in window) {
-      setIsSupported(true);
-      registerServiceWorker();
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Load preferences from localStorage on mount
-  useEffect(() => {
-    const savedPreferences = localStorage.getItem(
-      "cashflow-notification-preferences"
-    );
-    if (savedPreferences !== null) {
-      try {
-        const parsed = JSON.parse(savedPreferences);
-        setPreferences(parsed);
-      } catch (error) {
-        console.error("Error parsing saved notification preferences:", error);
-      }
-    }
-
-    const loadVapidKey = async () => {
-      try {
-        const vapidKey = await getVapidPublicKey();
-        setVapidPublicKey(vapidKey);
-      } catch (error) {
-        console.log("Error loading VAPID public key, notifications will not work", error);
-      }
-    };
-    loadVapidKey();
-
-    setIsLoading(false);
-  }, []);
-
-  // Save preferences to localStorage whenever they change
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem(
-        "cashflow-notification-preferences",
-        JSON.stringify(preferences)
+    if (!isSupported) return;
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/", updateViaCache: "none" })
+      .then((registration) => registration.pushManager.getSubscription())
+      .then(setSubscription)
+      .catch((error) =>
+        console.error("Error registering service worker:", error)
       );
-    }
-  }, [preferences, isLoading]);
+  }, [isSupported]);
 
-  // Update preferences when subscription status changes
   useEffect(() => {
-    if (!isLoading) {
-      setPreferences((prev) => ({
-        ...prev,
-        enabled: !!subscription,
-      }));
-    }
-  }, [subscription, isLoading]);
-
-  async function registerServiceWorker() {
-    try {
-      const registration = await navigator.serviceWorker.register("/sw.js", {
-        scope: "/",
-        updateViaCache: "none",
-      });
-      const sub = await registration.pushManager.getSubscription();
-      setSubscription(sub);
-    } catch (error) {
-      console.error("Error registering service worker:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
+    getVapidPublicKey()
+      .then(setVapidPublicKey)
+      .catch((error) =>
+        console.log(
+          "Error loading VAPID public key, notifications will not work",
+          error
+        )
+      );
+  }, []);
 
   async function subscribeToPush() {
     if (!vapidPublicKey) {
@@ -146,11 +120,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     } catch (error) {
       console.error("Error subscribing to push notifications:", error);
       toast.error("Failed to subscribe to push notifications");
-      // Revert the preference change if subscription failed
-      setPreferences((prev) => ({
-        ...prev,
-        enabled: false,
-      }));
     }
   }
 
@@ -167,29 +136,15 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     } catch (error) {
       console.error("Error unsubscribing from push notifications:", error);
       toast.error("Failed to unsubscribe from push notifications");
-      // Revert the preference change if unsubscription failed
-      setPreferences((prev) => ({
-        ...prev,
-        enabled: true,
-      }));
     }
   }
 
   const toggleNotifications = async () => {
-    const newEnabledState = !preferences.enabled;
-
-    if (newEnabledState) {
-      await subscribeToPush();
-    } else {
+    if (preferences.enabled) {
       await unsubscribeFromPush();
+    } else {
+      await subscribeToPush();
     }
-  };
-
-  const updatePreferences = (updates: Partial<NotificationPreferences>) => {
-    setPreferences((prev) => ({
-      ...prev,
-      ...updates,
-    }));
   };
 
   const sendTestNotification = async (message: string) => {
@@ -208,8 +163,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     preferences,
     subscription,
     isSupported,
-    isLoading,
-    updatePreferences,
+    updatePreferences: setNotificationPreferences,
     toggleNotifications,
     sendTestNotification,
   };
