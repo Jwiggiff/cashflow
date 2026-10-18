@@ -1,0 +1,122 @@
+name: PR Preview
+
+# Ephemeral per-PR preview deploy to Fly.io, opt-in via the `preview` label.
+# Adding the label deploys the PR's own app, and every push while it's
+# labeled redeploys it; the app seeds demo data on boot (see SEED_ON_START
+# in fly.toml). Removing the label or closing the PR tears the app down.
+# Requires a FLY_API_TOKEN repo secret: an org token (`fly tokens create
+# org`), since a deploy token is scoped to one app and can't create the
+# per-PR apps.
+#
+# Only runs for same-repo, non-Dependabot PRs: fork and Dependabot PRs don't
+# get repo secrets. Note that whatever a same-repo PR changes (Dockerfile,
+# build scripts) runs with FLY_API_TOKEN available.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed, labeled, unlabeled]
+
+# One preview run per PR at a time, newest wins (so removing the label
+# cancels an in-flight deploy). Changes to other labels get their own
+# throwaway group so they can't cancel a real deploy.
+concurrency:
+  group: >-
+    pr-preview-${{ github.event.pull_request.number }}${{
+      contains(fromJSON('["labeled","unlabeled"]'), github.event.action) &&
+      github.event.label.name != 'preview' &&
+      format('-ignored-{0}', github.run_id) || ''
+    }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'preview') &&
+      github.event.action != 'unlabeled' && github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@dfdfedc86b296f5e5384f755a18bf400409a15d0 # v1.4
+
+      # Creating fails on every push after the first; that's only OK if the
+      # app is really there, so a bad token/org/quota still fails here.
+      - name: Ensure app exists
+        run: |
+          flyctl apps create "$APP_NAME" --org personal \
+            || flyctl status --app "$APP_NAME" > /dev/null
+
+      # Fresh secret per deploy, staged so it lands with the deploy below
+      # instead of triggering its own restart. Signs out preview sessions on
+      # every push, which is fine since the data is re-seeded anyway.
+      - name: Set preview auth secret
+        run: |
+          flyctl secrets set --stage \
+            AUTH_SECRET="$(openssl rand -base64 32)" \
+            --app "$APP_NAME"
+
+      - name: Deploy
+        run: |
+          flyctl deploy \
+            --app "$APP_NAME" \
+            --config fly.toml \
+            --build-arg GIT_HASH=${{ github.sha }} \
+            --build-arg PREVIEW_LABEL=PR-${{ github.event.pull_request.number }} \
+            --env BASE_URL=https://${{ env.APP_NAME }}.fly.dev \
+            --strategy immediate
+
+      # GitHub can't attach a generated image to a comment, so the QR code
+      # is rendered by api.qrserver.com from the (already public) preview URL.
+      - name: Comment preview URL
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            ## 🚀 Preview deployed
+
+            ### [${{ env.APP_NAME }}.fly.dev](https://${{ env.APP_NAME }}.fly.dev)
+
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=12&data=https%3A%2F%2F${{ env.APP_NAME }}.fly.dev" width="180" alt="QR code for the preview URL">
+
+            **Login:** `dev` / `preview-dev-pass` · **Commit:** ${{ github.event.pull_request.head.sha }}
+
+            <sub>Demo data is re-seeded whenever the machine boots (after each push or after idling), so anything you create there doesn't stick. Remove the `preview` label or close the PR to tear it down.</sub>
+
+  cleanup:
+    if: >-
+      ((github.event.action == 'closed' &&
+        contains(github.event.pull_request.labels.*.name, 'preview')) ||
+       (github.event.action == 'unlabeled' && github.event.label.name == 'preview')) &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      APP_NAME: cashflow-pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: superfly/flyctl-actions/setup-flyctl@dfdfedc86b296f5e5384f755a18bf400409a15d0 # v1.4
+      # Nothing to do if the app was never created; otherwise a failed
+      # destroy should be loud, since a leftover app keeps billing.
+      - run: |
+          flyctl status --app "$APP_NAME" > /dev/null 2>&1 || exit 0
+          flyctl apps destroy "$APP_NAME" -y
+
+      - name: Update preview comment
+        if: github.event.action == 'unlabeled'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            ## 🧹 Preview torn down
+
+            Add the `preview` label again to redeploy.

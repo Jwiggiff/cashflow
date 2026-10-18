@@ -25,6 +25,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build arguments for version info
 ARG GIT_HASH=unknown
+# Set only on PR preview deploys; baked into the static web manifest
+ARG PREVIEW_LABEL=""
+ENV PREVIEW_LABEL=$PREVIEW_LABEL
 
 # Generate version info during build
 RUN VERSION=$(node -p "require('./package.json').version") && \
@@ -44,6 +47,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV AUTH_TRUST_HOST=true
 ENV TZ=America/New_York
+ARG PREVIEW_LABEL=""
+ENV PREVIEW_LABEL=$PREVIEW_LABEL
 
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -71,6 +76,13 @@ COPY --from=builder /app/prisma ./prisma
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+
+# prisma/seed.mjs (run on boot by PR previews, see entrypoint.sh) imports
+# these directly; Next bundles them into server chunks, so the standalone
+# output doesn't include them.
+COPY --from=deps /app/node_modules/bcryptjs ./node_modules/bcryptjs
+COPY --from=deps /app/node_modules/rrule ./node_modules/rrule
+COPY --from=deps /app/node_modules/tslib ./node_modules/tslib
 
 RUN npm install -g prisma@6.13.0
 

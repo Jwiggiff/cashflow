@@ -5,6 +5,7 @@ import { PrivacyProvider } from "@/components/privacy-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { appName } from "@/lib/app-name";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { BankAccount } from "@prisma/client";
@@ -24,7 +25,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: process.env.NODE_ENV === "development" ? "CashFlow (Dev)" : "CashFlow",
+  title: process.env.NODE_ENV === "development" ? "CashFlow (Dev)" : appName,
   description: "Track your cash flow",
 };
 
@@ -57,7 +58,7 @@ export default async function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
-        <meta name="apple-mobile-web-app-title" content="CashFlow" />
+        <meta name="apple-mobile-web-app-title" content={appName} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
