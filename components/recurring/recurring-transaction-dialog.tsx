@@ -26,7 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { computeNextDueDateForCreate } from "@/lib/recurring-schedule";
-import { cn, getOccurenceInMonth } from "@/lib/utils";
+import { alignRRuleToStartDate } from "@/lib/standard-recurrence-rrules";
+import { cn } from "@/lib/utils";
 import {
   BankAccount,
   Category,
@@ -36,8 +37,8 @@ import {
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { RRule, Weekday } from "rrule";
+import { useState } from "react";
+import { RRule } from "rrule";
 import { toast } from "sonner";
 import { RecurrenceTypeSelectItems } from "./recurrence-type-select-items";
 
@@ -160,47 +161,18 @@ function RecurringTransactionForm({
     recurringTransaction?.startDate ?? prefill?.startDate ?? new Date()
   );
 
-  const [recurrenceType, setRecurrenceType] = useState(
-    recurringTransaction?.rrule ?? prefill?.rrule ?? ""
+  const [recurrenceType, setRecurrenceType] = useState(() =>
+    alignRRuleToStartDate(
+      recurringTransaction?.rrule ?? prefill?.rrule ?? "",
+      startDate
+    )
   );
 
-  // Update recurrenceType when startDate changes to maintain the same pattern
-  useEffect(() => {
-    if (recurrenceType) {
-      try {
-        const options = RRule.parseString(recurrenceType);
-
-        if (options.freq === RRule.WEEKLY) {
-          // For weekly/biweekly, just update the byweekday to match the new date's weekday
-          options.byweekday =
-            startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
-        } else if (options.freq === RRule.MONTHLY) {
-          if (options.byweekday) {
-            // For monthly by weekday (e.g., "third Wednesday"), update both byweekday and bysetpos
-            const occurrence = getOccurenceInMonth(startDate);
-            const weekday = new Weekday(
-              startDate.getDay() === 0 ? 6 : startDate.getDay() - 1
-            );
-            options.byweekday = weekday.nth(occurrence);
-          } else {
-            // For monthly by day of month (e.g., "15th of every month"), update bymonthday
-            options.bymonthday = startDate.getDate();
-          }
-        }
-
-        // Keep dtstart anchored to the current start date too, so biweekly
-        // interval parity doesn't drift once one gets persisted.
-        options.dtstart = startDate;
-
-        // Create new rule with updated options
-        setRecurrenceType(RRule.optionsToString(options));
-      } catch (error) {
-        // If there's an error parsing the rule, just keep the current value
-        console.error("Error updating recurrence type:", error);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate]);
+  // Keep the selected recurrence pattern anchored to the new start date
+  const handleStartDateChange = (date: Date) => {
+    setStartDate(date);
+    setRecurrenceType((rule) => alignRRuleToStartDate(rule, date));
+  };
 
   const handleCreateCategory = async (name: string) => {
     const result = await createCategory({ name });
@@ -332,7 +304,7 @@ function RecurringTransactionForm({
                 <Calendar
                   mode="single"
                   selected={startDate}
-                  onSelect={(date) => date && setStartDate(date)}
+                  onSelect={(date) => date && handleStartDateChange(date)}
                   initialFocus
                 />
               </PopoverContent>
