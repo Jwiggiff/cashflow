@@ -10,16 +10,16 @@ const SEED_USERNAME = (process.env.SEED_USERNAME ?? "dev").toLowerCase();
 const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "devpassword";
 
 const categoryDefinitions = [
-  ["Housing", "House"],
-  ["Groceries", "ShoppingCart"],
-  ["Dining", "Utensils"],
-  ["Utilities", "Zap"],
-  ["Transportation", "Car"],
-  ["Entertainment", "Clapperboard"],
-  ["Health", "HeartPulse"],
-  ["Shopping", "ShoppingBag"],
-  ["Travel", "Plane"],
-  ["Subscriptions", "Repeat"],
+  ["Housing", "house"],
+  ["Groceries", "shopping-cart"],
+  ["Dining", "utensils"],
+  ["Utilities", "zap"],
+  ["Transportation", "car"],
+  ["Entertainment", "clapperboard"],
+  ["Health", "heart-pulse"],
+  ["Shopping", "shopping-bag"],
+  ["Travel", "plane"],
+  ["Subscriptions", "repeat"],
 ];
 
 const accountDefinitions = {
