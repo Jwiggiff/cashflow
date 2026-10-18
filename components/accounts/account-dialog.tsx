@@ -37,7 +37,6 @@ export function AccountDialog({
 }: AccountDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
-  // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
@@ -63,7 +62,7 @@ interface AccountFormProps {
   onClose: () => void;
 }
 
-// Mounted fresh each time the dialog opens, so initial state comes from props.
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
 function AccountForm({ mode, account, onClose }: AccountFormProps) {
   const router = useRouter();
   const editing = mode === "edit" && account;

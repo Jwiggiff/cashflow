@@ -77,20 +77,11 @@ export default function SignInPage() {
     }
   };
 
-  // Auto-trigger the passkey prompt on launch, but only when installed as a
-  // PWA - not in a regular browser tab on phone or desktop, where popping a
-  // biometric prompt the instant the page loads would feel like an
-  // unexpected interruption rather than "the app opening."
-  // Only attempted once per mount (autoAttempted ref) - a failed/dismissed
-  // attempt falls back to the normal manual button instead of retrying in a
-  // loop. Also skipped right after an explicit sign-out (see
-  // components/user-section.tsx's `signedOut` redirect param) - without
-  // this, signing out would immediately re-prompt Face ID and sign back in,
-  // making it impossible to actually log out or switch accounts.
-  // The attempt is silent: a failure (no passkey saved yet, prompt dismissed,
-  // etc.) shows no error, since the user didn't ask to authenticate and still
-  // has the password form and manual button. It also skips the loading state,
-  // as the OS passkey sheet already blocks input while it is up.
+  // Prompt for a passkey once on launch, but only in the installed PWA (in a
+  // browser tab an instant biometric prompt is intrusive) and not right after
+  // sign-out (`signedOut`, see components/user-section.tsx), which would sign
+  // straight back in. The attempt is silent: failures show no error, and it
+  // skips the loading state since the OS passkey sheet already blocks input.
   useEffect(() => {
     if (autoAttempted.current) return;
     if (params.get("signedOut")) return;

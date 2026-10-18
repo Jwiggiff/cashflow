@@ -49,7 +49,6 @@ export function TransferDialog({
 }: TransferDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
-  // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
@@ -77,7 +76,7 @@ interface TransferFormProps {
   onClose: () => void;
 }
 
-// Mounted fresh each time the dialog opens, so initial state comes from props.
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
 function TransferForm({ accounts, mode, transfer, onClose }: TransferFormProps) {
   const router = useRouter();
   const [amount, setAmount] = useState(transfer?.amount.toString() || "");
@@ -91,7 +90,6 @@ function TransferForm({ accounts, mode, transfer, onClose }: TransferFormProps) 
   const [date, setDate] = useState<Date>(transfer?.date || new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Check if accounts are the same for validation
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
 

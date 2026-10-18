@@ -118,7 +118,7 @@ interface RecurringTransactionFormProps
   onClose: () => void;
 }
 
-// Mounted fresh each time the dialog opens, so initial state comes from props.
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
 function RecurringTransactionForm({
   recurringTransaction,
   prefillForCreate = null,
@@ -168,7 +168,6 @@ function RecurringTransactionForm({
     )
   );
 
-  // Keep the selected recurrence pattern anchored to the new start date
   const handleStartDateChange = (date: Date) => {
     setStartDate(date);
     setRecurrenceType((rule) => alignRRuleToStartDate(rule, date));
@@ -184,7 +183,6 @@ function RecurringTransactionForm({
     }
   };
 
-  // Convert categories to combobox items
   const categoryItems: ComboboxItem[] = [
     { value: "", label: "No category" },
     ...categories.map((cat) => ({

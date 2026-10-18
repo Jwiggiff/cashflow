@@ -25,7 +25,6 @@ export function CategoryDialog({
 }: CategoryDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
-  // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
@@ -46,7 +45,7 @@ interface CategoryFormProps {
   onClose: () => void;
 }
 
-// Mounted fresh each time the dialog opens, so initial state comes from props.
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
 function CategoryForm({ category, onClose }: CategoryFormProps) {
   const router = useRouter();
   const [name, setName] = useState(category?.name ?? "");

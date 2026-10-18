@@ -79,7 +79,6 @@ export function TransactionDialog({
 }: TransactionDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
-  // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
@@ -111,7 +110,7 @@ interface TransactionFormProps {
   onClose: () => void;
 }
 
-// Mounted fresh each time the dialog opens, so initial state comes from props.
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
 function TransactionForm({
   accounts,
   categories,
@@ -173,10 +172,8 @@ function TransactionForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Clear previous errors
     setErrors({});
 
-    // Validate required fields
     const newErrors: Record<string, string> = {};
 
     if (!description.trim()) {
@@ -232,7 +229,6 @@ function TransactionForm({
     }
   };
 
-  // Convert categories to combobox items
   const categoryItems: ComboboxItem[] = [
     { value: "", label: "No category" },
     ...categories.map((cat) => ({
