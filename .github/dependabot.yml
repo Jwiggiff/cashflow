@@ -10,6 +10,12 @@ updates:
       npm-security:
         applies-to: security-updates
         patterns: ["*"]
+    ignore:
+      # Auth.js's passkey provider (@auth/core) is written against the v9 API
+      # and peer-depends on ^9; v10+ breaks passkey registration. Drop this
+      # once @auth/core supports a newer major.
+      - dependency-name: "@simplewebauthn/*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/"
