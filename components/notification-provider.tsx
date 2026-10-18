@@ -15,23 +15,12 @@ import {
 } from "@/lib/notifications";
 import { urlBase64ToUint8Array } from "@/lib/utils";
 import { getVapidPublicKey } from "@/lib/config";
-import {
-  getNotificationPreferences,
-  getServerNotificationPreferences,
-  setNotificationPreferences,
-  subscribeToNotificationPreferences,
-  type StoredNotificationPreferences,
-} from "@/lib/notification-preferences";
-
-interface NotificationPreferences extends StoredNotificationPreferences {
-  enabled: boolean;
-}
 
 interface NotificationContextType {
-  preferences: NotificationPreferences;
+  /** True while this browser has a push subscription. */
+  enabled: boolean;
   subscription: PushSubscription | null;
   isSupported: boolean;
-  updatePreferences: (updates: Partial<StoredNotificationPreferences>) => void;
   toggleNotifications: () => Promise<void>;
   sendTestNotification: (message: string) => Promise<void>;
 }
@@ -63,20 +52,12 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     () => "serviceWorker" in navigator && "PushManager" in window,
     () => false
   );
-  const storedPreferences = useSyncExternalStore(
-    subscribeToNotificationPreferences,
-    getNotificationPreferences,
-    getServerNotificationPreferences
-  );
   const [subscription, setSubscription] = useState<PushSubscription | null>(
     null
   );
   const [vapidPublicKey, setVapidPublicKey] = useState<string | null>(null);
 
-  const preferences: NotificationPreferences = {
-    ...storedPreferences,
-    enabled: !!subscription,
-  };
+  const enabled = !!subscription;
 
   // Register the service worker and pick up any existing push subscription
   useEffect(() => {
@@ -140,7 +121,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   }
 
   const toggleNotifications = async () => {
-    if (preferences.enabled) {
+    if (enabled) {
       await unsubscribeFromPush();
     } else {
       await subscribeToPush();
@@ -160,10 +141,9 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   };
 
   const value = {
-    preferences,
+    enabled,
     subscription,
     isSupported,
-    updatePreferences: setNotificationPreferences,
     toggleNotifications,
     sendTestNotification,
   };

@@ -13,30 +13,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { Bell, BellOff, AlertCircle } from "lucide-react";
 import { useNotifications } from "@/components/notification-provider";
-import { cn } from "@/lib/utils";
 
 export function NotificationForm() {
   const [testMessage, setTestMessage] = useState("");
   const [isSendingTest, setIsSendingTest] = useState(false);
 
   const {
-    preferences,
+    enabled,
     isSupported,
     toggleNotifications,
-    updatePreferences,
     sendTestNotification: sendTest,
   } = useNotifications();
-
-  const handlePreferenceChange = async (key: keyof typeof preferences) => {
-    if (key === "enabled") {
-      await toggleNotifications();
-    } else {
-      updatePreferences({ [key]: !preferences[key] });
-    }
-  };
 
   const handleSendTestNotification = async () => {
     if (!testMessage.trim()) return;
@@ -87,71 +76,35 @@ export function NotificationForm() {
         <CardAction>
           <Switch
             id="enable-notifications"
-            checked={preferences.enabled}
-            onCheckedChange={() => handlePreferenceChange("enabled")}
+            checked={enabled}
+            onCheckedChange={toggleNotifications}
             aria-label="Enable push notifications"
           />
         </CardAction>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Notification Preferences */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div
-              className={cn(
-                "space-y-0.5",
-                !preferences.enabled && "opacity-50"
-              )}
-            >
-              <Label
-                htmlFor="new-transactions"
-                className={!preferences.enabled ? "text-muted-foreground" : ""}
-              >
-                New Transaction Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when a new transaction is added to your account
-              </p>
-            </div>
-            <Switch
-              id="new-transactions"
-              checked={preferences.newTransactions}
-              onCheckedChange={() => handlePreferenceChange("newTransactions")}
-              disabled={!preferences.enabled}
+      {enabled && (
+        <CardContent className="space-y-2">
+          <Label htmlFor="test-notification">Test Notifications</Label>
+          <div className="flex gap-2">
+            <Input
+              id="test-notification"
+              type="text"
+              placeholder="Enter test message"
+              value={testMessage}
+              onChange={(e) => setTestMessage(e.target.value)}
+              className="flex-1"
+              disabled={isSendingTest}
             />
+            <Button
+              onClick={handleSendTestNotification}
+              disabled={!testMessage.trim() || isSendingTest}
+              size="sm"
+            >
+              {isSendingTest ? "Sending..." : "Send Test"}
+            </Button>
           </div>
-        </div>
-
-        {/* Test Notification */}
-        {preferences.enabled && (
-          <>
-            <Separator />
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="test-notification">Test Notifications</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="test-notification"
-                    type="text"
-                    placeholder="Enter test message"
-                    value={testMessage}
-                    onChange={(e) => setTestMessage(e.target.value)}
-                    className="flex-1"
-                    disabled={isSendingTest}
-                  />
-                  <Button
-                    onClick={handleSendTestNotification}
-                    disabled={!testMessage.trim() || isSendingTest}
-                    size="sm"
-                  >
-                    {isSendingTest ? "Sending..." : "Send Test"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 }

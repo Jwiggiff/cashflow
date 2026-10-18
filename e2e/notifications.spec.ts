@@ -31,39 +31,28 @@ function collectHydrationErrors(page: Page) {
 
 const enableSwitch = (page: Page) =>
   page.getByRole("switch", { name: "Enable push notifications" });
-const newTransactionsSwitch = (page: Page) =>
-  page.getByLabel("New Transaction Notifications");
+const testMessageInput = (page: Page) => page.getByLabel("Test Notifications");
 
 test("shows notifications as off without a push subscription", async ({
   page,
 }) => {
+  const hydrationErrors = collectHydrationErrors(page);
   await signUp(page);
   await page.goto("/settings");
 
   await expect(enableSwitch(page)).not.toBeChecked();
-  await expect(newTransactionsSwitch(page)).toBeDisabled();
+  await expect(testMessageInput(page)).toBeHidden();
+  expect(hydrationErrors).toEqual([]);
 });
 
-test("shows notifications as on and persists preferences with a push subscription", async ({
-  page,
-}) => {
+test("shows notifications as on with a push subscription", async ({ page }) => {
   const hydrationErrors = collectHydrationErrors(page);
   await mockPushSubscription(page);
   await signUp(page);
   await page.goto("/settings");
 
   await expect(enableSwitch(page)).toBeChecked();
-  await expect(newTransactionsSwitch(page)).toBeEnabled();
-  await expect(newTransactionsSwitch(page)).toBeChecked();
-
-  await newTransactionsSwitch(page).click();
-  await expect(newTransactionsSwitch(page)).not.toBeChecked();
-
-  // The server renders the default (on); the stored preference must win
-  // after hydration without a mismatch.
-  await page.reload();
-  await expect(enableSwitch(page)).toBeChecked();
-  await expect(newTransactionsSwitch(page)).not.toBeChecked();
+  await expect(testMessageInput(page)).toBeVisible();
   expect(hydrationErrors).toEqual([]);
 });
 
