@@ -7,13 +7,14 @@ import {
 import { capitalize, cn } from "@/lib/utils";
 import { BankAccount, Category } from "@prisma/client";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
+import { TransactionTableFeatures } from "./table-features";
 import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import React from "react";
 import { TransactionActionsCell } from "./transaction-actions-cell";
 import { TransferActionsCell } from "./transfer-actions-cell";
 
-const dateRangeFilter: FilterFn<TransactionOrTransfer> = (row, columnId, value) => {
+const dateRangeFilter: FilterFn<TransactionTableFeatures, TransactionOrTransfer> = (row, columnId, value) => {
   const date = row.getValue(columnId) as Date;
   if (!date) return false;
   
@@ -47,7 +48,7 @@ export function getColumns(
   categories: Category[],
   formatCurrencyWithPrivacy: (amount: number) => string,
   isPrivate = false
-): ColumnDef<TransactionOrTransfer>[] {
+): ColumnDef<TransactionTableFeatures, TransactionOrTransfer>[] {
   return [
     {
       accessorKey: "id",
