@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockStandaloneMode } from "./helpers";
 
 // Covers the PWA-only auto-passkey-prompt behavior added to the sign-in
 // page (see app/auth/signin/page.tsx) - self-contained (own user/
@@ -7,27 +8,6 @@ import { expect, test, type Page } from "@playwright/test";
 // registered passkey before the sign-in page ever loads.
 const password = "password123";
 let userCount = 0;
-
-async function mockStandaloneMode(page: Page) {
-  await page.addInitScript(() => {
-    const realMatchMedia = window.matchMedia.bind(window);
-    window.matchMedia = (query: string) => {
-      if (query.includes("display-mode: standalone")) {
-        return {
-          matches: true,
-          media: query,
-          addListener: () => {},
-          removeListener: () => {},
-          addEventListener: () => {},
-          removeEventListener: () => {},
-          dispatchEvent: () => true,
-          onchange: null,
-        } as unknown as MediaQueryList;
-      }
-      return realMatchMedia(query);
-    };
-  });
-}
 
 // Spies on navigator.credentials.get so the negative test cases can assert
 // the passkey prompt was never actually invoked, rather than inferring it
