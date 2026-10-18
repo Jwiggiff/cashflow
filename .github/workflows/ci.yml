@@ -112,7 +112,9 @@ jobs:
           context: .
           push: false
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Only main writes the cache: exporting it takes minutes, and a PR's
+          # cache is only readable from that PR, while main's is readable by all
+          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max' || '' }}
           build-args: |
             GIT_HASH=${{ github.sha }}
 
