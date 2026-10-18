@@ -12,23 +12,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Fingerprint, Loader2 } from "lucide-react";
+import { isStandalonePwa } from "@/lib/pwa";
 import { signIn } from "next-auth/react";
 import { signIn as signInWithPasskey } from "next-auth/webauthn";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-// True only when launched from the home-screen icon (installed PWA), not a
-// regular browser tab on phone or desktop - `display-mode: standalone` is
-// the standard way to detect this; `navigator.standalone` is Safari's older,
-// non-standard equivalent, still needed for some iOS versions.
-function isStandalonePwa() {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia?.("(display-mode: standalone)").matches ||
-    (window.navigator as unknown as { standalone?: boolean }).standalone ===
-      true
-  );
-}
 
 export default function SignInPage() {
   const [username, setUsername] = useState("");
@@ -101,9 +89,9 @@ export default function SignInPage() {
   );
 
   // Auto-trigger the passkey prompt on launch, but only when installed as a
-  // PWA (see isStandalonePwa above) - not in a regular browser tab on phone
-  // or desktop, where popping a biometric prompt the instant the page loads
-  // would feel like an unexpected interruption rather than "the app opening."
+  // PWA - not in a regular browser tab on phone or desktop, where popping a
+  // biometric prompt the instant the page loads would feel like an
+  // unexpected interruption rather than "the app opening."
   // Only attempted once per mount (autoAttempted ref) - a failed/dismissed
   // attempt falls back to the normal manual button instead of retrying in a
   // loop. Also skipped right after an explicit sign-out (see
