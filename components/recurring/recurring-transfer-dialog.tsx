@@ -19,12 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { computeNextDueDateForCreate } from "@/lib/recurring-schedule";
-import { cn, getOccurenceInMonth } from "@/lib/utils";
+import { alignRRuleToStartDate } from "@/lib/standard-recurrence-rrules";
+import { cn } from "@/lib/utils";
 import { BankAccount, RecurringTransfer } from "@prisma/client";
 import { ArrowRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { RRule, Weekday } from "rrule";
+import { useState } from "react";
+import { RRule } from "rrule";
 import { toast } from "sonner";
 import { RecurrenceTypeSelectItems } from "./recurrence-type-select-items";
 
@@ -64,101 +65,87 @@ export function RecurringTransferDialog({
   trigger,
   onSuccess,
 }: RecurringTransferDialogProps) {
-  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
-  const [amount, setAmount] = useState(
-    recurringTransfer?.amount.toString() || "0.00"
-  );
-  const [description, setDescription] = useState(
-    recurringTransfer?.description || ""
-  );
-  const [fromAccountId, setFromAccountId] = useState<number | "">(
-    recurringTransfer?.fromAccountId || ""
-  );
-  const [toAccountId, setToAccountId] = useState<number | "">(
-    recurringTransfer?.toAccountId || ""
-  );
-  const [startDate, setStartDate] = useState<Date>(
-    recurringTransfer?.startDate || new Date()
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [recurrenceType, setRecurrenceType] = useState(
-    recurringTransfer?.rrule || ""
-  );
 
-  // Update recurrenceType when startDate changes to maintain the same pattern
-  useEffect(() => {
-    if (recurrenceType) {
-      try {
-        const options = RRule.parseString(recurrenceType);
-
-        if (options.freq === RRule.WEEKLY) {
-          // For weekly/biweekly, just update the byweekday to match the new date's weekday
-          options.byweekday =
-            startDate.getDay() === 0 ? 6 : startDate.getDay() - 1;
-        } else if (options.freq === RRule.MONTHLY) {
-          if (options.byweekday) {
-            // For monthly by weekday (e.g., "third Wednesday"), update both byweekday and bysetpos
-            const occurrence = getOccurenceInMonth(startDate);
-            const weekday = new Weekday(
-              startDate.getDay() === 0 ? 6 : startDate.getDay() - 1
-            );
-            options.byweekday = weekday.nth(occurrence);
-          } else {
-            // For monthly by day of month (e.g., "15th of every month"), update bymonthday
-            options.bymonthday = startDate.getDate();
-          }
-        }
-
-        // Keep dtstart anchored to the current start date too, so biweekly
-        // interval parity doesn't drift once one gets persisted.
-        options.dtstart = startDate;
-
-        // Create new rule with updated options
-        setRecurrenceType(RRule.optionsToString(options));
-      } catch (error) {
-        // If there's an error parsing the rule, just keep the current value
-        console.error("Error updating recurrence type:", error);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate]);
-
-  // Use controlled or uncontrolled state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const onOpenChange = controlledOnOpenChange || setInternalOpen;
 
-  // Check if accounts are the same for validation
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={
+        mode === "edit" ? "Edit Recurring Transfer" : "Add Recurring Transfer"
+      }
+    >
+      <RecurringTransferForm
+        accounts={accounts}
+        mode={mode}
+        recurringTransfer={recurringTransfer}
+        prefillForCreate={prefillForCreate}
+        onSuccess={onSuccess}
+        onClose={() => onOpenChange(false)}
+      />
+    </ResponsiveDialog>
+  );
+}
+
+interface RecurringTransferFormProps {
+  accounts: BankAccount[];
+  mode: "add" | "edit";
+  recurringTransfer?: RecurringTransferWithAccounts;
+  prefillForCreate: RecurringTransferPrefill | null;
+  onSuccess?: () => void;
+  onClose: () => void;
+}
+
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
+function RecurringTransferForm({
+  accounts,
+  mode,
+  recurringTransfer,
+  prefillForCreate,
+  onSuccess,
+  onClose,
+}: RecurringTransferFormProps) {
+  const router = useRouter();
+  const prefill =
+    !recurringTransfer && mode === "add" ? prefillForCreate : null;
+  const [amount, setAmount] = useState(
+    recurringTransfer
+      ? recurringTransfer.amount.toString() || "0.00"
+      : prefill
+        ? prefill.amount.toFixed(2)
+        : "0.00"
+  );
+  const [description, setDescription] = useState(
+    recurringTransfer?.description ?? prefill?.description ?? ""
+  );
+  const [fromAccountId, setFromAccountId] = useState<number | "">(
+    recurringTransfer?.fromAccountId ?? prefill?.fromAccountId ?? ""
+  );
+  const [toAccountId, setToAccountId] = useState<number | "">(
+    recurringTransfer?.toAccountId ?? prefill?.toAccountId ?? ""
+  );
+  const [startDate, setStartDate] = useState<Date>(
+    recurringTransfer?.startDate ?? prefill?.startDate ?? new Date()
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState(() =>
+    alignRRuleToStartDate(
+      recurringTransfer?.rrule ?? prefill?.rrule ?? "",
+      startDate
+    )
+  );
+
+  const handleStartDateChange = (date: Date) => {
+    setStartDate(date);
+    setRecurrenceType((rule) => alignRRuleToStartDate(rule, date));
+  };
+
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
-
-  // Reset the form state when dialog opens
-  useEffect(() => {
-    if (open) {
-      if (recurringTransfer) {
-        setAmount(recurringTransfer.amount.toString() || "0.00");
-        setDescription(recurringTransfer.description || "");
-        setFromAccountId(recurringTransfer.fromAccountId || "");
-        setToAccountId(recurringTransfer.toAccountId || "");
-        setStartDate(recurringTransfer.startDate || new Date());
-        setRecurrenceType(recurringTransfer.rrule || "");
-      } else if (prefillForCreate && mode === "add") {
-        setAmount(prefillForCreate.amount.toFixed(2));
-        setDescription(prefillForCreate.description);
-        setFromAccountId(prefillForCreate.fromAccountId);
-        setToAccountId(prefillForCreate.toAccountId);
-        setStartDate(prefillForCreate.startDate);
-        setRecurrenceType(prefillForCreate.rrule);
-      } else {
-        setAmount("0.00");
-        setDescription("");
-        setFromAccountId("");
-        setToAccountId("");
-        setStartDate(new Date());
-        setRecurrenceType("");
-      }
-    }
-  }, [recurringTransfer, open, prefillForCreate, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +189,7 @@ export function RecurringTransferDialog({
             ? "Recurring transfer updated successfully"
             : "Recurring transfer created successfully"
         );
-        onOpenChange(false);
+        onClose();
         if (onSuccess) {
           onSuccess();
         } else {
@@ -226,7 +213,7 @@ export function RecurringTransferDialog({
       const result = await deleteRecurringTransfer(recurringTransfer.id);
       if (result.success) {
         toast.success("Recurring transfer deleted");
-        onOpenChange(false);
+        onClose();
         if (onSuccess) {
           onSuccess();
         } else {
@@ -242,138 +229,129 @@ export function RecurringTransferDialog({
   };
 
   return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={trigger}
-      title={
-        mode === "edit" ? "Edit Recurring Transfer" : "Add Recurring Transfer"
-      }
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Transfer Between Accounts</Label>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            <Select
-              value={fromAccountId.toString()}
-              onValueChange={(value) => setFromAccountId(parseInt(value))}
-              required
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select source account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
-            <Select
-              value={toAccountId.toString()}
-              onValueChange={(value) => setToAccountId(parseInt(value))}
-              required
-            >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select destination account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {isSameAccount && (
-            <div className="text-sm text-red-500">
-              From and To accounts must be different
-            </div>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
-          <CurrencyInput
-            value={amount}
-            onChange={(value) => setAmount(value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description (Optional)</Label>
-          <Input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Monthly savings transfer"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Start Date</Label>
-          <DatePicker
-            date={startDate}
-            onDateChange={(newDate) => setStartDate(newDate || new Date())}
-            placeholder="Select start date"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Repeats</Label>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Transfer Between Accounts</Label>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
           <Select
-            value={recurrenceType}
-            onValueChange={(value) => setRecurrenceType(value)}
+            value={fromAccountId.toString()}
+            onValueChange={(value) => setFromAccountId(parseInt(value))}
+            required
           >
-            <SelectTrigger className="w-full">
-              <SelectValue />
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
+            >
+              <SelectValue placeholder="Select source account" />
             </SelectTrigger>
             <SelectContent>
-              <RecurrenceTypeSelectItems startDate={startDate} />
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
+          <Select
+            value={toAccountId.toString()}
+            onValueChange={(value) => setToAccountId(parseInt(value))}
+            required
+          >
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
+            >
+              <SelectValue placeholder="Select destination account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {mode === "edit" && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDeleteTransfer}
-              disabled={isSubmitting}
-            >
-              Delete
-            </Button>
-          )}
-          <div className="ml-auto flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isSameAccount}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                  ? "Update"
-                  : "Add"}
-            </Button>
+        {isSameAccount && (
+          <div className="text-sm text-red-500">
+            From and To accounts must be different
           </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount</Label>
+        <CurrencyInput
+          value={amount}
+          onChange={(value) => setAmount(value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Input
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g., Monthly savings transfer"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="date">Start Date</Label>
+        <DatePicker
+          date={startDate}
+          onDateChange={(newDate) => handleStartDateChange(newDate || new Date())}
+          placeholder="Select start date"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label>Repeats</Label>
+        <Select
+          value={recurrenceType}
+          onValueChange={(value) => setRecurrenceType(value)}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <RecurrenceTypeSelectItems startDate={startDate} />
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {mode === "edit" && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDeleteTransfer}
+            disabled={isSubmitting}
+          >
+            Delete
+          </Button>
+        )}
+        <div className="ml-auto flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting || isSameAccount}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+                ? "Update"
+                : "Add"}
+          </Button>
         </div>
-      </form>
-    </ResponsiveDialog>
+      </div>
+    </form>
   );
 }

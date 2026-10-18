@@ -16,7 +16,7 @@ import { isStandalonePwa } from "@/lib/pwa";
 import { signIn } from "next-auth/react";
 import { signIn as signInWithPasskey } from "next-auth/webauthn";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function SignInPage() {
   const [username, setUsername] = useState("");
@@ -56,56 +56,48 @@ export default function SignInPage() {
     }
   };
 
-  const handleSignInWithPasskey = useCallback(
-    async (options?: { silent?: boolean }) => {
-      setIsLoading(true);
-      if (!options?.silent) setError("");
+  const handleSignInWithPasskey = async () => {
+    setIsLoading(true);
+    setError("");
 
-      try {
-        const result = await signInWithPasskey("passkey", { redirect: false });
+    try {
+      const result = await signInWithPasskey("passkey", { redirect: false });
 
-        if (result?.error) {
-          // A silent auto-attempt failing (no passkey saved yet, user
-          // dismissed the system prompt, etc.) shouldn't show an error on a
-          // page the user didn't explicitly ask to authenticate on - they
-          // still have the password form and the manual button right there.
-          if (!options?.silent) {
-            setError("An error occurred during sign in with passkey");
-          }
-        } else {
-          router.push(callbackUrl);
-          router.refresh();
-        }
-      } catch (error) {
-        console.error(error);
-        if (!options?.silent) {
-          setError("An error occurred during sign in with passkey");
-        }
-      } finally {
-        setIsLoading(false);
+      if (result?.error) {
+        setError("An error occurred during sign in with passkey");
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
       }
-    },
-    [callbackUrl, router]
-  );
+    } catch (error) {
+      console.error(error);
+      setError("An error occurred during sign in with passkey");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // Auto-trigger the passkey prompt on launch, but only when installed as a
-  // PWA - not in a regular browser tab on phone or desktop, where popping a
-  // biometric prompt the instant the page loads would feel like an
-  // unexpected interruption rather than "the app opening."
-  // Only attempted once per mount (autoAttempted ref) - a failed/dismissed
-  // attempt falls back to the normal manual button instead of retrying in a
-  // loop. Also skipped right after an explicit sign-out (see
-  // components/user-section.tsx's `signedOut` redirect param) - without
-  // this, signing out would immediately re-prompt Face ID and sign back in,
-  // making it impossible to actually log out or switch accounts.
+  // Prompt for a passkey once on launch, but only in the installed PWA (in a
+  // browser tab an instant biometric prompt is intrusive) and not right after
+  // sign-out (`signedOut`, see components/user-section.tsx), which would sign
+  // straight back in. The attempt is silent: failures show no error, and it
+  // skips the loading state since the OS passkey sheet already blocks input.
   useEffect(() => {
     if (autoAttempted.current) return;
     if (params.get("signedOut")) return;
     if (!isStandalonePwa()) return;
     if (typeof window.PublicKeyCredential === "undefined") return;
     autoAttempted.current = true;
-    handleSignInWithPasskey({ silent: true });
-  }, [handleSignInWithPasskey, params]);
+
+    signInWithPasskey("passkey", { redirect: false })
+      .then((result) => {
+        if (!result?.error) {
+          router.push(callbackUrl);
+          router.refresh();
+        }
+      })
+      .catch((error) => console.error(error));
+  }, [callbackUrl, params, router]);
 
   return (
     <div className="flex h-full items-center justify-center bg-pattern px-4 py-12 sm:px-6 lg:px-8">

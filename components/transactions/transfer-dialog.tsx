@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { CurrencyInput } from "@/components/currency-input";
 import {
@@ -47,8 +47,38 @@ export function TransferDialog({
   onOpenChange: controlledOnOpenChange,
   trigger,
 }: TransferDialogProps) {
-  const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
+
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const onOpenChange = controlledOnOpenChange || setInternalOpen;
+
+  return (
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      trigger={trigger}
+      title={mode === "edit" ? "Edit Transfer" : "Add New Transfer"}
+    >
+      <TransferForm
+        accounts={accounts}
+        mode={mode}
+        transfer={transfer}
+        onClose={() => onOpenChange(false)}
+      />
+    </ResponsiveDialog>
+  );
+}
+
+interface TransferFormProps {
+  accounts: BankAccount[];
+  mode: "add" | "edit";
+  transfer?: TransferWithAccounts;
+  onClose: () => void;
+}
+
+// Radix unmounts dialog content on close, so this mounts fresh on each open.
+function TransferForm({ accounts, mode, transfer, onClose }: TransferFormProps) {
+  const router = useRouter();
   const [amount, setAmount] = useState(transfer?.amount.toString() || "");
   const [description, setDescription] = useState(transfer?.description || "");
   const [fromAccountId, setFromAccountId] = useState<number | "">(
@@ -60,24 +90,8 @@ export function TransferDialog({
   const [date, setDate] = useState<Date>(transfer?.date || new Date());
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Use controlled or uncontrolled state
-  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const onOpenChange = controlledOnOpenChange || setInternalOpen;
-
-  // Check if accounts are the same for validation
   const isSameAccount =
     fromAccountId !== "" && toAccountId !== "" && fromAccountId === toAccountId;
-
-  // Reset the form state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setAmount(transfer?.amount.toString() || "");
-      setDescription(transfer?.description || "");
-      setFromAccountId(transfer?.fromAccountId || "");
-      setToAccountId(transfer?.toAccountId || "");
-      setDate(transfer?.date || new Date());
-    }
-  }, [transfer, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +123,7 @@ export function TransferDialog({
             ? "Transfer updated successfully"
             : "Transfer created successfully"
         );
-        onOpenChange(false);
+        onClose();
         router.refresh();
       } else {
         toast.error(result.error || `Failed to ${mode} transfer`);
@@ -127,7 +141,7 @@ export function TransferDialog({
     const result = await deleteTransfer(transfer.id);
     if (result.success) {
       toast.success("Transfer deleted");
-      onOpenChange(false);
+      onClose();
       router.refresh();
     } else {
       toast.error(result.error || "Failed to delete transfer");
@@ -135,123 +149,116 @@ export function TransferDialog({
   };
 
   return (
-    <ResponsiveDialog
-      open={open}
-      onOpenChange={onOpenChange}
-      trigger={trigger}
-      title={mode === "edit" ? "Edit Transfer" : "Add New Transfer"}
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label>Transfer Between Accounts</Label>
-          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            <Select
-              value={fromAccountId.toString()}
-              onValueChange={(value) => setFromAccountId(parseInt(value))}
-              required
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label>Transfer Between Accounts</Label>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          <Select
+            value={fromAccountId.toString()}
+            onValueChange={(value) => setFromAccountId(parseInt(value))}
+            required
+          >
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
             >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select source account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
-            <Select
-              value={toAccountId.toString()}
-              onValueChange={(value) => setToAccountId(parseInt(value))}
-              required
+              <SelectValue placeholder="Select source account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <ArrowRightIcon className="h-5 w-5 text-muted-foreground shrink-0 mx-auto rotate-90 md:rotate-0" />
+          <Select
+            value={toAccountId.toString()}
+            onValueChange={(value) => setToAccountId(parseInt(value))}
+            required
+          >
+            <SelectTrigger
+              className={cn(
+                "w-full md:flex-1",
+                isSameAccount && "border-red-500 focus:border-red-500"
+              )}
             >
-              <SelectTrigger
-                className={cn(
-                  "w-full md:flex-1",
-                  isSameAccount && "border-red-500 focus:border-red-500"
-                )}
-              >
-                <SelectValue placeholder="Select destination account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id.toString()}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <SelectValue placeholder="Select destination account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map((account) => (
+                <SelectItem key={account.id} value={account.id.toString()}>
+                  {account.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {isSameAccount && (
+          <div className="text-sm text-red-500">
+            From and To accounts must be different
           </div>
-          {isSameAccount && (
-            <div className="text-sm text-red-500">
-              From and To accounts must be different
-            </div>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
-          <CurrencyInput
-            value={amount}
-            onChange={(value) => setAmount(value)}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description (Optional)</Label>
-          <Input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Monthly savings transfer"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <DatePicker
-            date={date}
-            onDateChange={(newDate) => setDate(newDate || new Date())}
-            placeholder="Select date"
-          />
-        </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount</Label>
+        <CurrencyInput
+          value={amount}
+          onChange={(value) => setAmount(value)}
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description (Optional)</Label>
+        <Input
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="e.g., Monthly savings transfer"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="date">Date</Label>
+        <DatePicker
+          date={date}
+          onDateChange={(newDate) => setDate(newDate || new Date())}
+          placeholder="Select date"
+        />
+      </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {mode === "edit" && (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => handleDeleteTransfer()}
-              disabled={isSubmitting}
-            >
-              Delete
-            </Button>
-          )}
-          <div className="ml-auto flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting || isSameAccount}>
-              {isSubmitting
-                ? mode === "edit"
-                  ? "Updating..."
-                  : "Adding..."
-                : mode === "edit"
-                  ? "Update"
-                  : "Add"}
-            </Button>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {mode === "edit" && (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => handleDeleteTransfer()}
+            disabled={isSubmitting}
+          >
+            Delete
+          </Button>
+        )}
+        <div className="ml-auto flex gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting || isSameAccount}>
+            {isSubmitting
+              ? mode === "edit"
+                ? "Updating..."
+                : "Adding..."
+              : mode === "edit"
+                ? "Update"
+                : "Add"}
+          </Button>
         </div>
-      </form>
-    </ResponsiveDialog>
+      </div>
+    </form>
   );
 }
