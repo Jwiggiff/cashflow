@@ -6,11 +6,8 @@ on:
   issue_comment:
     types: [created]
 
-# One review per PR at a time, newest wins. Comments that don't ask for a
-# review (including the summary comment the review itself posts) and other
-# labels get their own throwaway group: concurrency applies to the whole
-# run, so even though their job is skipped they'd otherwise cancel a review
-# in progress.
+# Unrelated comments (including the review's own summary) and labels get a
+# throwaway group so their skipped runs can't cancel a review in progress.
 concurrency:
   group: >-
     claude-review-${{ github.event.pull_request.number || github.event.issue.number }}${{

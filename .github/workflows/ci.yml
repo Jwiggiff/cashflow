@@ -77,10 +77,7 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      # Turbopack's build cache. Like the Docker cache, only main saves it,
-      # since a PR's cache can only be read from that PR. The key changes
-      # with the source so main saves a fresh one; restore-keys falls back
-      # to the latest one for the same lockfile.
+      # Only main saves it, like the Docker cache
       - name: Restore Next.js build cache
         id: next-cache
         uses: actions/cache/restore@v6
@@ -115,7 +112,6 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
 
-      # The browser is cached, but its system libraries aren't
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
@@ -149,8 +145,8 @@ jobs:
           context: .
           push: false
           cache-from: type=gha
-          # Only main writes the cache: exporting it takes minutes, and a PR's
-          # cache is only readable from that PR, while main's is readable by all
+          # Only main writes the cache: exporting takes minutes, and other PRs
+          # can't read a PR's cache
           cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max' || '' }}
           build-args: |
             GIT_HASH=${{ github.sha }}
