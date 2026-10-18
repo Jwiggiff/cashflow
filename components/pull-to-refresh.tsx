@@ -21,9 +21,12 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   const startY = useRef<number | null>(null);
 
   const handleTouchStart = useCallback((e: TouchEvent) => {
-    // Only start tracking a pull from the very top of the page - otherwise
-    // this would fire mid-scroll on any upward-then-downward swipe.
-    if (window.scrollY > 0) return;
+    // Only start a pull when nothing under the finger is scrolled - the page
+    // itself (this reaches <html>) or any scroll area it's inside (popover
+    // list, sidebar, etc.). Otherwise scrolling back up in one would pull.
+    for (let el = e.target as Element | null; el; el = el.parentElement) {
+      if (el.scrollTop > 0) return;
+    }
     startY.current = e.touches[0].clientY;
   }, []);
 
