@@ -77,11 +77,48 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      # Turbopack's build cache. Like the Docker cache, only main saves it,
+      # since a PR's cache can only be read from that PR. The key changes
+      # with the source so main saves a fresh one; restore-keys falls back
+      # to the latest one for the same lockfile.
+      - name: Restore Next.js build cache
+        id: next-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'hooks/**', 'cron/**', 'types/**', 'public/**', '*.ts', '*.mjs') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
       - name: Build
         run: npm run build
 
+      - name: Save Next.js build cache
+        if: github.event_name == 'push' && steps.next-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .next/cache
+          key: ${{ steps.next-cache.outputs.cache-primary-key }}
+
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browser
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      # The browser is cached, but its system libraries aren't
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: E2E tests
         run: npm run test:e2e
