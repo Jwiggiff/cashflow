@@ -69,7 +69,7 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div
-        className="flex items-center justify-center overflow-hidden transition-[height] duration-200 ease-out"
+        className="flex shrink-0 items-center justify-center overflow-hidden transition-[height] duration-200 ease-out"
         style={{ height: pullDistance }}
         aria-hidden={pullDistance === 0}
       >
