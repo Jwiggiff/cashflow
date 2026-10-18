@@ -58,7 +58,7 @@ export async function updateProfile(data: {
     console.error("Failed to update profile:", error);
 
     if (error instanceof ZodError) {
-      return { success: false, error: error.errors[0].message };
+      return { success: false, error: error.issues[0].message };
     }
 
     return { success: false, error: "Failed to update profile" };
