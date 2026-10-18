@@ -1,19 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockStandaloneMode } from "./helpers";
 
-// Covers the PWA-only auto-passkey-prompt behavior added to the sign-in
-// page (see app/auth/signin/page.tsx) - self-contained (own user/
-// authenticator) rather than reusing e2e/app.spec.ts's shared serial-mode
-// state, since each case needs a virtual authenticator already holding a
-// registered passkey before the sign-in page ever loads.
+// PWA passkey auto-prompt on the sign-in page. Each case creates its own user
+// and authenticator rather than sharing app.spec.ts's serial state, since it
+// needs a passkey registered before the sign-in page loads.
 const password = "password123";
-let userCount = 0;
 
-// Spies on navigator.credentials.get so the negative test cases can assert
-// the passkey prompt was never actually invoked, rather than inferring it
-// from the URL after a fixed wait - a slow auto-prompt could still fire
-// after that wait elapses, well past when the test already decided nothing
-// happened.
+// Counts navigator.credentials.get calls, so negative cases can assert the
+// prompt never fired rather than inferring it from the URL after a fixed wait.
 async function spyOnCredentialsGet(page: Page) {
   await page.addInitScript(() => {
     (window as unknown as { __credentialsGetCalls: number }).__credentialsGetCalls = 0;
@@ -32,8 +26,8 @@ async function credentialsGetCallCount(page: Page) {
 }
 
 async function setUpUserWithPasskey(page: Page, context: import("@playwright/test").BrowserContext) {
-  userCount++;
-  const username = `pwaautouser${userCount}`;
+  // Unique per attempt, so a CI retry doesn't collide with the first attempt's user
+  const username = `pwaautouser${Date.now()}`;
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
   const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
@@ -59,6 +53,10 @@ async function setUpUserWithPasskey(page: Page, context: import("@playwright/tes
   await page.getByRole("button", { name: "Update Profile" }).click();
   const addPasskey = page.getByRole("button", { name: "Add Passkey" });
   await expect(addPasskey).toBeEnabled();
+  // Registering reloads the page, and the reloaded page refetches the session
+  // (re-setting its cookie). Wait for both, or the reload can abort the
+  // caller's next goto() and the refetch can undo its clearCookies().
+  const reloaded = page.waitForEvent("load");
   await addPasskey.click();
   await expect
     .poll(async () => {
@@ -66,6 +64,8 @@ async function setUpUserWithPasskey(page: Page, context: import("@playwright/tes
       return credentials.length;
     })
     .toBe(1);
+  await reloaded;
+  await page.waitForLoadState("networkidle");
 
   return username;
 }
@@ -104,10 +104,7 @@ test("does not auto-trigger right after clicking sign out, even in standalone mo
   await mockStandaloneMode(page);
   await spyOnCredentialsGet(page);
 
-  // Still signed in from setUpUserWithPasskey - open the user menu and
-  // click the real "Sign out" item (components/user-section.tsx), so this
-  // actually exercises its redirectTo string too, not just the sign-in
-  // page's own handling of the flag.
+  // Sign out through the real user menu so its `signedOut` redirect is covered too
   await page.goto("/");
   await page.getByRole("button", { name: new RegExp(username) }).click();
   await page.getByRole("menuitem", { name: /sign out/i }).click();
