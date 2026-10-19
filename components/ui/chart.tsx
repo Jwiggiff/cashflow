@@ -253,7 +253,12 @@ function ChartTooltipContent({
   )
 }
 
-const ChartLegend = RechartsPrimitive.Legend
+// Keep legend items in data order; Recharts sorts them by name by default
+function ChartLegend(
+  props: React.ComponentProps<typeof RechartsPrimitive.Legend>
+) {
+  return <RechartsPrimitive.Legend itemSorter={null} {...props} />
+}
 
 function ChartLegendContent({
   className,
