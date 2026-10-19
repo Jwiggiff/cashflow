@@ -106,6 +106,38 @@ export async function updateAccount(
   }
 }
 
+// Shown in the delete confirmation, since deleting cascades to all of these
+export async function getAccountDeletionImpact(id: number) {
+  const session = await auth();
+  if (!session?.user) {
+    return { success: false, error: "Unauthorized" } as const;
+  }
+
+  const account = await prisma.bankAccount.findFirst({
+    where: { id, userId: session.user.id },
+  });
+  if (!account) {
+    return { success: false, error: "Account not found" } as const;
+  }
+
+  const [transactions, recurringTransactions, transfers, recurringTransfers] =
+    await Promise.all([
+      prisma.transaction.count({ where: { accountId: id } }),
+      prisma.recurringTransaction.count({ where: { accountId: id } }),
+      prisma.transfer.count({
+        where: { OR: [{ fromAccountId: id }, { toAccountId: id }] },
+      }),
+      prisma.recurringTransfer.count({
+        where: { OR: [{ fromAccountId: id }, { toAccountId: id }] },
+      }),
+    ]);
+
+  return {
+    success: true,
+    data: { transactions, recurringTransactions, transfers, recurringTransfers },
+  } as const;
+}
+
 export async function deleteAccount(id: number) {
   const session = await auth();
   if (!session?.user) {

@@ -1,7 +1,12 @@
-import { createAccount, deleteAccount, updateAccount } from "@/app/accounts/actions";
+import {
+  createAccount,
+  deleteAccount,
+  getAccountDeletionImpact,
+  updateAccount,
+} from "@/app/accounts/actions";
 import { prisma } from "@/lib/prisma";
 import { describe, expect, it } from "vitest";
-import { createAccountFor, createUser, signedInUser } from "./helpers";
+import { balanceOf, createAccountFor, createUser, signedInUser } from "./helpers";
 
 describe("account actions", () => {
   it("rejects unauthenticated requests", async () => {
@@ -52,6 +57,91 @@ describe("account actions", () => {
     expect(await prisma.bankAccount.findUnique({ where: { id: account.id } })).toMatchObject({
       name: "Theirs",
     });
+  });
+});
+
+describe("account deletion", () => {
+  async function seedLinkedRecords(accountId: number, otherId: number) {
+    const transaction = await prisma.transaction.create({
+      data: { description: "Coffee", amount: -5, type: "EXPENSE", accountId, date: new Date() },
+    });
+    const recurring = await prisma.recurringTransaction.create({
+      data: {
+        description: "Rent",
+        amount: -1000,
+        type: "EXPENSE",
+        rrule: "FREQ=MONTHLY",
+        startDate: new Date(),
+        nextDueDate: new Date(),
+        accountId,
+      },
+    });
+    const transfer = await prisma.transfer.create({
+      data: { date: new Date(), amount: 20, fromAccountId: accountId, toAccountId: otherId },
+    });
+    const recurringTransfer = await prisma.recurringTransfer.create({
+      data: {
+        amount: 50,
+        rrule: "FREQ=MONTHLY",
+        startDate: new Date(),
+        nextDueDate: new Date(),
+        fromAccountId: otherId,
+        toAccountId: accountId,
+      },
+    });
+    return { transaction, recurring, transfer, recurringTransfer };
+  }
+
+  it("reports what a delete would remove without deleting anything", async () => {
+    const user = await signedInUser();
+    const account = await createAccountFor(user);
+    const other = await createAccountFor(user, { name: "Savings" });
+    await seedLinkedRecords(account.id, other.id);
+
+    const impact = await getAccountDeletionImpact(account.id);
+
+    expect(impact).toEqual({
+      success: true,
+      data: { transactions: 1, recurringTransactions: 1, transfers: 1, recurringTransfers: 1 },
+    });
+    expect(await prisma.transaction.count()).toBe(1);
+  });
+
+  it("deletes everything linked to the account and leaves other accounts alone", async () => {
+    const user = await signedInUser();
+    const account = await createAccountFor(user);
+    const other = await createAccountFor(user, { name: "Savings", balance: 300 });
+    const linked = await seedLinkedRecords(account.id, other.id);
+    const unrelated = await prisma.transaction.create({
+      data: { description: "Interest", amount: 1, type: "INCOME", accountId: other.id, date: new Date() },
+    });
+
+    const result = await deleteAccount(account.id);
+
+    expect(result.success).toBe(true);
+    expect(await prisma.transaction.findUnique({ where: { id: linked.transaction.id } })).toBeNull();
+    expect(await prisma.recurringTransaction.findUnique({ where: { id: linked.recurring.id } })).toBeNull();
+    expect(await prisma.transfer.findUnique({ where: { id: linked.transfer.id } })).toBeNull();
+    expect(
+      await prisma.recurringTransfer.findUnique({ where: { id: linked.recurringTransfer.id } })
+    ).toBeNull();
+    expect(await prisma.transaction.findUnique({ where: { id: unrelated.id } })).not.toBeNull();
+    expect(await balanceOf(other.id)).toBe(300);
+  });
+
+  it("won't report on another user's account", async () => {
+    const owner = await createUser();
+    const account = await createAccountFor(owner);
+    await signedInUser();
+
+    expect(await getAccountDeletionImpact(account.id)).toEqual({
+      success: false,
+      error: "Account not found",
+    });
+  });
+
+  it("rejects unauthenticated impact checks", async () => {
+    expect(await getAccountDeletionImpact(1)).toEqual({ success: false, error: "Unauthorized" });
   });
 });
 
