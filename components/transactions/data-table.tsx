@@ -3,13 +3,10 @@
 import {
   ColumnDef,
   ColumnFiltersState,
+  ColumnVisibilityState,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   Row,
-  useReactTable,
-  VisibilityState,
+  useTable,
 } from "@tanstack/react-table";
 import { ChevronDown } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
@@ -54,11 +51,15 @@ import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ActiveFiltersDisplay, FilterSheet } from "./filter-sheet";
+import {
+  transactionTableFeatures,
+  TransactionTableFeatures,
+} from "./table-features";
 import { TransactionList } from "./transaction-list";
 import { TransactionsEmptyState } from "./transactions-empty-state";
 
 interface DataTableProps {
-  columns: ColumnDef<TransactionOrTransfer>[];
+  columns: ColumnDef<TransactionTableFeatures, TransactionOrTransfer>[];
   data: TransactionOrTransfer[];
   accounts: { id: number; name: string }[];
   categories: {
@@ -93,7 +94,7 @@ export function DataTable({
         : [],
   );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({
+    React.useState<ColumnVisibilityState>({
       id: false,
       select: true,
       date: true,
@@ -121,7 +122,7 @@ export function DataTable({
   });
 
   // Add selection column
-  const selectionColumn: ColumnDef<TransactionOrTransfer> = {
+  const selectionColumn: ColumnDef<TransactionTableFeatures, TransactionOrTransfer> = {
     id: "select",
     header: ({ table }) => (
       <div className="grid place-items-center">
@@ -175,19 +176,14 @@ export function DataTable({
         />
       </div>
     ),
-    enableSorting: false,
     enableHiding: false,
   };
 
-  // React Compiler isn't enabled; TanStack Table's non-memoizable API is expected here
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
+  const table = useTable({
+    features: transactionTableFeatures,
     data,
     columns: [selectionColumn, ...columns],
     onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     onPaginationChange: setPagination,
@@ -272,10 +268,10 @@ export function DataTable({
   const listData = React.useMemo(() => {
     type RowData =
       | { type: "header"; date: string }
-      | { type: "row"; row: Row<TransactionOrTransfer> };
+      | { type: "row"; row: Row<TransactionTableFeatures, TransactionOrTransfer> };
 
     const groups: RowData[] = [];
-    const dateGroups: { [key: string]: Row<TransactionOrTransfer>[] } = {};
+    const dateGroups: { [key: string]: Row<TransactionTableFeatures, TransactionOrTransfer>[] } = {};
 
     pageRows.forEach((row) => {
       const date = (row.original as { date?: Date }).date;
@@ -335,14 +331,14 @@ export function DataTable({
                 Rows per page
               </p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${table.state.pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={table.state.pagination.pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -508,14 +504,14 @@ export function DataTable({
             <div className="flex items-center space-x-2 ml-auto pl-4">
               <p className="text-sm font-medium whitespace-nowrap">Rows per page</p>
               <Select
-                value={`${table.getState().pagination.pageSize}`}
+                value={`${table.state.pagination.pageSize}`}
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
                 }}
               >
                 <SelectTrigger className="h-8 w-[70px]">
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={table.state.pagination.pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -645,7 +641,7 @@ export function DataTable({
         <div className="flex flex-col items-center justify-between space-y-2 py-4 sm:flex-row sm:space-y-0">
           <div className="flex items-center space-x-4">
             <div className="text-sm text-muted-foreground">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
+              Page {table.state.pagination.pageIndex + 1} of{" "}
               {table.getPageCount()}
             </div>
           </div>

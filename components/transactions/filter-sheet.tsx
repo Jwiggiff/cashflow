@@ -29,13 +29,14 @@ import { format } from "date-fns";
 import { TransactionType } from "@prisma/client";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import { Table } from "@tanstack/react-table";
+import { TransactionTableFeatures } from "./table-features";
 import { TransactionOrTransfer } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface FilterSheetProps {
   accounts: { id: number; name: string }[];
   categories: { id: number; name: string; icon?: string | null }[];
-  table: Table<TransactionOrTransfer>;
+  table: Table<TransactionTableFeatures, TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
   setDateRange: (range: {
     from: Date | undefined;
@@ -272,7 +273,7 @@ export function ActiveFiltersDisplay({
   accounts,
   categories = [],
 }: {
-  table: Table<TransactionOrTransfer>;
+  table: Table<TransactionTableFeatures, TransactionOrTransfer>;
   dateRange: { from: Date | undefined; to: Date | undefined };
   setDateRange: (range: {
     from: Date | undefined;

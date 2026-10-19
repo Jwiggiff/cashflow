@@ -4,6 +4,7 @@ import { useFormatters } from "@/hooks/use-formatters";
 import type { TransactionOrTransfer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { Row } from "@tanstack/react-table";
+import type { TransactionTableFeatures } from "./table-features";
 import {
   ArrowDownLeft,
   ArrowLeftRight,
@@ -13,7 +14,7 @@ import type { ReactNode } from "react";
 
 export type TransactionListItem =
   | { type: "header"; date: string }
-  | { type: "row"; row: Row<TransactionOrTransfer> };
+  | { type: "row"; row: Row<TransactionTableFeatures, TransactionOrTransfer> };
 
 /** Stacked, date-grouped list shown below the `@3xl` content breakpoint. */
 export function TransactionList({
