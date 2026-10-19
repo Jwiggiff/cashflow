@@ -20,7 +20,8 @@ import { DashboardRecommendations } from "./dashboard-recommendations";
 import { capitalize } from "@/lib/utils";
 import { DollarSign, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
 import { useFormatters } from "@/hooks/use-formatters";
-import { formatChange } from "@/lib/formatter";
+import { groupTopExpenses, OTHER_EXPENSES_KEY } from "@/lib/expense-breakdown";
+import { formatChange, formatCompactCurrency } from "@/lib/formatter";
 import {
   Area,
   AreaChart,
@@ -54,15 +55,28 @@ export default function Dashboard({
   accounts = [],
   categories = [],
 }: DashboardProps) {
-  const { formatCurrency, formatPercentage } = useFormatters();
+  const { formatCurrency, formatPercentage, isPrivate } = useFormatters();
   
-  const expenseConfig = expenseData.reduce((acc, expense, index) => {
-    acc[expense.category] = {
-      label: capitalize(expense.category),
-      color: `var(--chart-${index + 1})`,
-    };
-    return acc;
-  }, {} as Record<string, { label: string; color: string }>);
+  const expenseSlices = groupTopExpenses(expenseData).map(
+    (expense, index) => ({
+      ...expense,
+      label:
+        expense.category === OTHER_EXPENSES_KEY
+          ? "Other"
+          : capitalize(expense.category),
+      color:
+        expense.category === OTHER_EXPENSES_KEY
+          ? "var(--muted-foreground)"
+          : `var(--chart-${index + 1})`,
+    })
+  );
+
+  const expenseConfig = Object.fromEntries(
+    expenseSlices.map(({ category, label, color }) => [
+      category,
+      { label, color },
+    ])
+  );
 
   return (
     <>
@@ -176,7 +190,10 @@ export default function Dashboard({
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
-                tickFormatter={(value) => formatCurrency(value)}
+                width={58}
+                tickFormatter={(value) =>
+                  isPrivate ? formatCurrency(value) : formatCompactCurrency(value)
+                }
               />
               <ChartTooltip
                 cursor={false}
@@ -225,9 +242,10 @@ export default function Dashboard({
                 }
               />
               <Pie
-                data={expenseData.map((expense, index) => ({
-                  ...expense,
-                  fill: `var(--chart-${index + 1})`,
+                data={expenseSlices.map((slice) => ({
+                  category: slice.category,
+                  value: slice.value,
+                  fill: slice.color,
                   fillOpacity: 0.8,
                 }))}
                 dataKey="value"
