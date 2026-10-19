@@ -14,6 +14,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useFormatters } from "@/hooks/use-formatters";
+import { formatCompactCurrency } from "@/lib/formatter";
 import type { DashboardRecurringPatternRecommendation } from "@/lib/recommendations/detect-recurring-patterns";
 import type {
   BalanceHistoryPoint,
@@ -43,17 +44,6 @@ type CompactDashboardProps = {
   accounts: BankAccount[];
   categories: Category[];
 };
-
-function formatCompactCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    notation: Math.abs(amount) >= 1000 ? "compact" : "standard",
-    maximumFractionDigits: Math.abs(amount) >= 1000 ? 1 : 0,
-  })
-    .format(amount)
-    .replace("K", "k");
-}
 
 function getNetWorthChange(history: BalanceHistoryPoint[]) {
   const latest = history.at(-1);

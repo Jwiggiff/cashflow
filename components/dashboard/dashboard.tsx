@@ -20,7 +20,8 @@ import { DashboardRecommendations } from "./dashboard-recommendations";
 import { capitalize } from "@/lib/utils";
 import { DollarSign, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
 import { useFormatters } from "@/hooks/use-formatters";
-import { formatChange } from "@/lib/formatter";
+import { chartColor } from "@/lib/chart-colors";
+import { formatChange, formatCompactCurrency } from "@/lib/formatter";
 import {
   Area,
   AreaChart,
@@ -54,15 +55,22 @@ export default function Dashboard({
   accounts = [],
   categories = [],
 }: DashboardProps) {
-  const { formatCurrency, formatPercentage } = useFormatters();
+  const { formatCurrency, formatPercentage, isPrivate } = useFormatters();
   
-  const expenseConfig = expenseData.reduce((acc, expense, index) => {
-    acc[expense.category] = {
+  const expenseSlices = [...expenseData]
+    .sort((a, b) => b.value - a.value)
+    .map((expense, index) => ({
+      ...expense,
       label: capitalize(expense.category),
-      color: `var(--chart-${index + 1})`,
-    };
-    return acc;
-  }, {} as Record<string, { label: string; color: string }>);
+      color: chartColor(index),
+    }));
+
+  const expenseConfig = Object.fromEntries(
+    expenseSlices.map(({ category, label, color }) => [
+      category,
+      { label, color },
+    ])
+  );
 
   return (
     <>
@@ -176,7 +184,10 @@ export default function Dashboard({
                 axisLine={false}
                 tickMargin={8}
                 minTickGap={32}
-                tickFormatter={(value) => formatCurrency(value)}
+                width={58}
+                tickFormatter={(value) =>
+                  isPrivate ? formatCurrency(value) : formatCompactCurrency(value)
+                }
               />
               <ChartTooltip
                 cursor={false}
@@ -225,9 +236,10 @@ export default function Dashboard({
                 }
               />
               <Pie
-                data={expenseData.map((expense, index) => ({
-                  ...expense,
-                  fill: `var(--chart-${index + 1})`,
+                data={expenseSlices.map((slice) => ({
+                  category: slice.category,
+                  value: slice.value,
+                  fill: slice.color,
                   fillOpacity: 0.8,
                 }))}
                 dataKey="value"
@@ -238,7 +250,7 @@ export default function Dashboard({
                 content={
                   <ChartLegendContent
                     nameKey="category"
-                    className="overflow-x-auto max-w-full whitespace-nowrap pb-4"
+                    className="flex-wrap gap-x-4 gap-y-1 pb-4"
                   />
                 }
               />
