@@ -20,7 +20,7 @@ import { DashboardRecommendations } from "./dashboard-recommendations";
 import { capitalize } from "@/lib/utils";
 import { DollarSign, PiggyBank, TrendingDown, TrendingUp } from "lucide-react";
 import { useFormatters } from "@/hooks/use-formatters";
-import { groupTopExpenses, OTHER_EXPENSES_KEY } from "@/lib/expense-breakdown";
+import { chartColor } from "@/lib/chart-colors";
 import { formatChange, formatCompactCurrency } from "@/lib/formatter";
 import {
   Area,
@@ -57,19 +57,13 @@ export default function Dashboard({
 }: DashboardProps) {
   const { formatCurrency, formatPercentage, isPrivate } = useFormatters();
   
-  const expenseSlices = groupTopExpenses(expenseData).map(
-    (expense, index) => ({
+  const expenseSlices = [...expenseData]
+    .sort((a, b) => b.value - a.value)
+    .map((expense, index) => ({
       ...expense,
-      label:
-        expense.category === OTHER_EXPENSES_KEY
-          ? "Other"
-          : capitalize(expense.category),
-      color:
-        expense.category === OTHER_EXPENSES_KEY
-          ? "var(--muted-foreground)"
-          : `var(--chart-${index + 1})`,
-    })
-  );
+      label: capitalize(expense.category),
+      color: chartColor(index),
+    }));
 
   const expenseConfig = Object.fromEntries(
     expenseSlices.map(({ category, label, color }) => [
@@ -256,7 +250,7 @@ export default function Dashboard({
                 content={
                   <ChartLegendContent
                     nameKey="category"
-                    className="overflow-x-auto max-w-full whitespace-nowrap pb-4"
+                    className="flex-wrap gap-x-4 gap-y-1 pb-4"
                   />
                 }
               />
