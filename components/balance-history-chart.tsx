@@ -7,6 +7,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { useFormatters } from "@/hooks/use-formatters";
+import { formatCompactCurrency } from "@/lib/formatter";
 import type { BalanceHistoryPoint } from "@/lib/types";
 import { useId } from "react";
 import {
@@ -107,14 +108,7 @@ export function BalanceHistoryChart({
               return formatCurrency(value);
             }
 
-            return new Intl.NumberFormat("en-US", {
-              style: "currency",
-              currency: "USD",
-              notation: Math.abs(value) >= 1000 ? "compact" : "standard",
-              maximumFractionDigits: Math.abs(value) >= 1000 ? 1 : 0,
-            })
-              .format(value)
-              .replace("K", "k");
+            return formatCompactCurrency(value);
           }}
         />
         <ChartTooltip

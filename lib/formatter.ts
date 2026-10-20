@@ -5,6 +5,19 @@ export function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+// Short axis labels like "$1.5k", so ticks fit beside the chart
+export function formatCompactCurrency(amount: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: Math.abs(amount) >= 1000 ? "compact" : "standard",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(amount) >= 1000 ? 1 : 0,
+  })
+    .format(amount)
+    .replace("K", "k");
+}
+
 export function formatPercentage(value: number) {
   return `${value.toFixed(1)}%`;
 }
