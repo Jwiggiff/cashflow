@@ -148,7 +148,7 @@ export function FilterSheet({
                       to: range?.to,
                     })
                   }
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>
