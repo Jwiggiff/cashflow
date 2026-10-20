@@ -41,9 +41,17 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
     setOpen(nextOpen);
     if (nextOpen) {
       setImpact(null);
-      const result = await getAccountDeletionImpact(account.id);
-      if (result.success) {
+      const result = await getAccountDeletionImpact(account.id).catch(
+        () => null
+      );
+      if (result?.success) {
         setImpact(result.data);
+      } else {
+        // Without the counts the user can't see what they'd be deleting
+        setOpen(false);
+        toast.error(
+          result?.error || "Couldn't check what deleting this account affects"
+        );
       }
     }
   }
@@ -109,6 +117,12 @@ export function AccountActionsCell({ account }: AccountActionsCellProps) {
                     )
                     .join(", ")}
                   .
+                  {impact.transfers > 0 && (
+                    <p className="mt-2">
+                      The other accounts in these transfers keep their current
+                      balances.
+                    </p>
+                  )}
                 </div>
               )
             )}
