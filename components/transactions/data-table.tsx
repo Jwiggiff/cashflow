@@ -401,7 +401,7 @@ export function DataTable({
                         to: range?.to,
                       })
                     }
-                    initialFocus
+                    autoFocus
                   />
                 </PopoverContent>
               </Popover>

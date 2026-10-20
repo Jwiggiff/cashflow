@@ -303,7 +303,7 @@ function RecurringTransactionForm({
                   mode="single"
                   selected={startDate}
                   onSelect={(date) => date && handleStartDateChange(date)}
-                  initialFocus
+                  autoFocus
                 />
               </PopoverContent>
             </Popover>
