@@ -1,5 +1,52 @@
 # Changelog
 
+## v0.1.25 (2026-10-24)
+
+### What's Changed
+#### Dependencies
+* Bump the npm-deps group across 1 directory with 18 updates by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/59
+* Bump the actions-deps group across 1 directory with 4 updates by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/61
+* Bump source-map-js from 1.2.1 to 1.2.2 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/58
+* Bump vitest from 3.2.7 to 4.1.11 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/56
+* Bump lucide-react from 0.522.0 to 1.57.0 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/65
+* Bump node from 24-alpine to 26-alpine in the docker-deps group across 1 directory by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/48
+* Bump the npm-deps group with 2 updates by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/69
+* Bump @types/node from 20.19.1 to 26.6.5 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/77
+* Bump eslint from 9.39.5 to 10.12.0 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/75
+* Bump lucide-react from 1.57.0 to 1.58.0 in the npm-deps group by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/83
+* Bump vitest from 4.1.11 to 5.0.5 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/85
+* Bump lint-staged from 16.1.2 to 17.6.0 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/86
+* Bump react-day-picker from 9.7.0 to 10.0.2 by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/87
+#### Changes
+* Add Claude PR review workflow by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/34
+* Update Node from 22 to 24 LTS by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/35
+* Fix stale recurring-transaction suggestions and backdated first occurrence by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/38
+* Hide "Uncategorized" label for income on mobile transaction list by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/39
+* Upgrade to Next.js 16 by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/36
+* Fix /dashboard 404 and CSV import dates; add passkey e2e test by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/37
+* Auto-trigger passkey sign-in when launched as an installed PWA by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/44
+* Stop re-running Claude PR review on every push by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/45
+* Fix passkey sign-out loop, add missing auto-signin e2e coverage by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/46
+* Add ephemeral per-PR preview deploys via Fly.io by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/55
+* Add pull-to-refresh for installed PWA mode by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/54
+* Downgrade React Compiler hook lint rules to warnings by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/60
+* Refactor effects flagged by React Compiler hook lint rules by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/62
+* Link recurring transfer notifications to /transactions by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/63
+* Group npm security updates into one Dependabot PR by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/64
+* Fix seeded category icons not rendering by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/66
+* Ignore major @simplewebauthn updates until Auth.js supports them by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/67
+* Install the lockfile's Prisma CLI version in the Docker image by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/68
+* Ignore major Prisma updates until the v7 migration is done by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/74
+* Speed up PR CI, fix cancelled Claude reviews, add commenting guidance by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/78
+* Upgrade zod to v4 by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/80
+* Upgrade @tanstack/react-table to v9 by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/82
+* Check Dependabot npm updates monthly by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/79
+* Upgrade recharts to v3 by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/81
+* Fix expense pie colours and clipped Monthly Overview axis by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/88
+* Cascade-delete accounts with a confirmation showing what's affected by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/47
+
+**Full Changelog**: https://github.com/Jwiggiff/cashflow/compare/v0.1.24...v0.1.25
+
 ## v0.1.24 (2026-09-27)
 
 ### What's Changed
