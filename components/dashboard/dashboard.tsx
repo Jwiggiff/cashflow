@@ -150,24 +150,24 @@ export default function Dashboard({
                   <stop
                     offset="5%"
                     stopColor="var(--color-income)"
-                    stopOpacity={0.8}
+                    stopOpacity={0.4}
                   />
                   <stop
                     offset="95%"
                     stopColor="var(--color-income)"
-                    stopOpacity={0.1}
+                    stopOpacity={0}
                   />
                 </linearGradient>
                 <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
                   <stop
                     offset="5%"
                     stopColor="var(--color-expenses)"
-                    stopOpacity={0.8}
+                    stopOpacity={0.4}
                   />
                   <stop
                     offset="95%"
                     stopColor="var(--color-expenses)"
-                    stopOpacity={0.1}
+                    stopOpacity={0}
                   />
                 </linearGradient>
               </defs>
@@ -201,17 +201,17 @@ export default function Dashboard({
               />
               <Area
                 dataKey="income"
-                type="natural"
+                type="monotone"
                 fill="url(#fillIncome)"
                 stroke="var(--color-income)"
-                stackId="a"
+                strokeWidth={2}
               />
               <Area
                 dataKey="expenses"
-                type="natural"
+                type="monotone"
                 fill="url(#fillExpenses)"
                 stroke="var(--color-expenses)"
-                stackId="a"
+                strokeWidth={2}
               />
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
