@@ -183,6 +183,9 @@ export function DataTable({
     features: transactionTableFeatures,
     data,
     columns: [selectionColumn, ...columns],
+    // Refreshed data (e.g. after saving an edit) shouldn't send the user back
+    // to page 1; filter changes reset it below.
+    autoResetPageIndex: false,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -194,6 +197,24 @@ export function DataTable({
       pagination,
     },
   });
+
+  const filtersKey = JSON.stringify(columnFilters);
+  const [prevFiltersKey, setPrevFiltersKey] = React.useState(filtersKey);
+  if (filtersKey !== prevFiltersKey) {
+    setPrevFiltersKey(filtersKey);
+    setPagination((prev) =>
+      prev.pageIndex === 0 ? prev : { ...prev, pageIndex: 0 },
+    );
+  }
+
+  // Step back if deletions left the current page empty
+  const pageCount = table.getPageCount();
+  if (pagination.pageIndex > 0 && pagination.pageIndex >= pageCount) {
+    setPagination((prev) => ({
+      ...prev,
+      pageIndex: Math.max(pageCount - 1, 0),
+    }));
+  }
 
   // Apply date filter when date range changes
   React.useEffect(() => {
