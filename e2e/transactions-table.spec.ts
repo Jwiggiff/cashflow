@@ -184,6 +184,13 @@ test.describe("wide layout", () => {
     await expectFilteredCount(page, 12);
   });
 
+  test("filters for uncategorized transactions", async ({ page }) => {
+    // Seeded transactions have no category
+    await pickOption(page, /All categories/, "Uncategorized");
+    await expectFilteredCount(page, total);
+    await expect(bodyRows(page)).toHaveCount(10);
+  });
+
   test("filters by date range", async ({ page }) => {
     await page.getByRole("button", { name: "Select date range" }).click();
     await page

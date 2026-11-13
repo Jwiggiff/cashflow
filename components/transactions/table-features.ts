@@ -20,4 +20,7 @@ export const transactionTableFeatures = tableFeatures({
   filterFns: { includesString: filterFn_includesString },
 });
 
+// Category filter value for transactions with no category
+export const UNCATEGORIZED_FILTER = "uncategorized";
+
 export type TransactionTableFeatures = typeof transactionTableFeatures;

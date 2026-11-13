@@ -29,7 +29,10 @@ import { format } from "date-fns";
 import { TransactionType } from "@prisma/client";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import { Table } from "@tanstack/react-table";
-import { TransactionTableFeatures } from "./table-features";
+import {
+  TransactionTableFeatures,
+  UNCATEGORIZED_FILTER,
+} from "./table-features";
 import { TransactionOrTransfer } from "@/lib/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -209,6 +212,9 @@ export function FilterSheet({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value={UNCATEGORIZED_FILTER}>
+                  Uncategorized
+                </SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     <div className="flex items-center gap-2">
@@ -330,8 +336,11 @@ export function ActiveFiltersDisplay({
     ?.getFilterValue() as string;
   if (categoryFilter) {
     const categoryName =
-      categories.find((category) => String(category.id) === String(categoryFilter))
-        ?.name ?? categoryFilter;
+      categoryFilter === UNCATEGORIZED_FILTER
+        ? "Uncategorized"
+        : (categories.find(
+            (category) => String(category.id) === String(categoryFilter),
+          )?.name ?? categoryFilter);
     activeFilters.push({
       key: "category",
       label: `Category: ${categoryName}`,

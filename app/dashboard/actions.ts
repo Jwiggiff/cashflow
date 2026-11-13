@@ -302,7 +302,8 @@ export async function getExpenseBreakdown(): Promise<ExpenseData[]> {
   });
 
   return expenses.map((expense) => ({
-    category: categories.find((c) => c.id === expense.categoryId)?.name ?? "",
+    category: categories.find((c) => c.id === expense.categoryId)?.name ??
+      "Uncategorized",
     value: (expense._sum.amount || 0) * -1,
   }));
 }

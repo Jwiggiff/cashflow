@@ -54,6 +54,7 @@ import { ActiveFiltersDisplay, FilterSheet } from "./filter-sheet";
 import {
   transactionTableFeatures,
   TransactionTableFeatures,
+  UNCATEGORIZED_FILTER,
 } from "./table-features";
 import { TransactionList } from "./transaction-list";
 import { TransactionsEmptyState } from "./transactions-empty-state";
@@ -457,6 +458,10 @@ export function DataTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value={UNCATEGORIZED_FILTER}>
+                  <div className="w-4" />
+                  Uncategorized
+                </SelectItem>
                 {categories.map((category) => {
                   return (
                     <SelectItem
