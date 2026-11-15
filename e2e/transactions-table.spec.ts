@@ -261,6 +261,27 @@ test.describe("mobile list", () => {
   });
 });
 
+test.describe("mobile edit", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("stays on the current page after saving an edit", async ({ page }) => {
+    await openTable(page);
+    await page.getByRole("button", { name: "Next" }).click();
+    await expect(pageStatus(page)).toHaveText("Page 2 of 2");
+
+    await page.locator("ul").getByText("Coffee shop 2", { exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Description").fill("Coffee shop 2 edited");
+    await dialog.getByRole("button", { name: "Update" }).click();
+    await expect(dialog).toBeHidden();
+
+    await expect(
+      page.locator("ul").getByText("Coffee shop 2 edited", { exact: true }),
+    ).toBeVisible();
+    await expect(pageStatus(page)).toHaveText("Page 2 of 2");
+  });
+});
+
 test.describe("bulk actions", () => {
   test.use({ viewport: { width: 1600, height: 1000 } });
 
