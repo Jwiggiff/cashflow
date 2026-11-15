@@ -7,7 +7,10 @@ import {
 import { capitalize, cn } from "@/lib/utils";
 import { BankAccount, Category } from "@prisma/client";
 import { ColumnDef, FilterFn } from "@tanstack/react-table";
-import { TransactionTableFeatures } from "./table-features";
+import {
+  TransactionTableFeatures,
+  UNCATEGORIZED_FILTER,
+} from "./table-features";
 import { ArrowRightIcon, ExternalLinkIcon } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import React from "react";
@@ -170,9 +173,9 @@ export function getColumns(
       header: "Category",
       filterFn: (row, id, value) => {
         const item = row.original;
-        return (
-          "category" in item && String(item.category?.id) === String(value)
-        );
+        if (!("category" in item)) return false;
+        if (value === UNCATEGORIZED_FILTER) return !item.category;
+        return String(item.category?.id) === String(value);
       },
       cell: ({ row }) => {
         const item = row.original;

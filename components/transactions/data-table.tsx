@@ -8,7 +8,7 @@ import {
   Row,
   useTable,
 } from "@tanstack/react-table";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TagX } from "lucide-react";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
 import * as React from "react";
 
@@ -54,6 +54,7 @@ import { ActiveFiltersDisplay, FilterSheet } from "./filter-sheet";
 import {
   transactionTableFeatures,
   TransactionTableFeatures,
+  UNCATEGORIZED_FILTER,
 } from "./table-features";
 import { TransactionList } from "./transaction-list";
 import { TransactionsEmptyState } from "./transactions-empty-state";
@@ -478,6 +479,12 @@ export function DataTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value={UNCATEGORIZED_FILTER}>
+                  <div className="w-4">
+                    <TagX className="h-4 w-4" />
+                  </div>
+                  Uncategorized
+                </SelectItem>
                 {categories.map((category) => {
                   return (
                     <SelectItem
