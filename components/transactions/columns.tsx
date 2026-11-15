@@ -43,6 +43,20 @@ const dateRangeFilter: FilterFn<TransactionTableFeatures, TransactionOrTransfer>
   return true;
 };
 
+// The table has a fixed layout so it never outgrows its container: these
+// columns get a set width and the rest split what's left, truncating text.
+export const columnWidths: Record<string, string> = {
+  select: "w-10",
+  id: "w-16",
+  date: "w-24",
+  type: "w-24",
+  category: "w-36",
+  amount: "w-28",
+  createdAt: "w-24",
+  updatedAt: "w-24",
+  actions: "w-14",
+};
+
 export function getColumns(
   accounts: BankAccount[],
   categories: Category[],
@@ -72,7 +86,7 @@ export function getColumns(
       accessorKey: "description",
       header: "Description",
       cell: ({ row }) => (
-        <div className="font-medium truncate max-w-[200px] md:max-w-full">
+        <div className="font-medium truncate">
           {row.getValue("description")}
         </div>
       ),
@@ -95,7 +109,7 @@ export function getColumns(
                 href={item.source}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline truncate max-w-[200px] flex items-center gap-1"
+                className="hover:underline flex items-center gap-1 min-w-0"
               >
                 <span className="truncate">{item.source}</span>
                 <ExternalLinkIcon className="h-3 w-3 flex-shrink-0" />
@@ -104,7 +118,7 @@ export function getColumns(
           }
 
           return (
-            <div className="text-sm text-muted-foreground truncate max-w-[200px]">
+            <div className="text-sm text-muted-foreground truncate">
               {item.source}
             </div>
           );
@@ -138,7 +152,7 @@ export function getColumns(
 
         // Check if it has 'account' property (transaction) or 'fromAccount' property (transfer)
         if ("account" in item && item.account) {
-          return <div className="truncate max-w-[150px]">{item.account.name}</div>;
+          return <div className="truncate">{item.account.name}</div>;
         } else if (
           "fromAccount" in item &&
           item.fromAccount &&
@@ -179,14 +193,14 @@ export function getColumns(
 
         if ("category" in item && item.category) {
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {item.category.icon && (
                 <DynamicIcon
                   name={item.category.icon as keyof typeof dynamicIconImports}
-                  className="h-4 w-4"
+                  className="h-4 w-4 flex-shrink-0"
                 />
               )}
-              {item.category.name}
+              <span className="truncate">{item.category.name}</span>
             </div>
           );
         }
