@@ -119,13 +119,13 @@ export function RecentAccountActivity({
             </ul>
 
             <div className="hidden @3xl:block">
-              <Table>
+              <Table className="table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="pl-6">Date</TableHead>
+                    <TableHead className="w-32 pl-6">Date</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Details</TableHead>
-                    <TableHead className="pr-6 text-right">Amount</TableHead>
+                    <TableHead className="w-36 pr-6 text-right">Amount</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -136,9 +136,9 @@ export function RecentAccountActivity({
                           {item.date}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{item.description}</div>
+                          <div className="font-medium truncate">{item.description}</div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="truncate text-muted-foreground">
                           {item.detail}
                         </TableCell>
                         <TableCell

@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useCompactFilters } from "@/hooks/use-mobile";
+import { columnWidths } from "./columns";
 import { formatCurrency } from "@/lib/formatter";
 import { TransactionOrTransfer } from "@/lib/types";
 import { capitalize } from "@/lib/utils";
@@ -624,14 +625,17 @@ export function DataTable({
           <div className="@3xl:hidden">
             <TransactionList items={listData} onRowClick={onRowClick} />
           </div>
-          <div className="hidden overflow-x-hidden rounded-md border @3xl:block">
-            <Table>
+          <div className="hidden rounded-md border @3xl:block">
+            <Table className="table-fixed">
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
                       return (
-                        <TableHead key={header.id}>
+                        <TableHead
+                          key={header.id}
+                          className={columnWidths[header.column.id]}
+                        >
                           {header.isPlaceholder
                             ? null
                             : flexRender(

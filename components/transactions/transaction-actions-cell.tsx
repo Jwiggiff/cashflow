@@ -1,10 +1,7 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Trash2Icon, PencilIcon } from "lucide-react";
 import {
   AlertDialog,
-  AlertDialogTrigger,
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -18,6 +15,7 @@ import { TransactionWithAccountAndCategory } from "@/lib/types";
 import { deleteTransaction } from "@/app/transactions/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { RowActionsMenu } from "./row-actions-menu";
 import { TransactionDialog } from "./transaction-dialog";
 import { Category } from "@prisma/client";
 
@@ -29,6 +27,7 @@ interface TransactionActionsCellProps {
 
 export function TransactionActionsCell({ transaction, accounts, categories }: TransactionActionsCellProps) {
   const [open, setOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
@@ -46,24 +45,20 @@ export function TransactionActionsCell({ transaction, accounts, categories }: Tr
   }
 
   return (
-    <div className="flex gap-2 justify-end">
+    <div className="flex justify-end">
+      <RowActionsMenu
+        onEdit={() => setEditOpen(true)}
+        onDelete={() => setOpen(true)}
+      />
       <TransactionDialog
         mode="edit"
         transaction={transaction}
         accounts={accounts}
         categories={categories}
-        trigger={
-          <Button size="icon" variant="ghost" aria-label="Edit transaction">
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-        }
+        open={editOpen}
+        onOpenChange={setEditOpen}
       />
       <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label="Delete transaction">
-            <Trash2Icon className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transaction</AlertDialogTitle>

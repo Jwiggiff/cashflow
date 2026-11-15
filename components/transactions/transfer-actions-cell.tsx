@@ -10,15 +10,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 import { TransferWithAccounts } from "@/lib/types";
 import { BankAccount } from "@prisma/client";
-import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { RowActionsMenu } from "./row-actions-menu";
 import { TransferDialog } from "./transfer-dialog";
 
 interface TransferActionsCellProps {
@@ -31,6 +29,7 @@ export function TransferActionsCell({
   accounts,
 }: TransferActionsCellProps) {
   const [open, setOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
 
@@ -48,23 +47,19 @@ export function TransferActionsCell({
   }
 
   return (
-    <div className="flex gap-2 justify-end">
+    <div className="flex justify-end">
+      <RowActionsMenu
+        onEdit={() => setEditOpen(true)}
+        onDelete={() => setOpen(true)}
+      />
       <TransferDialog
         mode="edit"
         transfer={transfer}
         accounts={accounts}
-        trigger={
-          <Button size="icon" variant="ghost" aria-label="Edit transaction">
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-        }
+        open={editOpen}
+        onOpenChange={setEditOpen}
       />
       <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogTrigger asChild>
-          <Button size="icon" variant="ghost" aria-label="Delete transaction">
-            <Trash2Icon className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Transfer</AlertDialogTitle>
