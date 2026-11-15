@@ -39,6 +39,11 @@ Comments (code, config, workflows, scripts):
 - Only comment on what the code can't tell a reader: why something is done, or a gotcha. Never restate what the code, a step name, or a config key already says.
 - Keep them short and simple, usually one line, in plain language rather than technical detail. No history or "previously this did X"; that goes in the commit message.
 
+Pull requests:
+- Every PR that changes UI includes before/after screenshots in its description. If the change involves motion or interactions (animations, transitions, gestures, drag, multi-step flows), include before/after videos instead.
+- Capture "before" from `main` and "after" from the PR branch, at each viewport the change affects (phone ~390px wide and desktop), with seeded data that shows the change.
+- Host images and videos on the `pr-assets` branch under `pr-<number>/` and embed them with `https://github.com/Jwiggiff/cashflow/blob/pr-assets/pr-<number>/<file>?raw=true`. Never commit them to a feature branch.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
