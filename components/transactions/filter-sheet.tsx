@@ -24,7 +24,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, CircleDashed, FilterIcon, X } from "lucide-react";
+import { CalendarIcon, FilterIcon, TagX, X } from "lucide-react";
 import { format } from "date-fns";
 import { TransactionType } from "@prisma/client";
 import { DynamicIcon, dynamicIconImports } from "lucide-react/dynamic";
@@ -214,7 +214,7 @@ export function FilterSheet({
                 <SelectItem value="all">All categories</SelectItem>
                 <SelectItem value={UNCATEGORIZED_FILTER}>
                   <div className="flex items-center gap-2">
-                    <CircleDashed className="h-4 w-4" />
+                    <TagX className="h-4 w-4" />
                     Uncategorized
                   </div>
                 </SelectItem>
