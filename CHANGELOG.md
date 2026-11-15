@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.26 (2026-11-15)
+
+### What's Changed
+#### Dependencies
+* Bump the npm-deps group with 5 updates by @dependabot[bot] in https://github.com/Jwiggiff/cashflow/pull/91
+#### Changes
+* Show income and expenses as overlapping lines in Monthly Overview by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/90
+* Keep the transactions page after saving an edit by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/92
+* Support uncategorized transactions in filter and expense chart by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/93
+* Fit the transactions table to the page and move row actions into a menu by @Jwiggiff in https://github.com/Jwiggiff/cashflow/pull/94
+
+**Full Changelog**: https://github.com/Jwiggiff/cashflow/compare/v0.1.25...v0.1.26
+
 ## v0.1.25 (2026-10-24)
 
 ### What's Changed
